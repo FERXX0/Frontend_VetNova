@@ -1,0 +1,289 @@
+:host {
+  // Paleta tomada del mockup de VetNova
+  --vn-navy: #10263a;
+  --vn-teal: #1aa7a0;
+  --vn-teal-dark: #0e7c86;
+  --vn-mint: #4fd6a8;
+  --vn-text-dark: #1c2b36;
+  --vn-text-muted: #7c93a6;
+  --vn-border: #d7e3e8;
+  --vn-border-focus: var(--vn-teal);
+  --vn-danger: #e0554f;
+  --vn-white: #ffffff;
+
+  display: block;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--vn-white);
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+
+  // ---------- Panel izquierdo ----------
+  &__hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2rem 2.5rem 2rem;
+    color: var(--vn-white);
+    background:
+      linear-gradient(135deg, rgba(10, 25, 38, 0.84) 0%, rgba(13, 56, 70, 0.76) 50%, rgba(14, 124, 134, 0.82) 100%),
+      url('/images/login-hero.jpg') center/cover no-repeat;
+    min-height: 420px;
+
+    @media (max-width: 900px) {
+      min-height: 280px;
+      padding: 1.5rem 1.5rem 2rem;
+    }
+  }
+
+  &__hero-brand {
+    position: absolute;
+    top: 2rem;
+    left: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    @media (max-width: 900px) {
+      top: 1.5rem;
+      left: 1.5rem;
+    }
+  }
+
+  &__hero-logo-icon {
+    display: inline-flex;
+    width: 1.75rem;
+    height: 1.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    background: var(--vn-white);
+    color: var(--vn-teal);
+
+    svg { width: 1.1rem; height: 1.1rem; }
+  }
+
+  &__hero-logo-text {
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: -0.01em;
+  }
+  &__hero-logo-vet { color: var(--vn-white); }
+  &__hero-logo-nova { color: var(--vn-mint); }
+
+  &__hero-copy {
+    max-width: 30rem;
+  }
+
+  &__hero-title {
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0 0 1rem;
+
+    span { color: var(--vn-mint); }
+  }
+
+  &__hero-subtitle {
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+  }
+
+  // ---------- Panel derecho ----------
+  &__form-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 2rem;
+    background: var(--vn-white);
+  }
+
+  &__form-wrapper {
+    width: 100%;
+    max-width: 26rem;
+  }
+
+  &__form-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.75rem;
+  }
+
+  &__form-logo-icon {
+    display: inline-flex;
+    width: 4rem;
+    height: 4rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--vn-teal) 0%, var(--vn-mint) 100%);
+    color: var(--vn-white);
+
+    svg { width: 2rem; height: 2rem; }
+  }
+
+  &__form-logo-text {
+    font-weight: 800;
+    font-size: 1.6rem;
+  }
+  &__form-logo-vet { color: var(--vn-navy); }
+  &__form-logo-nova { color: var(--vn-teal); }
+
+  &__form-heading {
+    text-align: center;
+    margin-bottom: 1.75rem;
+
+    h2 {
+      margin: 0 0 0.25rem;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--vn-teal-dark);
+    }
+    p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--vn-teal);
+    }
+  }
+
+  &__field {
+    margin-bottom: 1.25rem;
+
+    label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--vn-text-dark);
+      margin-bottom: 0.4rem;
+    }
+  }
+
+  &__field-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.4rem;
+
+    label { margin-bottom: 0; }
+  }
+
+  &__forgot {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--vn-teal);
+    cursor: pointer;
+
+    &:hover { text-decoration: underline; }
+  }
+
+  &__input {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    border: 1.5px solid var(--vn-border);
+    border-radius: 0.6rem;
+    padding: 0.7rem 0.9rem;
+    background: var(--vn-white);
+    transition: border-color 0.15s ease;
+
+    svg {
+      width: 1.15rem;
+      height: 1.15rem;
+      color: var(--vn-teal);
+      flex-shrink: 0;
+    }
+
+    input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 0.92rem;
+      color: var(--vn-text-dark);
+      background: transparent;
+
+      &::placeholder { color: #a9bac5; }
+    }
+
+    &:focus-within {
+      border-color: var(--vn-border-focus);
+      box-shadow: 0 0 0 3px rgba(26, 167, 160, 0.12);
+    }
+
+    &--invalid {
+      border-color: var(--vn-danger);
+    }
+  }
+
+  &__toggle-password {
+    background: none;
+    border: none;
+    padding: 0;
+    display: inline-flex;
+    cursor: pointer;
+    color: var(--vn-text-muted);
+
+    svg { width: 1.1rem; height: 1.1rem; }
+  }
+
+  &__field-error {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    color: var(--vn-danger);
+  }
+
+  &__error {
+    background: rgba(224, 85, 79, 0.08);
+    border: 1px solid rgba(224, 85, 79, 0.25);
+    color: var(--vn-danger);
+    font-size: 0.85rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: 0.5rem;
+    margin: 0 0 1rem;
+  }
+
+  &__submit {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: none;
+    border-radius: 0.6rem;
+    padding: 0.85rem 1rem;
+    background: linear-gradient(90deg, var(--vn-teal) 0%, var(--vn-teal-dark) 100%);
+    color: var(--vn-white);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+
+    svg { width: 1.1rem; height: 1.1rem; }
+
+    &:hover:not(:disabled) { opacity: 0.92; }
+    &:active:not(:disabled) { transform: translateY(1px); }
+    &:disabled { opacity: 0.65; cursor: not-allowed; }
+  }
+
+  &__footnote {
+    margin: 1rem 0 0;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--vn-text-muted);
+  }
+}

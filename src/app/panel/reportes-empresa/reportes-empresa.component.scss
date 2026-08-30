@@ -1,0 +1,184 @@
+:host {
+  display: block;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: var(--vn-text-dark, #1c2b36);
+  background-color: var(--vn-bg, #f4f6f8);
+  min-height: 100%;
+  padding: 1.5rem;
+}
+
+$vn-teal: var(--vn-teal, #1aa7a0);
+$vn-navy: var(--vn-navy, #10263a);
+$vn-surface: var(--vn-surface, #ffffff);
+$vn-border: var(--vn-border, #e5e9ec);
+$vn-text-muted: var(--vn-text-muted, #8a97a1);
+$vn-white: var(--vn-white, #ffffff);
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid $vn-border;
+
+  &__title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    color: $vn-navy;
+  }
+
+  &__desc {
+    margin: 0;
+    color: $vn-text-muted;
+    font-size: 1rem;
+  }
+}
+
+.info-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(to right, rgba(16, 38, 58, 0.08), rgba(16, 38, 58, 0.03));
+  border-left: 4px solid $vn-navy;
+  padding: 1rem 1.5rem;
+  border-radius: 0.5rem;
+  margin-bottom: 2.5rem;
+  
+  &__icon {
+    color: $vn-navy;
+    display: flex;
+    align-items: center;
+    
+    svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+  }
+
+  &__text {
+    color: var(--vn-text-dark, #1c2b36);
+    font-size: 0.95rem;
+  }
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.report-card {
+  background: $vn-surface;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  border: 1px solid transparent;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    border-color: rgba(26, 167, 160, 0.2);
+  }
+
+  &__header {
+    padding: 1.5rem 1.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  &__icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    &.icon-citas {
+      background-color: rgba(26, 167, 160, 0.1);
+      color: $vn-teal;
+    }
+
+    &.icon-pacientes {
+      background-color: rgba(16, 38, 58, 0.1);
+      color: $vn-navy;
+    }
+
+    &.icon-ingresos {
+      background-color: rgba(99, 102, 241, 0.1);
+      color: #6366f1;
+    }
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--vn-text-dark, #1c2b36);
+  }
+
+  &__body {
+    padding: 0 1.5rem;
+    flex-grow: 1;
+
+    p {
+      margin: 0 0 1.5rem 0;
+      color: $vn-text-muted;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+  }
+
+  &__footer {
+    padding: 1rem 1.5rem;
+    background-color: rgba(0, 0, 0, 0.02);
+    border-top: 1px solid $vn-border;
+  }
+}
+
+.btn-generate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  background-color: $vn-surface;
+  color: $vn-navy;
+  border: 1px solid $vn-border;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: not-allowed;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-container {
+    padding: 0.5rem;
+  }
+  
+  .reports-grid {
+    grid-template-columns: 1fr;
+  }
+}

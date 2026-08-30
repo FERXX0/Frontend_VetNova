@@ -1,0 +1,308 @@
+.perfil-page {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+
+  @media (max-width: 640px) {
+    padding: 1.25rem;
+  }
+
+  &__header {
+    margin-bottom: 1.75rem;
+  }
+
+  &__volver {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--vn-teal-dark, #0e7c86);
+    text-decoration: none;
+    margin-bottom: 0.75rem;
+    transition: transform 0.15s ease;
+
+    svg {
+      width: 1.1rem;
+      height: 1.1rem;
+    }
+
+    &:hover {
+      transform: translateX(-3px);
+    }
+  }
+
+  &__title {
+    margin: 0 0 0.25rem;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--vn-navy, #10263a);
+  }
+
+  &__subtitle {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--vn-text-muted, #8a97a1);
+  }
+
+  &__card {
+    background: var(--vn-white, #ffffff);
+    border: 1px solid var(--vn-border, #e5e9ec);
+    border-radius: 0.9rem;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(16, 38, 58, 0.04);
+
+    @media (max-width: 640px) {
+      padding: 1.25rem;
+    }
+  }
+
+  &__divider {
+    height: 1px;
+    background: var(--vn-border, #e5e9ec);
+    margin: 1.75rem 0;
+  }
+}
+
+.perfil-card {
+  &__resumen {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+
+    @media (max-width: 640px) {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+
+  &__avatar {
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--vn-teal, #1aa7a0) 0%, var(--vn-teal-dark, #0e7c86) 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.6rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(26, 167, 160, 0.3);
+  }
+
+  &__info-principal {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    h2 {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--vn-navy, #10263a);
+    }
+  }
+
+  &__rol-badge {
+    display: inline-block;
+    align-self: flex-start;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    background: rgba(26, 167, 160, 0.14);
+    color: var(--vn-teal-dark, #0e7c86);
+
+    @media (max-width: 640px) {
+      align-self: center;
+    }
+  }
+
+  &__empresa {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--vn-text-muted, #8a97a1);
+    margin: 0.25rem 0 0;
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+      color: var(--vn-teal, #1aa7a0);
+    }
+
+    @media (max-width: 640px) {
+      justify-content: center;
+    }
+  }
+}
+
+.perfil-alerta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: 0.65rem;
+  font-size: 0.88rem;
+  margin-bottom: 1.5rem;
+
+  svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  &--exito {
+    background: rgba(79, 214, 168, 0.15);
+    color: #0e8f5f;
+    border: 1px solid rgba(79, 214, 168, 0.3);
+  }
+
+  &--error {
+    background: var(--vn-danger-bg, #fdeceb);
+    color: var(--vn-danger, #e0554f);
+    border: 1px solid rgba(224, 85, 79, 0.3);
+  }
+}
+
+.perfil-form {
+  &__seccion-titulo {
+    margin-bottom: 1.25rem;
+
+    h3 {
+      margin: 0 0 0.2rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--vn-navy, #10263a);
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--vn-text-muted, #8a97a1);
+    }
+  }
+
+  &__fila {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.1rem;
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--vn-text-dark, #1c2b36);
+    }
+
+    input {
+      padding: 0.7rem 0.9rem;
+      border: 1.5px solid var(--vn-border, #e5e9ec);
+      border-radius: 0.55rem;
+      font-size: 0.9rem;
+      color: var(--vn-text-dark, #1c2b36);
+      background: var(--vn-white, #ffffff);
+      font-family: inherit;
+      transition: border-color 0.15s ease;
+
+      &:focus {
+        outline: none;
+        border-color: var(--vn-border-focus, #1aa7a0);
+      }
+    }
+  }
+
+  &__static {
+    padding: 0.7rem 0.9rem;
+    border: 1.5px solid var(--vn-border, #e5e9ec);
+    border-radius: 0.55rem;
+    font-size: 0.9rem;
+    background: var(--vn-surface, #f6f9fa);
+    color: var(--vn-text-muted, #8a97a1);
+    font-weight: 500;
+  }
+
+  &__input--invalido {
+    border-color: var(--vn-danger, #e0554f) !important;
+  }
+
+  &__error {
+    font-size: 0.78rem;
+    color: var(--vn-danger, #e0554f);
+  }
+
+  &__modulos {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--vn-text-dark, #1c2b36);
+    }
+  }
+
+  &__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .perfil-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: var(--vn-surface, #f6f9fa);
+    border: 1px solid var(--vn-border, #e5e9ec);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--vn-navy, #10263a);
+  }
+
+  &__acciones {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.75rem;
+  }
+
+  &__btn-guardar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.6rem;
+    border: none;
+    border-radius: 0.65rem;
+    background: linear-gradient(90deg, var(--vn-teal, #1aa7a0) 0%, var(--vn-teal-dark, #0e7c86) 100%);
+    color: var(--vn-white, #ffffff);
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.15s ease;
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.05);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+  }
+}

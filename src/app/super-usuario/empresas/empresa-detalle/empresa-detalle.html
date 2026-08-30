@@ -1,0 +1,883 @@
+<div class="tenant-page">
+
+  <!-- Breadcrumb / Volver -->
+  <div class="tenant-page__top-nav">
+    <a routerLink="/super-usuario/empresas" class="tenant-page__btn-back">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Volver a Empresas</span>
+    </a>
+  </div>
+
+  @if (cargando()) {
+    <div class="tenant-page__loading">
+      <div class="spinner"></div>
+      <p>Cargando información de la empresa…</p>
+    </div>
+  } @else if (empresa()) {
+
+    <!-- Header Hero de la Empresa -->
+    <header class="tenant-hero">
+      <div class="tenant-hero__main">
+        <div class="tenant-hero__avatar">
+          <span>{{ empresa()!.nombre.slice(0, 2).toUpperCase() }}</span>
+        </div>
+        <div class="tenant-hero__info">
+          <div class="tenant-hero__title-row">
+            <h1 class="tenant-hero__title">{{ empresa()!.nombre }}</h1>
+            <span
+              class="tenant-badge"
+              [class.tenant-badge--activa]="empresa()!.estado === 'activa'"
+              [class.tenant-badge--inactiva]="empresa()!.estado === 'inactiva'"
+              [class.tenant-badge--suspendida]="empresa()!.estado === 'suspendida'"
+            >
+              {{ empresa()!.estado }}
+            </span>
+          </div>
+
+          <div class="tenant-hero__meta">
+            @if (empresa()!.nit) {
+              <span class="tenant-hero__meta-item">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M7 8h10M7 12h6M7 16h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                NIT: {{ empresa()!.nit }}
+              </span>
+            }
+            @if (empresa()!.correo) {
+              <span class="tenant-hero__meta-item">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2Z" stroke="currentColor" stroke-width="1.6"/><path d="m22 6-10 7L2 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                {{ empresa()!.correo }}
+              </span>
+            }
+            <span class="tenant-hero__meta-item">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              {{ empresa()!.zona_horaria }}
+            </span>
+          </div>
+
+          <!-- Módulos Contratados Tags -->
+          <div class="tenant-hero__modules">
+            <span class="tenant-hero__modules-label">Módulos contratados:</span>
+            @for (mod of modulosHabilitados(); track mod) {
+              <span class="module-chip">
+                <span class="module-chip__dot"></span>
+                {{ mod }}
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="tenant-hero__actions">
+        <button type="button" class="btn-hero-primary" (click)="abrirModalEditarEmpresa()">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          Editar Empresa
+        </button>
+      </div>
+    </header>
+
+    <!-- Barra de Pestañas (Tabs) -->
+    <nav class="tenant-tabs">
+      <button
+        type="button"
+        class="tenant-tabs__item"
+        [class.tenant-tabs__item--active]="tabActiva() === 'resumen'"
+        (click)="tabActiva.set('resumen')"
+      >
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span>Resumen</span>
+      </button>
+
+      <button
+        type="button"
+        class="tenant-tabs__item"
+        [class.tenant-tabs__item--active]="tabActiva() === 'usuarios'"
+        (click)="tabActiva.set('usuarios')"
+      >
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c1.2-3.4 4-5.2 7.5-5.2s6.3 1.8 7.5 5.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span>Usuarios de la Empresa</span>
+        <span class="tenant-tabs__badge">{{ usuariosTenant().length }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="tenant-tabs__item"
+        [class.tenant-tabs__item--active]="tabActiva() === 'modulos'"
+        (click)="tabActiva.set('modulos')"
+      >
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Módulos Habilitados</span>
+        <span class="tenant-tabs__badge">{{ modulosHabilitados().length }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="tenant-tabs__item"
+        [class.tenant-tabs__item--active]="tabActiva() === 'suscripciones'"
+        (click)="tabActiva.set('suscripciones')"
+      >
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="8" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.7"/><path d="M8 8V6a4 4 0 0 1 8 0v2" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span>Suscripciones</span>
+        <span class="tenant-tabs__badge">{{ suscripciones().length }}</span>
+      </button>
+
+      <!-- Pestaña condicional de Citas -->
+      <button
+        type="button"
+        class="tenant-tabs__item"
+        [class.tenant-tabs__item--active]="tabActiva() === 'citas'"
+        [class.tenant-tabs__item--disabled]="!tieneModuloCitas()"
+        (click)="tabActiva.set('citas')"
+      >
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M3 9h18M8 2v4M16 2v4M7 13h2M11 13h2M15 13h2M7 17h2M11 17h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span>Agenda & Citas</span>
+        @if (!tieneModuloCitas()) {
+          <span class="tenant-tabs__tag-off">Inactivo</span>
+        }
+      </button>
+
+      <!-- Pestaña condicional de Clientes -->
+      <button
+        type="button"
+        class="tenant-tabs__item"
+        [class.tenant-tabs__item--active]="tabActiva() === 'pacientes'"
+        [class.tenant-tabs__item--disabled]="!tieneModuloPacientes()"
+        (click)="tabActiva.set('pacientes')"
+      >
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c-2 0-4-1.5-4-4s1-4.5 4-4.5 4 2 4 4.5-2 4-4 4Z" stroke="currentColor" stroke-width="1.7"/><path d="M5 21c0-3.5 3-6 7-6s7 2.5 7 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="18" cy="8" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M18 6.5v3M16.5 8h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <span>Clientes</span>
+        @if (!tieneModuloPacientes()) {
+          <span class="tenant-tabs__tag-off">Inactivo</span>
+        }
+      </button>
+    </nav>
+
+    <!-- Contenido de las Pestañas -->
+    <div class="tenant-tab-body">
+
+      <!-- TAB 1: RESUMEN E INFORMACIÓN -->
+      @if (tabActiva() === 'resumen') {
+        <div class="resumen-grid">
+          <div class="detail-card">
+            <h3 class="detail-card__title">Información Corporativa</h3>
+            <div class="detail-list">
+              <div class="detail-row">
+                <span class="detail-label">Nombre Comercial</span>
+                <strong class="detail-value">{{ empresa()!.nombre }}</strong>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Razón Social</span>
+                <span class="detail-value">{{ empresa()!.razon_social || 'No especificada' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Identificación Tributaria (NIT)</span>
+                <span class="detail-value">{{ empresa()!.nit || 'Sin NIT' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Correo Electrónico de Contacto</span>
+                <span class="detail-value">{{ empresa()!.correo || 'No registrado' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Zona Horaria Asignada</span>
+                <span class="detail-value">{{ empresa()!.zona_horaria }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Estado Operativo</span>
+                <span class="detail-value text-capitalize">{{ empresa()!.estado }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-card">
+            <h3 class="detail-card__title">Resumen de Uso del Tenant</h3>
+            <div class="stats-mini-grid">
+              <div class="stat-mini">
+                <span class="stat-mini__num">{{ usuariosTenant().length }}</span>
+                <span class="stat-mini__label">Usuarios Activos</span>
+              </div>
+              <div class="stat-mini">
+                <span class="stat-mini__num">{{ modulosHabilitados().length }}</span>
+                <span class="stat-mini__label">Módulos Habilitados</span>
+              </div>
+              <div class="stat-mini">
+                <span class="stat-mini__num">{{ suscripciones().length }}</span>
+                <span class="stat-mini__label">Suscripciones</span>
+              </div>
+              <div class="stat-mini">
+                <span class="stat-mini__num">{{ pacientes().length }}</span>
+                <span class="stat-mini__label">Clientes Registrados</span>
+              </div>
+            </div>
+
+            <div class="multitenant-note">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              <div>
+                <strong>Aislamiento Multitenant</strong>
+                <p>Todos los datos de usuarios, agenda, clientes y registros clínicos permanecen estrictamente aislados para esta empresa y su base de datos asignada.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB: USUARIOS DE LA EMPRESA -->
+      @if (tabActiva() === 'usuarios') {
+        <div class="tenant-users-tab">
+          <div class="tab-section-header">
+            <div>
+              <h3>Usuarios y Colaboradores de {{ empresa()!.nombre }}</h3>
+              <p>Gestiona los usuarios con credenciales y roles con acceso exclusivo a esta sede/empresa.</p>
+            </div>
+            <button type="button" class="btn-primary" (click)="abrirModalCrearUsuarioTenant()">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Nuevo Usuario de Empresa
+            </button>
+          </div>
+
+          @if (usuariosTenant().length === 0) {
+            <div class="empty-box">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 20c1.2-3.4 4-5.2 7.5-5.2s6.3 1.8 7.5 5.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <p>No hay usuarios registrados para esta empresa todavía.</p>
+              <button type="button" class="btn-secondary" (click)="abrirModalCrearUsuarioTenant()">Crear Primer Usuario</button>
+            </div>
+          } @else {
+            <div class="table-card">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th>Usuario / Colaborador</th>
+                    <th>Correo Electrónico</th>
+                    <th>Rol en la Empresa</th>
+                    <th>Estado</th>
+                    <th>Fecha Alta</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (user of usuariosTenant(); track user.id) {
+                    <tr>
+                      <td>
+                        <div class="user-cell">
+                          <div class="user-avatar">{{ user.nombre.slice(0, 2).toUpperCase() }}</div>
+                          <span class="font-semibold">{{ user.nombre }}</span>
+                        </div>
+                      </td>
+                      <td>{{ user.correo }}</td>
+                      <td>
+                        <span
+                          class="role-pill"
+                          [class.role-pill--admin]="user.rol === 'Administrador'"
+                          [class.role-pill--vet]="user.rol === 'Veterinario'"
+                          [class.role-pill--cajero]="user.rol === 'Cajero'"
+                          [class.role-pill--recepcion]="user.rol === 'Recepcionista'"
+                        >
+                          {{ user.rol }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="pill" [class.pill--success]="user.activo" [class.pill--muted]="!user.activo">
+                          {{ user.activo ? 'Activo' : 'Inactivo' }}
+                        </span>
+                      </td>
+                      <td>{{ user.creado_en || '2026-01-01' }}</td>
+                      <td class="text-right">
+                        <div class="action-buttons">
+                          <button
+                            type="button"
+                            class="btn-icon"
+                            title="Editar usuario"
+                            (click)="abrirModalEditarUsuarioTenant(user)"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                          </button>
+                          <button
+                            type="button"
+                            class="btn-icon"
+                            [class.btn-icon--danger]="user.activo"
+                            [title]="user.activo ? 'Desactivar usuario' : 'Activar usuario'"
+                            (click)="toggleEstadoUsuarioTenant(user)"
+                          >
+                            @if (user.activo) {
+                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M4.93 4.93l14.14 14.14" stroke="currentColor" stroke-width="1.6"/></svg>
+                            } @else {
+                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            }
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="multitenant-note mt-4">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div>
+                <strong>Aislamiento de Usuarios por Tenant</strong>
+                <p>Los usuarios creados aquí pertenecen únicamente al tenant de esta empresa, no tienen acceso a otras empresas ni al panel del Super Admin. Al iniciar sesión, el sistema detecta su empresa y los redirige a su panel exclusivo.</p>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- TAB 2: APROVISIONAMIENTO DE MÓDULOS -->
+      @if (tabActiva() === 'modulos') {
+        <div class="modules-provisioning">
+          <div class="modules-provisioning__header">
+            <div>
+              <h3>Catálogo de Módulos y Aprovisionamiento para {{ empresa()!.nombre }}</h3>
+              <p>Activa o desactiva las funcionalidades que esta empresa tiene autorizadas según su modelo de negocio o plan contratado.</p>
+            </div>
+          </div>
+
+          <div class="modules-grid">
+            @for (mod of todosModulos(); track mod.codigo) {
+              <div class="module-card" [class.module-card--active]="moduloEstaHabilitado(mod.codigo)">
+                <div class="module-card__header">
+                  <div class="module-card__icon-box">
+                    @switch (mod.codigo) {
+                      @case ('citas') {
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                      }
+                      @case ('clientes_pacientes') {
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c-2 0-4-1.5-4-4s1-4.5 4-4.5 4 2 4 4.5-2 4-4 4Z" stroke="currentColor" stroke-width="1.7"/><path d="M5 21c0-3.5 3-6 7-6s7 2.5 7 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                      }
+                      @case ('facturacion') {
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="3" width="16" height="18" rx="1.5" stroke="currentColor" stroke-width="1.7"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                      }
+                      @case ('usuarios') {
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c1.2-3.4 4-5.2 7.5-5.2s6.3 1.8 7.5 5.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                      }
+                      @default {
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                      }
+                    }
+                  </div>
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      [checked]="moduloEstaHabilitado(mod.codigo)"
+                      (change)="toggleModulo(mod.codigo)"
+                    />
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+
+                <div class="module-card__body">
+                  <h4>{{ mod.nombre }}</h4>
+                  <p>Código técnico: <code>{{ mod.codigo }}</code></p>
+                  <div class="module-card__status">
+                    @if (moduloEstaHabilitado(mod.codigo)) {
+                      <span class="pill pill--success">Habilitado para este Tenant</span>
+                    } @else {
+                      <span class="pill pill--muted">Inactivo en este Tenant</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- TAB 3: SUSCRIPCIONES -->
+      @if (tabActiva() === 'suscripciones') {
+        <div class="suscripciones-tab">
+          <div class="tab-section-header">
+            <div>
+              <h3>Planes y Suscripciones de la Empresa</h3>
+              <p>Historial de contratos, estados de pago y fechas de renovación.</p>
+            </div>
+            <button type="button" class="btn-primary" (click)="abrirModalSuscripcion()">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Nueva Suscripción
+            </button>
+          </div>
+
+          @if (suscripciones().length === 0) {
+            <div class="empty-box">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="8" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 8V6a4 4 0 0 1 8 0v2" stroke="currentColor" stroke-width="1.6"/></svg>
+              <p>Esta empresa no tiene suscripciones activas registradas.</p>
+              <button type="button" class="btn-secondary" (click)="abrirModalSuscripcion()">Asignar Plan Inicial</button>
+            </div>
+          } @else {
+            <div class="table-card">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th>Plan</th>
+                    <th>Estado</th>
+                    <th>Periodo</th>
+                    <th>Monto</th>
+                    <th>Fecha Inicio</th>
+                    <th>Fecha Fin</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (sub of suscripciones(); track sub.id) {
+                    <tr>
+                      <td class="font-semibold">{{ sub.plan.nombre || 'Plan Personalizado' }}</td>
+                      <td>
+                        <span class="pill" [class.pill--success]="sub.estado === 'activa'" [class.pill--warning]="sub.estado === 'prueba'" [class.pill--danger]="sub.estado === 'vencida'">
+                          {{ sub.estado }}
+                        </span>
+                      </td>
+                      <td class="text-capitalize">{{ sub.periodo }}</td>
+                      <td class="font-semibold">{{ formatearMoneda(sub.monto, sub.moneda) }}</td>
+                      <td>{{ sub.inicia_en | date: 'd MMM y' }}</td>
+                      <td>{{ sub.finaliza_en ? (sub.finaliza_en | date: 'd MMM y') : 'Indefinido' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- TAB 4: AGENDA MÉDICA (CONDICIONAL AL MÓDULO) -->
+      @if (tabActiva() === 'citas') {
+        @if (!tieneModuloCitas()) {
+          <div class="inactive-module-notice">
+            <div class="notice-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </div>
+            <h3>Módulo de Agenda Médica no contratado</h3>
+            <p>Esta empresa no tiene activado el módulo de <strong>Agenda y Citas</strong>. Si esta empresa es una veterinaria o consultorio, puedes habilitar este módulo en cualquier momento.</p>
+            <button type="button" class="btn-primary" (click)="toggleModulo('citas')">
+              Habilitar Agenda para {{ empresa()!.nombre }}
+            </button>
+          </div>
+        } @else {
+          <div class="agenda-tab">
+            <div class="tab-section-header">
+              <div>
+                <h3>Agenda de Citas — {{ empresa()!.nombre }}</h3>
+                <p>Gestión de consultas y turnos programados en esta sede.</p>
+              </div>
+
+              <div class="header-actions">
+                <div class="date-navigator">
+                  <button type="button" (click)="cambiarFechaCitas(-1)">‹</button>
+                  <input type="date" [value]="fechaCitas()" (change)="fechaCitas.set($any($event.target).value); cargarCitas()" />
+                  <button type="button" (click)="cambiarFechaCitas(1)">›</button>
+                </div>
+                <button type="button" class="btn-primary" (click)="abrirModalCita()">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  Agendar Cita
+                </button>
+              </div>
+            </div>
+
+            @if (cargandoCitas()) {
+              <div class="spinner-container"><div class="spinner"></div></div>
+            } @else if (citas().length === 0) {
+              <div class="empty-box">
+                <p>No hay citas programadas para el día <strong>{{ fechaCitas() }}</strong> en esta empresa.</p>
+                <button type="button" class="btn-secondary" (click)="abrirModalCita()">Crear Primera Cita</button>
+              </div>
+            } @else {
+              <div class="table-card">
+                <table class="modern-table">
+                  <thead>
+                    <tr>
+                      <th>Hora</th>
+                      <th>Paciente</th>
+                      <th>Propietario / Cliente</th>
+                      <th>Motivo de Consulta</th>
+                      <th>Tipo</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (cita of citas(); track cita.id) {
+                      <tr>
+                        <td class="font-bold">{{ cita.hora_inicio }}</td>
+                        <td class="font-semibold">{{ cita.paciente_nombre }}</td>
+                        <td>{{ cita.propietario_nombre || '—' }}</td>
+                        <td>{{ cita.motivo }}</td>
+                        <td class="text-capitalize">{{ cita.tipo_consulta }}</td>
+                        <td>
+                          <span class="pill" [class.pill--success]="cita.estado === 'confirmada'" [class.pill--warning]="cita.estado === 'pendiente'" [class.pill--primary]="cita.estado === 'atendida'">
+                            {{ cita.estado }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      <!-- TAB 5: CLIENTES (CONDICIONAL AL MÓDULO) -->
+      @if (tabActiva() === 'pacientes') {
+        @if (!tieneModuloPacientes()) {
+          <div class="inactive-module-notice">
+            <div class="notice-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c-2 0-4-1.5-4-4s1-4.5 4-4.5 4 2 4 4.5-2 4-4 4Z" stroke="currentColor" stroke-width="1.6"/><path d="M5 21c0-3.5 3-6 7-6s7 2.5 7 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </div>
+            <h3>Módulo de Clientes no contratado</h3>
+            <p>Esta empresa no tiene activado el módulo de <strong>Clientes</strong> en su configuración de tenant.</p>
+            <button type="button" class="btn-primary" (click)="toggleModulo('clientes_pacientes')">
+              Habilitar Clientes para {{ empresa()!.nombre }}
+            </button>
+          </div>
+        } @else {
+          <div class="pacientes-tab">
+            <div class="tab-section-header">
+              <div>
+                <h3>Clientes — {{ empresa()!.nombre }}</h3>
+                <p>Directorio de clientes y pacientes registrados en la base de datos de esta empresa.</p>
+              </div>
+
+              <div class="header-actions">
+                <input
+                  type="text"
+                  placeholder="Buscar cliente o paciente…"
+                  class="search-input"
+                  [value]="filtroTextoPaciente()"
+                  (input)="filtroTextoPaciente.set($any($event.target).value)"
+                />
+                <select
+                  class="select-input"
+                  [value]="filtroEspeciePaciente()"
+                  (change)="filtroEspeciePaciente.set($any($event.target).value)"
+                >
+                  <option value="todas">Todas las Especies</option>
+                  <option value="Canino">Caninos 🐕</option>
+                  <option value="Felino">Felinos 🐈</option>
+                  <option value="Equino">Equinos 🐎</option>
+                  <option value="Otro">Otras especies</option>
+                </select>
+                <button type="button" class="btn-primary" (click)="abrirModalPaciente()">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  Nuevo Cliente
+                </button>
+              </div>
+            </div>
+
+            @if (cargandoPacientes()) {
+              <div class="spinner-container"><div class="spinner"></div></div>
+            } @else if (pacientesFiltrados().length === 0) {
+              <div class="empty-box">
+                <p>No se encontraron pacientes registrados para los filtros seleccionados.</p>
+                <button type="button" class="btn-secondary" (click)="abrirModalPaciente()">Registrar Primer Paciente</button>
+              </div>
+            } @else {
+              <div class="table-card">
+                <table class="modern-table">
+                  <thead>
+                    <tr>
+                      <th>Paciente</th>
+                      <th>Especie / Raza</th>
+                      <th>Sexo</th>
+                      <th>Propietario / Cliente</th>
+                      <th>Contacto</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (pac of pacientesFiltrados(); track pac.id) {
+                      <tr>
+                        <td class="font-bold">{{ pac.nombre }}</td>
+                        <td>{{ pac.especie }} {{ pac.raza ? '• ' + pac.raza : '' }}</td>
+                        <td class="text-capitalize">{{ pac.sexo }}</td>
+                        <td class="font-semibold">{{ pac.propietario.nombre }}</td>
+                        <td>{{ pac.propietario.celular }}</td>
+                        <td>
+                          <span class="pill pill--success">Activo</span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+      }
+
+    </div>
+
+  }
+
+  <!-- MODAL EDITAR EMPRESA -->
+  @if (modalEditarEmpresaAbierto()) {
+    <div class="modal-backdrop" (click)="cerrarModalEditarEmpresa()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card__header">
+          <h2>Editar Información de la Empresa</h2>
+          <button type="button" class="btn-close" (click)="cerrarModalEditarEmpresa()">✕</button>
+        </div>
+
+        <form [formGroup]="formEmpresa" (ngSubmit)="guardarEdicionEmpresa()">
+          <div class="form-group">
+            <label for="e_nombre">Nombre Comercial *</label>
+            <input id="e_nombre" type="text" formControlName="nombre" />
+          </div>
+
+          <div class="form-group">
+            <label for="e_razon">Razón Social</label>
+            <input id="e_razon" type="text" formControlName="razon_social" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="e_nit">NIT</label>
+              <input id="e_nit" type="text" formControlName="nit" />
+            </div>
+            <div class="form-group">
+              <label for="e_correo">Correo de Contacto</label>
+              <input id="e_correo" type="email" formControlName="correo" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="e_tz">Zona Horaria</label>
+              <input id="e_tz" type="text" formControlName="zona_horaria" />
+            </div>
+            <div class="form-group">
+              <label for="e_estado">Estado Operativo</label>
+              <select id="e_estado" formControlName="estado">
+                @for (est of estadosEmpresa; track est.valor) {
+                  <option [value]="est.valor">{{ est.etiqueta }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-card__actions">
+            <button type="button" class="btn-secondary" (click)="cerrarModalEditarEmpresa()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardandoEmpresa()">
+              {{ guardandoEmpresa() ? 'Guardando…' : 'Guardar Cambios' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL CREAR / EDITAR USUARIO DE EMPRESA -->
+  @if (modalUsuarioTenantAbierto()) {
+    <div class="modal-backdrop" (click)="cerrarModalUsuarioTenant()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card__header">
+          <h2>{{ usuarioTenantEnEdicion() ? 'Editar Usuario de Empresa' : 'Nuevo Usuario para ' + empresa()?.nombre }}</h2>
+          <button type="button" class="btn-close" (click)="cerrarModalUsuarioTenant()">✕</button>
+        </div>
+
+        <form [formGroup]="formUsuarioTenant" (ngSubmit)="guardarUsuarioTenant()">
+          <div class="form-group">
+            <label for="ut_nombre">Nombre Completo *</label>
+            <input id="ut_nombre" type="text" formControlName="nombre" placeholder="Ej: Dra. María López" />
+          </div>
+
+          <div class="form-group">
+            <label for="ut_correo">Correo Electrónico (Login) *</label>
+            <input id="ut_correo" type="email" formControlName="correo" placeholder="mlopez@empresa.com" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ut_rol">Rol en la Empresa *</label>
+              <select id="ut_rol" formControlName="rol">
+                @for (rol of rolesDisponiblesTenant; track rol) {
+                  <option [value]="rol">{{ rol }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="ut_activo">Estado</label>
+              <select id="ut_activo" formControlName="activo">
+                <option [ngValue]="true">Activo</option>
+                <option [ngValue]="false">Inactivo</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ut_pass">Contraseña Temporal</label>
+            <input id="ut_pass" type="text" formControlName="contrasena" placeholder="VetNova2026*" />
+            <small class="form-hint">El usuario podrá cambiarla al iniciar sesión en su panel.</small>
+          </div>
+
+          <div class="modal-card__actions">
+            <button type="button" class="btn-secondary" (click)="cerrarModalUsuarioTenant()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardandoUsuarioTenant()">
+              {{ guardandoUsuarioTenant() ? 'Guardando…' : (usuarioTenantEnEdicion() ? 'Actualizar Usuario' : 'Crear Usuario') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL NUEVA SUSCRIPCIÓN -->
+  @if (modalSuscripcionAbierto()) {
+    <div class="modal-backdrop" (click)="cerrarModalSuscripcion()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card__header">
+          <h2>Asignar Suscripción a {{ empresa()?.nombre }}</h2>
+          <button type="button" class="btn-close" (click)="cerrarModalSuscripcion()">✕</button>
+        </div>
+
+        <form [formGroup]="formSuscripcion" (ngSubmit)="guardarSuscripcion()">
+          <div class="form-group">
+            <label for="s_plan">Plan de Servicio *</label>
+            <select id="s_plan" formControlName="plan_id" (change)="onPlanSuscripcionCambiado()">
+              <option value="" disabled>Selecciona un plan…</option>
+              @for (plan of planes(); track plan.id) {
+                <option [value]="plan.id">{{ plan.nombre }} — {{ formatearMoneda(plan.precio_mensual, plan.moneda) }}/mes</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="s_estado">Estado</label>
+              <select id="s_estado" formControlName="estado">
+                <option value="activa">Activa</option>
+                <option value="prueba">Prueba</option>
+                <option value="vencida">Vencida</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="s_periodo">Periodo</label>
+              <select id="s_periodo" formControlName="periodo">
+                <option value="mensual">Mensual</option>
+                <option value="trimestral">Trimestral</option>
+                <option value="semestral">Semestral</option>
+                <option value="anual">Anual</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="s_monto">Monto Facturado</label>
+              <input id="s_monto" type="number" formControlName="monto" />
+            </div>
+            <div class="form-group">
+              <label for="s_moneda">Moneda</label>
+              <input id="s_moneda" type="text" formControlName="moneda" />
+            </div>
+          </div>
+
+          <div class="modal-card__actions">
+            <button type="button" class="btn-secondary" (click)="cerrarModalSuscripcion()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardandoSuscripcion()">
+              {{ guardandoSuscripcion() ? 'Registrando…' : 'Crear Suscripción' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL AGENDAR CITA -->
+  @if (modalCitaAbierto()) {
+    <div class="modal-backdrop" (click)="modalCitaAbierto.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card__header">
+          <h2>Agendar Cita en {{ empresa()?.nombre }}</h2>
+          <button type="button" class="btn-close" (click)="modalCitaAbierto.set(false)">✕</button>
+        </div>
+
+        <form [formGroup]="formCita" (ngSubmit)="guardarCita()">
+          <div class="form-group">
+            <label for="c_paciente">Paciente / Cliente *</label>
+            <select id="c_paciente" formControlName="paciente_id">
+              @for (pac of pacientes(); track pac.id) {
+                <option [value]="pac.id">{{ pac.nombre }} ({{ pac.especie }}) — Prop: {{ pac.propietario.nombre }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="c_fecha">Fecha *</label>
+              <input id="c_fecha" type="date" formControlName="fecha" />
+            </div>
+            <div class="form-group">
+              <label for="c_hora">Hora *</label>
+              <input id="c_hora" type="time" formControlName="hora_inicio" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="c_motivo">Motivo de la Cita *</label>
+            <input id="c_motivo" type="text" formControlName="motivo" placeholder="Ej: Chequeo preventivo" />
+          </div>
+
+          <div class="modal-card__actions">
+            <button type="button" class="btn-secondary" (click)="modalCitaAbierto.set(false)">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardandoCita()">
+              {{ guardandoCita() ? 'Guardando…' : 'Agendar Cita' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL REGISTRAR PACIENTE -->
+  @if (modalPacienteAbierto()) {
+    <div class="modal-backdrop" (click)="modalPacienteAbierto.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card__header">
+          <h2>Registrar Paciente / Cliente en {{ empresa()?.nombre }}</h2>
+          <button type="button" class="btn-close" (click)="modalPacienteAbierto.set(false)">✕</button>
+        </div>
+
+        <form [formGroup]="formPaciente" (ngSubmit)="guardarPaciente()">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="p_nombre">Nombre del Paciente *</label>
+              <input id="p_nombre" type="text" formControlName="nombre" />
+            </div>
+            <div class="form-group">
+              <label for="p_especie">Especie *</label>
+              <select id="p_especie" formControlName="especie">
+                <option value="Canino">Canino</option>
+                <option value="Felino">Felino</option>
+                <option value="Equino">Equino</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+          </div>
+
+          <div formGroupName="propietario">
+            <h4 class="form-subtitle">Datos del Propietario / Cliente</h4>
+            <div class="form-group">
+              <label for="pr_nombre">Nombre Completo *</label>
+              <input id="pr_nombre" type="text" formControlName="nombre" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pr_cel">Celular / Teléfono *</label>
+                <input id="pr_cel" type="text" formControlName="celular" />
+              </div>
+              <div class="form-group">
+                <label for="pr_mail">Correo</label>
+                <input id="pr_mail" type="email" formControlName="correo" />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-card__actions">
+            <button type="button" class="btn-secondary" (click)="modalPacienteAbierto.set(false)">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardandoPaciente()">
+              {{ guardandoPaciente() ? 'Guardando…' : 'Registrar Paciente' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

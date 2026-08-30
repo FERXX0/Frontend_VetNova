@@ -1,0 +1,206 @@
+:host {
+  --vn-teal: #1aa7a0;
+  --vn-teal-dark: #0e7c86;
+  --vn-navy: #10263a;
+  --vn-border: #e5e9ec;
+  --vn-text-dark: #1c2b36;
+  --vn-text-muted: #8a97a1;
+  --vn-danger: #e0554f;
+  --vn-white: #ffffff;
+  --vn-bg: #f4f6f8;
+
+  display: block;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.suscripciones-page {
+  padding: 1.75rem 2rem;
+
+  &__volver {
+    display: inline-block;
+    font-size: 0.82rem;
+    color: var(--vn-teal);
+    text-decoration: none;
+    margin-bottom: 1rem;
+
+    &:hover { text-decoration: underline; }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+
+    h1 { margin: 0 0 0.2rem; font-size: 1.3rem; color: var(--vn-text-dark); }
+    p { margin: 0; font-size: 0.85rem; color: var(--vn-text-muted); }
+  }
+}
+
+.btn-primario {
+  background: linear-gradient(90deg, var(--vn-teal) 0%, var(--vn-teal-dark) 100%);
+  color: var(--vn-white);
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.65rem 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { opacity: 0.92; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-secundario {
+  background: var(--vn-white);
+  color: var(--vn-text-dark);
+  border: 1px solid var(--vn-border);
+  border-radius: 0.5rem;
+  padding: 0.65rem 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover { background: var(--vn-bg); }
+}
+
+.alerta-error {
+  background: rgba(224, 85, 79, 0.08);
+  border: 1px solid rgba(224, 85, 79, 0.25);
+  color: var(--vn-danger);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.estado-vacio {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--vn-text-muted);
+  font-size: 0.9rem;
+  background: var(--vn-white);
+  border: 1px solid var(--vn-border);
+  border-radius: 0.75rem;
+}
+
+.tabla-wrapper {
+  background: var(--vn-white);
+  border: 1px solid var(--vn-border);
+  border-radius: 0.75rem;
+  overflow-x: auto;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th {
+    text-align: left;
+    padding: 0.85rem 1.1rem;
+    color: var(--vn-text-muted);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--vn-border);
+  }
+
+  td {
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--vn-border);
+    color: var(--vn-text-dark);
+  }
+
+  tr:last-child td { border-bottom: none; }
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: capitalize;
+
+  &--prueba { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
+  &--activa { background: rgba(47, 191, 110, 0.12); color: #2fbf6e; }
+  &--vencida { background: rgba(242, 185, 12, 0.15); color: #b8860b; }
+  &--en_mora { background: rgba(224, 85, 79, 0.12); color: #e0554f; }
+  &--cancelada { background: rgba(138, 151, 161, 0.15); color: #8a97a1; }
+}
+
+// ---------- Modal ----------
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 38, 58, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.modal {
+  background: var(--vn-white);
+  border-radius: 0.9rem;
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 30rem;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  h2 { margin: 0 0 1.25rem; font-size: 1.15rem; color: var(--vn-text-dark); }
+
+  &__error {
+    background: rgba(224, 85, 79, 0.08);
+    border: 1px solid rgba(224, 85, 79, 0.25);
+    color: var(--vn-danger);
+    font-size: 0.82rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: 0.5rem;
+    margin: 0 0 1rem;
+  }
+
+  &__acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+}
+
+.campo {
+  margin-bottom: 1rem;
+  flex: 1;
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--vn-text-dark);
+    margin-bottom: 0.35rem;
+  }
+
+  input,
+  select {
+    width: 100%;
+    border: 1.5px solid var(--vn-border);
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.88rem;
+    color: var(--vn-text-dark);
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+
+    &:focus { border-color: var(--vn-teal); }
+  }
+}
+
+.campo-fila {
+  display: flex;
+  gap: 1rem;
+}

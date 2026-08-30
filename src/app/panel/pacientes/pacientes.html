@@ -1,0 +1,350 @@
+<div class="pacientes-page">
+  <!-- Encabezado -->
+  <header class="pacientes-page__header">
+    <div>
+      <h1>Administración de Pacientes</h1>
+      <p>Registro y seguimiento de mascotas y sus propietarios</p>
+    </div>
+
+    <button type="button" class="pacientes-page__btn-nuevo" (click)="abrirModalCrear()">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Nuevo Paciente
+    </button>
+  </header>
+
+  <!-- Barra de Filtros y Búsqueda -->
+  <div class="pacientes-page__toolbar">
+    <div class="pacientes-page__busqueda">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <input
+        type="text"
+        placeholder="Buscar por nombre de mascota, propietario o celular…"
+        [value]="filtroTexto()"
+        (input)="filtroTexto.set($any($event.target).value)"
+      />
+      @if (filtroTexto()) {
+        <button type="button" class="btn-limpiar" (click)="filtroTexto.set('')">✕</button>
+      }
+    </div>
+
+    <!-- Filtros por especie -->
+    <div class="pacientes-page__filtros">
+      @for (esp of especies; track esp.valor) {
+        <button
+          type="button"
+          class="pacientes-page__filtro-btn"
+          [class.pacientes-page__filtro-btn--activo]="filtroEspecie() === esp.valor"
+          (click)="filtroEspecie.set(esp.valor)"
+        >
+          {{ esp.etiqueta }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="pacientes-page__alerta">
+      <span>{{ error() }}</span>
+      <button type="button" (click)="cargarPacientes()">Reintentar</button>
+    </div>
+  }
+
+  <!-- Tabla de Pacientes -->
+  <div class="pacientes-page__tabla-wrapper">
+    @if (cargando()) {
+      <div class="pacientes-page__estado-vacio">
+        <p>Cargando pacientes…</p>
+      </div>
+    } @else if (pacientesFiltrados().length === 0) {
+      <div class="pacientes-page__estado-vacio">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 21s-7-4.35-9.5-8.5C.7 9 2 5 6 5c2 0 3.5 1.5 4 2.5C10.5 6.5 12 5 14 5c4 0 5.3 4 3.5 7.5C15 16.65 12 21 12 21Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+        <p>
+          @if (filtroTexto() || filtroEspecie() !== 'todas') {
+            No se encontraron pacientes que coincidan con los filtros aplicados.
+          } @else {
+            Todavía no hay pacientes registrados en esta veterinaria.
+          }
+        </p>
+        <button type="button" class="btn-primario" (click)="abrirModalCrear()">
+          Registrar el primer paciente
+        </button>
+      </div>
+    } @else {
+      <table class="pacientes-page__tabla">
+        <thead>
+          <tr>
+            <th>Mascota</th>
+            <th>Especie / Raza</th>
+            <th>Sexo</th>
+            <th>Propietario</th>
+            <th>Contacto</th>
+            <th>Estado</th>
+            <th class="th-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of pacientesFiltrados(); track p.id) {
+            <tr>
+              <td>
+                <div class="paciente-celda">
+                  <div class="paciente-celda__avatar">
+                    @switch (p.especie.toLowerCase()) {
+                      @case ('canino') { 🐕 }
+                      @case ('felino') { 🐈 }
+                      @case ('ave') { 🦜 }
+                      @case ('equino') { 🐎 }
+                      @default { 🐾 }
+                    }
+                  </div>
+                  <div>
+                    <strong class="paciente-celda__nombre">{{ p.nombre }}</strong>
+                    @if (p.peso_kg) {
+                      <span class="paciente-celda__peso">{{ p.peso_kg }} kg</span>
+                    }
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="especie-raza">
+                  <span class="especie-tag">{{ p.especie }}</span>
+                  <span class="raza-text">{{ p.raza || 'Mestizo' }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="sexo-tag" [class]="'sexo-tag--' + p.sexo">
+                  {{ p.sexo }}
+                </span>
+              </td>
+              <td>
+                <div class="propietario-info">
+                  <strong>{{ p.propietario.nombre }}</strong>
+                  @if (p.propietario.numero_identificacion) {
+                    <span>{{ p.propietario.tipo_identificacion || 'ID' }}: {{ p.propietario.numero_identificacion }}</span>
+                  }
+                </div>
+              </td>
+              <td>
+                <div class="contacto-info">
+                  <span>{{ p.propietario.celular || '—' }}</span>
+                  @if (p.propietario.correo) {
+                    <small>{{ p.propietario.correo }}</small>
+                  }
+                </div>
+              </td>
+              <td>
+                <span
+                  class="badge-estado"
+                  [class.badge-estado--activo]="p.estado === 'activo'"
+                  [class.badge-estado--inactivo]="p.estado === 'inactivo'"
+                  [class.badge-estado--fallecido]="p.estado === 'fallecido'"
+                >
+                  {{ p.estado }}
+                </span>
+              </td>
+              <td class="td-acciones">
+                <button
+                  type="button"
+                  class="btn-accion"
+                  title="Ver ficha clínica"
+                  [routerLink]="['/panel/pacientes', p.id]"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="btn-accion"
+                  title="Editar paciente"
+                  (click)="abrirModalEditar(p)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="btn-accion btn-accion--eliminar"
+                  title="Eliminar paciente"
+                  (click)="eliminar(p)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 .8 12.1a2 2 0 0 0 2 1.9h4.4a2 2 0 0 0 2-1.9L18 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+  <!-- Modal Crear / Editar Paciente -->
+  @if (modalAbierto()) {
+    <div class="modal-backdrop" (click)="cerrarModal()">
+      <div class="modal-panel" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ pacienteEnEdicion() ? 'Editar Paciente' : 'Nuevo Paciente y Propietario' }}</h2>
+          <button type="button" class="btn-cerrar" (click)="cerrarModal()" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-form" novalidate>
+          <div class="seccion-bloque">
+            <h3>🐾 Datos de la Mascota</h3>
+            
+            <div class="form-fila">
+              <div class="form-campo">
+                <label for="nombre">Nombre de la Mascota *</label>
+                <input
+                  id="nombre"
+                  type="text"
+                  formControlName="nombre"
+                  placeholder="Ej. Max"
+                  [class.input--invalido]="form.get('nombre')?.invalid && form.get('nombre')?.touched"
+                />
+                @if (form.get('nombre')?.invalid && form.get('nombre')?.touched) {
+                  <span class="error-texto">El nombre es obligatorio.</span>
+                }
+              </div>
+
+              <div class="form-campo">
+                <label for="especie">Especie *</label>
+                <select id="especie" formControlName="especie">
+                  <option value="Canino">Canino (Perro)</option>
+                  <option value="Felino">Felino (Gato)</option>
+                  <option value="Ave">Ave</option>
+                  <option value="Equino">Equino</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-fila">
+              <div class="form-campo">
+                <label for="raza">Raza</label>
+                <input id="raza" type="text" formControlName="raza" placeholder="Ej. Golden Retriever" />
+              </div>
+
+              <div class="form-campo">
+                <label for="sexo">Sexo *</label>
+                <select id="sexo" formControlName="sexo">
+                  @for (s of sexos; track s.valor) {
+                    <option [value]="s.valor">{{ s.etiqueta }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="form-fila form-fila--3">
+              <div class="form-campo">
+                <label for="fecha_nacimiento">Fecha Nacimiento</label>
+                <input id="fecha_nacimiento" type="date" formControlName="fecha_nacimiento" />
+              </div>
+
+              <div class="form-campo">
+                <label for="peso_kg">Peso (Kg)</label>
+                <input id="peso_kg" type="number" step="0.1" min="0" formControlName="peso_kg" placeholder="0.0" />
+              </div>
+
+              <div class="form-campo">
+                <label for="color">Color / Pelaje</label>
+                <input id="color" type="text" formControlName="color" placeholder="Ej. Blanco y café" />
+              </div>
+            </div>
+
+            <div class="form-fila">
+              <div class="form-campo">
+                <label for="microchip">N° Microchip (Opcional)</label>
+                <input id="microchip" type="text" formControlName="microchip" placeholder="Código de microchip" />
+              </div>
+
+              <div class="form-campo">
+                <label for="estado">Estado</label>
+                <select id="estado" formControlName="estado">
+                  @for (est of estados; track est.valor) {
+                    <option [value]="est.valor">{{ est.etiqueta }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="form-campo">
+              <label for="notas">Observaciones Médicas / Alergias</label>
+              <textarea id="notas" rows="2" formControlName="notas" placeholder="Alergias, comportamiento, antecedentes..."></textarea>
+            </div>
+          </div>
+
+          <div class="seccion-bloque">
+            <h3>👤 Datos del Propietario / Responsable</h3>
+
+            <div class="form-fila">
+              <div class="form-campo">
+                <label for="propietario_nombre">Nombre del Propietario *</label>
+                <input
+                  id="propietario_nombre"
+                  type="text"
+                  formControlName="propietario_nombre"
+                  placeholder="Nombre y apellidos"
+                  [class.input--invalido]="form.get('propietario_nombre')?.invalid && form.get('propietario_nombre')?.touched"
+                />
+                @if (form.get('propietario_nombre')?.invalid && form.get('propietario_nombre')?.touched) {
+                  <span class="error-texto">El nombre del propietario es obligatorio.</span>
+                }
+              </div>
+
+              <div class="form-campo">
+                <label for="propietario_celular">Celular / WhatsApp</label>
+                <input id="propietario_celular" type="tel" formControlName="propietario_celular" placeholder="+57 300 000 0000" />
+              </div>
+            </div>
+
+            <div class="form-fila">
+              <div class="form-campo">
+                <label for="propietario_numero_identificacion">N° Documento / Cédula</label>
+                <input id="propietario_numero_identificacion" type="text" formControlName="propietario_numero_identificacion" placeholder="1020304050" />
+              </div>
+
+              <div class="form-campo">
+                <label for="propietario_correo">Correo Electrónico</label>
+                <input id="propietario_correo" type="email" formControlName="propietario_correo" placeholder="correo@ejemplo.com" />
+              </div>
+            </div>
+
+            <div class="form-campo">
+              <label for="propietario_direccion">Dirección de Residencia</label>
+              <input id="propietario_direccion" type="text" formControlName="propietario_direccion" placeholder="Calle, Carrera, Barrio..." />
+            </div>
+          </div>
+
+          @if (errorFormulario()) {
+            <div class="alerta-form-error">{{ errorFormulario() }}</div>
+          }
+
+          <div class="modal-acciones">
+            <button type="button" class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-guardar" [disabled]="guardando()">
+              @if (guardando()) {
+                <span>Guardando…</span>
+              } @else {
+                <span>{{ pacienteEnEdicion() ? 'Guardar Cambios' : 'Registrar Paciente' }}</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

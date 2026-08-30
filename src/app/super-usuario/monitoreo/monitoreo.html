@@ -1,0 +1,47 @@
+<div class="page-header">
+  <div class="header-content">
+    <div class="icon-wrapper">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+        <line x1="8" y1="21" x2="16" y2="21"></line>
+        <line x1="12" y1="17" x2="12" y2="21"></line>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Monitoreo de la Plataforma</h1>
+      <p>Supervisa el estado de los servicios, rendimiento y uso de recursos</p>
+    </div>
+  </div>
+</div>
+
+<div class="metrics-grid">
+  @for (metric of ['Uptime', 'Latencia promedio', 'Solicitudes/min', 'Errores']; track metric) {
+    <div class="card metric-card">
+      <h3>{{ metric }}</h3>
+      <div class="skeleton skeleton-value"></div>
+      <div class="skeleton skeleton-subtext"></div>
+    </div>
+  }
+</div>
+
+<div class="card chart-card">
+  <div class="chart-header">
+    <h3>Rendimiento del Sistema</h3>
+    <div class="skeleton skeleton-badge" style="width: 100px;"></div>
+  </div>
+  <div class="chart-placeholder">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--vn-border, #e5e9ec)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+    </svg>
+    <span>Recopilando datos de telemetría...</span>
+  </div>
+</div>
+
+<div class="info-banner">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="16" x2="12" y2="12"></line>
+    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+  </svg>
+  <span>Este módulo estará disponible cuando el backend exponga el endpoint GET /monitoreo/metricas</span>
+</div>

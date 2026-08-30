@@ -1,0 +1,106 @@
+<div class="panel-layout" [class.panel-layout--sidebar-open]="sidebarAbierto()">
+  <!-- Overlay móvil -->
+  @if (sidebarAbierto()) {
+    <div class="panel-layout__overlay" (click)="cerrarSidebar()"></div>
+  }
+
+  <!-- Sidebar -->
+  <aside class="panel-layout__sidebar">
+    <div class="panel-layout__brand">
+      <a routerLink="/panel/dashboard" class="panel-layout__logo">
+        <span class="panel-layout__logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 21s-7-4.35-9.5-8.5C.7 9 2 5 6 5c2 0 3.5 1.5 4 2.5C10.5 6.5 12 5 14 5c4 0 5.3 4 3.5 7.5C15 16.65 12 21 12 21Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="panel-layout__logo-text">VETNOVA</span>
+      </a>
+      <div class="panel-layout__tenant" [title]="empresaNombre()">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 21h18M5 21V7l8-4v18M13 7l6 3v11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>{{ empresaNombre() }}</span>
+      </div>
+    </div>
+
+    <nav class="panel-layout__nav">
+      <!-- Enlace directo al Dashboard / Inicio -->
+      <a
+        routerLink="/panel/dashboard"
+        routerLinkActive="panel-layout__nav-item--activo"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="panel-layout__nav-item"
+      >
+        <span class="panel-layout__nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/></svg>
+        </span>
+        <span class="panel-layout__nav-text">Inicio / Dashboard</span>
+      </a>
+
+      <div class="panel-layout__nav-divider"></div>
+      <div class="panel-layout__nav-section">MÓDULOS DE TRABAJO</div>
+
+      @for (item of menuItems(); track item.codigo) {
+        @if (item.habilitado && item.ruta) {
+          <a
+            [routerLink]="item.ruta"
+            routerLinkActive="panel-layout__nav-item--activo"
+            class="panel-layout__nav-item"
+          >
+            <span class="panel-layout__nav-icon">
+              @switch (item.icono) {
+                @case ('agenda') {
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                }
+                @case ('pacientes') {
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7-4.35-9.5-8.5C.7 9 2 5 6 5c2 0 3.5 1.5 4 2.5C10.5 6.5 12 5 14 5c4 0 5.3 4 3.5 7.5C15 16.65 12 21 12 21Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                }
+                @case ('usuarios') {
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c1.2-3.4 4-5.2 7.5-5.2s6.3 1.8 7.5 5.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                }
+                @case ('reportes') {
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="3" width="16" height="18" rx="1.5" stroke="currentColor" stroke-width="1.7"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                }
+                @case ('configuracion') {
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                }
+                @default {
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/></svg>
+                }
+              }
+            </span>
+            <span class="panel-layout__nav-text">{{ item.nombre }}</span>
+          </a>
+        } @else if (item.asignado) {
+          <div class="panel-layout__nav-item panel-layout__nav-item--disabled" [title]="item.nombre + ' (Próximamente)'">
+            <span class="panel-layout__nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </span>
+            <span class="panel-layout__nav-text">{{ item.nombre }}</span>
+            <span class="panel-layout__badge-prox">Próx.</span>
+          </div>
+        }
+      }
+    </nav>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="panel-layout__main">
+    <header class="panel-layout__topbar">
+      <div class="panel-layout__topbar-left">
+        <button class="panel-layout__menu-toggle" type="button" aria-label="Abrir menú" (click)="toggleSidebar()">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <span class="panel-layout__topbar-tenant-tag">{{ empresaNombre() }}</span>
+      </div>
+
+      <div class="panel-layout__topbar-right">
+        <app-user-menu></app-user-menu>
+      </div>
+    </header>
+
+    <main class="panel-layout__content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
