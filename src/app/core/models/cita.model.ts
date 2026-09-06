@@ -8,6 +8,8 @@ export interface Cita {
   paciente_especie?: string;
   propietario_nombre: string;
   propietario_celular?: string;
+  servicio_id?: string | null;
+  servicio_nombre?: string | null;
   veterinario_id?: string;
   veterinario_nombre: string;
   fecha: string; // YYYY-MM-DD
@@ -26,6 +28,7 @@ export interface CitaPayload {
   paciente_nombre: string;
   propietario_nombre?: string;
   propietario_celular?: string;
+  servicio_id?: string | null;
   veterinario_nombre: string;
   fecha: string;
   hora_inicio: string;

@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CitaService } from '../../core/services/cita.service';
 import { PacienteService } from '../../core/services/paciente.service';
+import { ServicioService } from '../../core/services/servicio.service';
 import { Cita, CitaPayload, EstadoCita, TipoConsulta } from '../../core/models/cita.model';
 import { Paciente } from '../../core/models/paciente.model';
+import { Servicio } from '../../core/models/servicio.model';
 
 @Component({
   selector: 'app-agenda',
@@ -16,6 +18,7 @@ import { Paciente } from '../../core/models/paciente.model';
 export class AgendaComponent implements OnInit {
   private readonly citaService = inject(CitaService);
   private readonly pacienteService = inject(PacienteService);
+  private readonly servicioService = inject(ServicioService);
   private readonly fb = inject(FormBuilder);
 
   // Fecha seleccionada en formato YYYY-MM-DD
@@ -25,6 +28,7 @@ export class AgendaComponent implements OnInit {
 
   citas = signal<Cita[]>([]);
   pacientes = signal<Paciente[]>([]);
+  servicios = signal<Servicio[]>([]);
   cargando = signal(false);
   error = signal<string | null>(null);
 
@@ -104,6 +108,7 @@ export class AgendaComponent implements OnInit {
   constructor() {
     this.form = this.fb.group({
       paciente_id: ['', [Validators.required]],
+      servicio_id: [''],
       veterinario_nombre: ['Dr. Alejandro Gómez', [Validators.required]],
       fecha: [this.fechaSeleccionada(), [Validators.required]],
       hora_inicio: ['09:00', [Validators.required]],
@@ -117,7 +122,54 @@ export class AgendaComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarPacientes();
+    this.cargarServicios();
     this.cargarCitas();
+  }
+
+  cargarServicios(): void {
+    this.servicioService.listar(true).subscribe({
+      next: (res) => {
+        this.servicios.set(res || []);
+      },
+      error: () => {
+        // Fallback demostrativo ante backend no disponible
+        this.servicios.set([
+          { id: 's-001', nombre: 'Consulta General', tipo_consulta: 'general', duracion_minutos: 30, precio: 0, activo: true },
+          { id: 's-002', nombre: 'Vacunación', tipo_consulta: 'vacunacion', duracion_minutos: 20, precio: 0, activo: true },
+          { id: 's-003', nombre: 'Desparasitación', tipo_consulta: 'desparasitacion', duracion_minutos: 20, precio: 0, activo: true },
+          { id: 's-004', nombre: 'Cirugía', tipo_consulta: 'cirugia', duracion_minutos: 90, precio: 0, activo: true },
+          { id: 's-005', nombre: 'Urgencia', tipo_consulta: 'urgencia', duracion_minutos: 30, precio: 0, activo: true },
+          { id: 's-006', nombre: 'Control / Seguimiento', tipo_consulta: 'control', duracion_minutos: 20, precio: 0, activo: true },
+          { id: 's-007', nombre: 'Peluquería / Estética', tipo_consulta: 'estetica', duracion_minutos: 45, precio: 0, activo: true },
+        ]);
+      },
+    });
+  }
+
+  /**
+   * Al elegir un servicio, se auto-completa el tipo de consulta y (si el
+   * usuario no ha tocado la hora fin) se sugiere la hora fin según la
+   * duración configurada en el servicio. El usuario puede seguir editando
+   * ambos campos manualmente después.
+   */
+  onServicioSeleccionado(servicioId: string): void {
+    const servicio = this.servicios().find((s) => s.id === servicioId);
+    if (!servicio) return;
+
+    this.form.patchValue({ tipo_consulta: servicio.tipo_consulta });
+
+    const horaInicio = this.form.get('hora_inicio')?.value as string;
+    if (horaInicio) {
+      this.form.patchValue({ hora_fin: this.sumarMinutos(horaInicio, servicio.duracion_minutos) });
+    }
+  }
+
+  private sumarMinutos(horaHHmm: string, minutos: number): string {
+    const [h, m] = horaHHmm.split(':').map(Number);
+    const total = h * 60 + m + minutos;
+    const horaFin = Math.floor((total % (24 * 60)) / 60);
+    const minFin = total % 60;
+    return `${String(horaFin).padStart(2, '0')}:${String(minFin).padStart(2, '0')}`;
   }
 
   cargarPacientes(): void {
@@ -261,6 +313,7 @@ export class AgendaComponent implements OnInit {
     this.errorFormulario.set(null);
     this.form.reset({
       paciente_id: this.pacientes()[0]?.id || '',
+      servicio_id: '',
       veterinario_nombre: 'Dr. Alejandro Gómez',
       fecha: this.fechaSeleccionada(),
       hora_inicio: horaInicial || '09:00',
@@ -278,6 +331,7 @@ export class AgendaComponent implements OnInit {
     this.errorFormulario.set(null);
     this.form.reset({
       paciente_id: cita.paciente_id,
+      servicio_id: cita.servicio_id || '',
       veterinario_nombre: cita.veterinario_nombre,
       fecha: cita.fecha,
       hora_inicio: cita.hora_inicio,
@@ -308,6 +362,7 @@ export class AgendaComponent implements OnInit {
 
     const payload: CitaPayload = {
       ...formVal,
+      servicio_id: formVal.servicio_id || null,
       paciente_nombre: pacienteSeleccionado?.nombre || 'Paciente',
       propietario_nombre: pacienteSeleccionado?.propietario?.nombre || 'Propietario',
       propietario_celular: pacienteSeleccionado?.propietario?.celular || '',
@@ -327,12 +382,15 @@ export class AgendaComponent implements OnInit {
       error: () => {
         // Fallback local ante 404 de backend
         this.guardando.set(false);
+        const servicioSeleccionado = this.servicios().find((s) => s.id === payload.servicio_id);
         const nuevaCita: Cita = {
           id: enEdicion ? enEdicion.id : 'c-' + Date.now(),
           paciente_id: payload.paciente_id,
           paciente_nombre: payload.paciente_nombre,
           paciente_especie: pacienteSeleccionado?.especie || 'Mascota',
           propietario_nombre: payload.propietario_nombre || 'Propietario',
+          servicio_id: payload.servicio_id,
+          servicio_nombre: servicioSeleccionado?.nombre || null,
           propietario_celular: payload.propietario_celular,
           veterinario_nombre: payload.veterinario_nombre,
           fecha: payload.fecha,
