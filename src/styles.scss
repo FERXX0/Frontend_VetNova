@@ -1,0 +1,31 @@
+/* Global styles and VetNova design tokens */
+:root {
+  --vn-navy: #10263a;
+  --vn-teal: #1aa7a0;
+  --vn-teal-dark: #0e7c86;
+  --vn-mint: #4fd6a8;
+  --vn-text-dark: #1c2b36;
+  --vn-text-muted: #8a97a1;
+  --vn-bg: #f4f6f8;
+  --vn-surface: #f6f9fa;
+  --vn-border: #e5e9ec;
+  --vn-border-focus: #1aa7a0;
+  --vn-white: #ffffff;
+  --vn-danger: #e0554f;
+  --vn-danger-bg: #fdeceb;
+  --vn-warning: #c98a12;
+  --vn-warning-bg: #fdf3e0;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--vn-bg);
+  color: var(--vn-text-dark);
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}

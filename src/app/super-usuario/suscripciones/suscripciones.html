@@ -1,0 +1,152 @@
+<div class="suscripciones-page">
+
+  <a class="suscripciones-page__volver" routerLink="/super-usuario/empresas">← Volver a veterinarias</a>
+
+  <header class="suscripciones-page__header">
+    <div>
+      <h1>Suscripciones</h1>
+      <p>Historial de suscripciones de esta veterinaria</p>
+    </div>
+
+    <button type="button" class="btn-primario" (click)="abrirModalCrear()">
+      Nueva suscripción
+    </button>
+  </header>
+
+  @if (error()) {
+    <div class="alerta-error">
+      <span>{{ error() }}</span>
+      <button type="button" class="btn-secundario" (click)="cargarSuscripciones()">Reintentar</button>
+    </div>
+  }
+
+  <div class="tabla-wrapper">
+    @if (cargando()) {
+      <div class="estado-vacio">
+        <p>Cargando suscripciones…</p>
+      </div>
+    } @else if (suscripciones().length === 0) {
+      <div class="estado-vacio">
+        <p>Esta veterinaria todavía no tiene suscripciones registradas.</p>
+        <button type="button" class="btn-secundario" (click)="abrirModalCrear()">
+          Registrar la primera suscripción
+        </button>
+      </div>
+    } @else {
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th>Estado</th>
+            <th>Periodo</th>
+            <th>Monto</th>
+            <th>Inicia</th>
+            <th>Finaliza</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (suscripcion of suscripciones(); track suscripcion.id) {
+            <tr>
+              <td>{{ suscripcion.plan.nombre || '—' }}</td>
+              <td>
+                <span [class]="'badge badge--' + suscripcion.estado">
+                  {{ suscripcion.estado }}
+                </span>
+              </td>
+              <td>{{ suscripcion.periodo }}</td>
+              <td>{{ formatearMoneda(suscripcion.monto, suscripcion.moneda) }}</td>
+              <td>{{ suscripcion.inicia_en | date: 'd MMM y' }}</td>
+              <td>{{ suscripcion.finaliza_en ? (suscripcion.finaliza_en | date: 'd MMM y') : '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+  @if (modalAbierto()) {
+    <div class="modal-overlay" (click)="cerrarModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h2>Nueva suscripción</h2>
+
+        <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+
+          <div class="campo">
+            <label for="plan_id">Plan</label>
+            <select id="plan_id" formControlName="plan_id" (change)="onPlanOPeriodoCambiado()">
+              <option value="" disabled>Selecciona un plan</option>
+              @for (plan of planes(); track plan.id) {
+                <option [value]="plan.id">{{ plan.nombre }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="campo-fila">
+            <div class="campo">
+              <label for="estado">Estado</label>
+              <select id="estado" formControlName="estado">
+                @for (estado of estados; track estado.valor) {
+                  <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="campo">
+              <label for="periodo">Periodo</label>
+              <select id="periodo" formControlName="periodo" (change)="onPlanOPeriodoCambiado()">
+                @for (periodo of periodos; track periodo.valor) {
+                  <option [value]="periodo.valor">{{ periodo.etiqueta }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="campo-fila">
+            <div class="campo">
+              <label for="monto">Monto</label>
+              <input id="monto" type="number" min="0" step="0.01" formControlName="monto" />
+            </div>
+
+            <div class="campo">
+              <label for="moneda">Moneda</label>
+              <input id="moneda" type="text" maxlength="3" formControlName="moneda" placeholder="COP" />
+            </div>
+          </div>
+
+          <div class="campo-fila">
+            <div class="campo">
+              <label for="inicia_en">Inicia</label>
+              <input id="inicia_en" type="datetime-local" formControlName="inicia_en" />
+            </div>
+
+            <div class="campo">
+              <label for="finaliza_en">Finaliza (opcional)</label>
+              <input id="finaliza_en" type="datetime-local" formControlName="finaliza_en" />
+            </div>
+          </div>
+
+          <div class="campo">
+            <label for="prueba_finaliza_en">Fin de la prueba (opcional)</label>
+            <input id="prueba_finaliza_en" type="datetime-local" formControlName="prueba_finaliza_en" />
+          </div>
+
+          @if (errorFormulario()) {
+            <p class="modal__error">{{ errorFormulario() }}</p>
+          }
+
+          <div class="modal__acciones">
+            <button type="button" class="btn-secundario" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primario" [disabled]="guardando()">
+              @if (guardando()) {
+                <span>Guardando…</span>
+              } @else {
+                <span>Registrar suscripción</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

@@ -1,0 +1,64 @@
+<div class="page-container">
+  
+  <header class="page-header">
+    <div class="page-header__content">
+      <h1 class="page-header__title">Usuarios de la Veterinaria</h1>
+      <p class="page-header__desc">Administra los usuarios y colaboradores de tu veterinaria</p>
+    </div>
+    <button class="btn-primary" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      Nuevo Usuario
+    </button>
+  </header>
+
+  <div class="info-banner">
+    <div class="info-banner__icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+    </div>
+    <div class="info-banner__text">
+      <strong>Próximamente:</strong> Este módulo permitirá gestionar los usuarios de tu veterinaria, asignar roles y controlar accesos.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="vn-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of skeletonRows; track $index) {
+            <tr>
+              <td>
+                <div class="skeleton-flex">
+                  <div class="skeleton-avatar skeleton-pulse"></div>
+                  <div class="skeleton-text skeleton-pulse" style="width: 120px;"></div>
+                </div>
+              </td>
+              <td><div class="skeleton-text skeleton-pulse" style="width: 180px;"></div></td>
+              <td><div class="skeleton-badge skeleton-pulse"></div></td>
+              <td><div class="skeleton-badge skeleton-pulse" style="width: 60px;"></div></td>
+              <td class="text-right">
+                <div class="skeleton-action skeleton-pulse"></div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

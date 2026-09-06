@@ -1,0 +1,74 @@
+<div class="page-header">
+  <div class="header-content">
+    <div class="icon-wrapper">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"></line>
+        <line x1="12" y1="20" x2="12" y2="4"></line>
+        <line x1="6" y1="20" x2="6" y2="14"></line>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Reportes de la Plataforma</h1>
+      <p>Genera reportes globales de uso, ingresos y crecimiento</p>
+    </div>
+  </div>
+</div>
+
+<div class="reports-grid">
+  <!-- Reporte de Ingresos -->
+  <div class="card report-card">
+    <div class="card-accent"></div>
+    <div class="card-content">
+      <div class="report-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"></line>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+      </div>
+      <h3>Reporte de Ingresos</h3>
+      <p>Analiza el flujo de caja, suscripciones y transacciones procesadas por la plataforma.</p>
+      <button class="btn-primary" disabled>Generar Reporte</button>
+    </div>
+  </div>
+
+  <!-- Reporte de Crecimiento -->
+  <div class="card report-card">
+    <div class="card-accent"></div>
+    <div class="card-content">
+      <div class="report-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+          <polyline points="16 7 22 7 22 13"></polyline>
+        </svg>
+      </div>
+      <h3>Reporte de Crecimiento</h3>
+      <p>Estadísticas de nuevas clínicas afiliadas, registro de usuarios y métricas de expansión.</p>
+      <button class="btn-primary" disabled>Generar Reporte</button>
+    </div>
+  </div>
+
+  <!-- Reporte de Uso -->
+  <div class="card report-card">
+    <div class="card-accent"></div>
+    <div class="card-content">
+      <div class="report-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+          <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+        </svg>
+      </div>
+      <h3>Reporte de Uso</h3>
+      <p>Métricas sobre funciones más utilizadas, tiempo de sesión y adopción de módulos.</p>
+      <button class="btn-primary" disabled>Generar Reporte</button>
+    </div>
+  </div>
+</div>
+
+<div class="info-banner">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="16" x2="12" y2="12"></line>
+    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+  </svg>
+  <span>Este módulo estará disponible cuando el backend exponga los endpoints de /reportes-admin</span>
+</div>

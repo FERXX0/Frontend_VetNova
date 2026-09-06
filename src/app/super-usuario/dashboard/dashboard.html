@@ -1,0 +1,128 @@
+<div class="dashboard-content">
+
+  <!-- KPI cards interactivas -->
+  <div class="dashboard-content__kpi-row">
+    @for (card of kpiCards(); track card.etiqueta) {
+      <a
+        [routerLink]="card.ruta"
+        class="kpi-card kpi-card--interactive"
+        [title]="'Ir a ' + card.etiqueta"
+      >
+        <span class="kpi-card__icon" [style.background]="card.colorFondo" [style.color]="card.colorIcono">
+          @switch (card.icono) {
+            @case ('agregar') {
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7-4.35-9.5-8.5C.7 9 2 5 6 5c2 0 3.5 1.5 4 2.5C10.5 6.5 12 5 14 5c4 0 5.3 4 3.5 7.5C15 16.65 12 21 12 21Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            }
+            @case ('admin') {
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 20c1.2-3.4 4-5.2 7.5-5.2s6.3 1.8 7.5 5.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            }
+            @case ('suscripcion') {
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="8" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 8V6a4 4 0 0 1 8 0v2" stroke="currentColor" stroke-width="1.6"/></svg>
+            }
+            @case ('empresas') {
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="16" height="16" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 9h2M8 13h2M14 9h2M14 13h2M10 20v-4h4v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            }
+          }
+        </span>
+        <div class="kpi-card__text">
+          <strong>{{ card.valor }}</strong>
+          <span>{{ card.etiqueta }}</span>
+        </div>
+
+        <span class="kpi-card__arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </a>
+    }
+  </div>
+
+  <!-- Grid: stats + estadísticas + reportes -->
+  <div class="dashboard-content__grid">
+
+    <!-- Stat cards -->
+    <div class="dashboard-content__stats">
+      @for (stat of statCards(); track stat.titulo) {
+        <div class="stat-card">
+          <span class="stat-card__title">{{ stat.titulo }}</span>
+          <strong class="stat-card__value">{{ stat.valor }}</strong>
+          @if (stat.conSparkline) {
+            <svg class="stat-card__sparkline" viewBox="0 0 100 24" preserveAspectRatio="none">
+              <polyline points="0,22 100,22" fill="none" stroke="#c7d2d9" stroke-width="2" />
+            </svg>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Estadísticas (donut) -->
+    <div class="dashboard-content__estadisticas">
+      <div class="panel-card">
+        <div class="panel-card__header">
+          <h3>Estadisticas</h3>
+          <button type="button" aria-label="Más opciones">⋯</button>
+        </div>
+
+        <div class="donut">
+          <svg viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="48" fill="none" stroke="#e7ebee" stroke-width="16" />
+          </svg>
+          <div class="donut__label">
+            <strong>{{ transaccionesPorcentaje() }}%</strong>
+            <span>Transactions</span>
+          </div>
+        </div>
+
+        <ul class="panel-card__legend">
+          @for (item of estadisticasLegend(); track item.nombre) {
+            <li>
+              <span class="legend-dot" [style.background]="item.color"></span>
+              {{ item.nombre }}
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+
+    <!-- Reportes (line chart) -->
+    <div class="dashboard-content__reportes">
+      <div class="panel-card">
+        <div class="panel-card__header">
+          <h3>Reportes</h3>
+          <button type="button" aria-label="Más opciones">⋯</button>
+        </div>
+
+        <div class="line-chart">
+          <div class="line-chart__grid">
+            @for (linea of [100, 80, 60, 40, 20, 0]; track linea) {
+              <div class="line-chart__gridline">
+                <span>{{ linea }}</span>
+              </div>
+            }
+          </div>
+
+          <svg class="line-chart__svg" viewBox="0 0 500 160" preserveAspectRatio="none">
+            <polyline
+              [attr.points]="puntosLinea(500, 160)"
+              fill="none"
+              stroke="#3b82f6"
+              stroke-width="2.5"
+            />
+          </svg>
+
+          @if (!hayDatosReporte()) {
+            <div class="line-chart__empty">Aún no hay datos de reportes</div>
+          }
+        </div>
+
+        <div class="line-chart__labels">
+          @for (label of reporteLabels(); track label.hora) {
+            <span>{{ label.hora }}</span>
+          }
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

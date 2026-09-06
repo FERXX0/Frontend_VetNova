@@ -1,0 +1,54 @@
+<div class="page-header">
+  <div class="header-content">
+    <div class="icon-wrapper">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Centro de Soporte</h1>
+      <p>Gestiona tickets de soporte y solicitudes de las veterinarias</p>
+    </div>
+  </div>
+</div>
+
+<div class="status-grid">
+  @for (status of ['Tickets Abiertos', 'En Proceso', 'Resueltos']; track status) {
+    <div class="card status-card">
+      <div class="status-content">
+        <h3>{{ status }}</h3>
+        <div class="skeleton skeleton-counter"></div>
+      </div>
+    </div>
+  }
+</div>
+
+<div class="card list-card">
+  <div class="list-header">
+    <h3>Tickets Recientes</h3>
+  </div>
+  <div class="ticket-list">
+    @for (item of [1,2,3]; track item) {
+      <div class="ticket-item">
+        <div class="ticket-info">
+          <div class="skeleton skeleton-text" style="width: 250px; height: 18px; margin-bottom: 8px;"></div>
+          <div class="skeleton skeleton-text" style="width: 150px; height: 14px;"></div>
+        </div>
+        <div class="ticket-meta">
+          <div class="skeleton skeleton-badge" style="width: 90px; margin-bottom: 8px;"></div>
+          <div class="skeleton skeleton-text" style="width: 70px; height: 12px; align-self: flex-end;"></div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<div class="info-banner">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="16" x2="12" y2="12"></line>
+    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+  </svg>
+  <span>Este módulo estará disponible cuando el backend exponga el endpoint GET /soporte/tickets</span>
+</div>

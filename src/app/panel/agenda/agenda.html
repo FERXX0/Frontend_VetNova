@@ -1,0 +1,323 @@
+<div class="agenda-page">
+  <!-- Header de la Agenda -->
+  <header class="agenda-page__header">
+    <div>
+      <h1>Agenda Médica y Citas</h1>
+      <p>Programación de turnos clínicos y consultas veterinarias</p>
+    </div>
+
+    <button type="button" class="agenda-page__btn-nueva" (click)="abrirModalCrear()">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Agendar Cita
+    </button>
+  </header>
+
+  <!-- Métricas Rápidas del Día -->
+  <div class="agenda-page__stats">
+    <div class="stat-box">
+      <span class="stat-box__label">Citas del Día</span>
+      <strong class="stat-box__val">{{ statsDia().total }}</strong>
+    </div>
+    <div class="stat-box stat-box--confirmadas">
+      <span class="stat-box__label">Confirmadas</span>
+      <strong class="stat-box__val">{{ statsDia().confirmadas }}</strong>
+    </div>
+    <div class="stat-box stat-box--pendientes">
+      <span class="stat-box__label">Pendientes</span>
+      <strong class="stat-box__val">{{ statsDia().pendientes }}</strong>
+    </div>
+    <div class="stat-box stat-box--atendidas">
+      <span class="stat-box__label">Atendidas</span>
+      <strong class="stat-box__val">{{ statsDia().atendidas }}</strong>
+    </div>
+  </div>
+
+  <!-- Barra de Navegación de Fechas y Filtros -->
+  <div class="agenda-page__nav-bar">
+    <div class="fecha-selector">
+      <button type="button" class="btn-nav" (click)="cambiarDia(-1)" title="Día anterior">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <button type="button" class="btn-hoy" (click)="irAHoy()">Hoy</button>
+
+      <button type="button" class="btn-nav" (click)="cambiarDia(1)" title="Día siguiente">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="fecha-picker-wrap">
+        <input type="date" [value]="fechaSeleccionada()" (change)="onFechaInput($event)" class="fecha-picker-input" />
+        <span class="fecha-texto">{{ fechaLegible() }}</span>
+      </div>
+    </div>
+
+    <!-- Filtro por estado -->
+    <div class="agenda-page__filtros-estado">
+      <button
+        type="button"
+        class="filtro-badge"
+        [class.filtro-badge--activo]="filtroEstado() === 'todos'"
+        (click)="filtroEstado.set('todos')"
+      >
+        Todas
+      </button>
+      @for (est of estados; track est.valor) {
+        <button
+          type="button"
+          class="filtro-badge"
+          [class.filtro-badge--activo]="filtroEstado() === est.valor"
+          (click)="filtroEstado.set(est.valor)"
+        >
+          {{ est.etiqueta }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Vista Horaria (Timeline) -->
+  <div class="timeline-card">
+    <div class="timeline">
+      @for (hora of franjasHorarias; track hora) {
+        <div class="timeline__fila">
+          <div class="timeline__hora">
+            <span>{{ hora }}</span>
+          </div>
+
+          <div class="timeline__contenido">
+            @for (cita of citasEnFranja(hora); track cita.id) {
+              <div class="cita-card" [class]="'cita-card--' + cita.estado">
+                <div class="cita-card__tiempo">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                  <span>{{ cita.hora_inicio }} - {{ cita.hora_fin || '...' }}</span>
+                </div>
+
+                <div class="cita-card__principal">
+                  <div class="cita-card__paciente">
+                    <span class="cita-card__avatar-emoji">
+                      @switch (cita.paciente_especie?.toLowerCase()) {
+                        @case ('canino') { 🐕 }
+                        @case ('felino') { 🐈 }
+                        @default { 🐾 }
+                      }
+                    </span>
+                    <strong>{{ cita.paciente_nombre }}</strong>
+                    <span class="badge-tipo-consulta">{{ cita.tipo_consulta }}</span>
+                    @if (cita.servicio_nombre) {
+                      <span class="badge-servicio">{{ cita.servicio_nombre }}</span>
+                    }
+                  </div>
+
+                  <p class="cita-card__motivo">{{ cita.motivo }}</p>
+
+                  <div class="cita-card__meta">
+                    <span class="cita-card__veterinario">
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.6"/><circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M20 8v6M23 11h-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                      {{ cita.veterinario_nombre }}
+                    </span>
+
+                    <span class="cita-card__propietario">
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.6"/></svg>
+                      {{ cita.propietario_nombre }} ({{ cita.propietario_celular || 'Sin celular' }})
+                    </span>
+                  </div>
+                </div>
+
+                <div class="cita-card__estado-acciones">
+                  <span class="badge-estado-cita" [class]="'badge-estado-cita--' + cita.estado">
+                    {{ cita.estado }}
+                  </span>
+
+                  <div class="cita-card__botones">
+                    @if (cita.estado === 'pendiente') {
+                      <button
+                        type="button"
+                        class="btn-mini btn-mini--confirmar"
+                        title="Confirmar cita"
+                        (click)="cambiarEstadoCita(cita, 'confirmada')"
+                      >
+                        ✓ Confirmar
+                      </button>
+                    }
+                    @if (cita.estado === 'confirmada') {
+                      <button
+                        type="button"
+                        class="btn-mini btn-mini--atender"
+                        title="Marcar como atendida"
+                        (click)="cambiarEstadoCita(cita, 'atendida')"
+                      >
+                        ✓ Atendida
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      class="btn-mini-icon"
+                      title="Editar cita"
+                      (click)="abrirModalEditar(cita)"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-mini-icon btn-mini-icon--eliminar"
+                      title="Cancelar / Eliminar"
+                      (click)="eliminarCita(cita)"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (citasEnFranja(hora).length === 0) {
+              <button
+                type="button"
+                class="timeline__slot-vacio"
+                (click)="abrirModalCrear(hora)"
+                title="Agendar cita a las {{ hora }}"
+              >
+                + Disponible
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Modal Agendar / Editar Cita -->
+  @if (modalAbierto()) {
+    <div class="modal-backdrop" (click)="cerrarModal()">
+      <div class="modal-panel" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ citaEnEdicion() ? 'Editar Cita Médica' : 'Agendar Nueva Cita' }}</h2>
+          <button type="button" class="btn-cerrar" (click)="cerrarModal()" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-form" novalidate>
+          <div class="form-campo">
+            <label for="paciente_id">Paciente / Mascota *</label>
+            <select id="paciente_id" formControlName="paciente_id">
+              <option value="" disabled>Selecciona un paciente</option>
+              @for (p of pacientes(); track p.id) {
+                <option [value]="p.id">{{ p.nombre }} ({{ p.especie }} - Propietario: {{ p.propietario.nombre }})</option>
+              }
+            </select>
+            @if (form.get('paciente_id')?.invalid && form.get('paciente_id')?.touched) {
+              <span class="error-texto">Debes seleccionar un paciente.</span>
+            }
+          </div>
+
+          <div class="form-campo">
+            <label for="servicio_id">Tipo de Servicio</label>
+            <select
+              id="servicio_id"
+              formControlName="servicio_id"
+              (change)="onServicioSeleccionado(form.get('servicio_id')?.value)"
+            >
+              <option value="">Sin servicio específico</option>
+              @for (s of servicios(); track s.id) {
+                <option [value]="s.id">{{ s.nombre }} ({{ s.duracion_minutos }} min)</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-fila">
+            <div class="form-campo">
+              <label for="veterinario_nombre">Veterinario Responsable *</label>
+              <select id="veterinario_nombre" formControlName="veterinario_nombre">
+                @for (vet of veterinarios; track vet) {
+                  <option [value]="vet">{{ vet }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-campo">
+              <label for="tipo_consulta">Tipo de Consulta *</label>
+              <select id="tipo_consulta" formControlName="tipo_consulta">
+                @for (t of tiposConsulta; track t.valor) {
+                  <option [value]="t.valor">{{ t.etiqueta }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="form-fila form-fila--3">
+            <div class="form-campo">
+              <label for="fecha">Fecha *</label>
+              <input id="fecha" type="date" formControlName="fecha" />
+            </div>
+
+            <div class="form-campo">
+              <label for="hora_inicio">Hora Inicio *</label>
+              <input id="hora_inicio" type="time" formControlName="hora_inicio" />
+            </div>
+
+            <div class="form-campo">
+              <label for="hora_fin">Hora Fin</label>
+              <input id="hora_fin" type="time" formControlName="hora_fin" />
+            </div>
+          </div>
+
+          <div class="form-campo">
+            <label for="motivo">Motivo de la Cita *</label>
+            <input
+              id="motivo"
+              type="text"
+              formControlName="motivo"
+              placeholder="Ej. Vacunación antirrábica y revisión general"
+              [class.input--invalido]="form.get('motivo')?.invalid && form.get('motivo')?.touched"
+            />
+            @if (form.get('motivo')?.invalid && form.get('motivo')?.touched) {
+              <span class="error-texto">El motivo es obligatorio.</span>
+            }
+          </div>
+
+          <div class="form-fila">
+            <div class="form-campo">
+              <label for="estado">Estado de la Cita</label>
+              <select id="estado" formControlName="estado">
+                @for (est of estados; track est.valor) {
+                  <option [value]="est.valor">{{ est.etiqueta }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-campo">
+              <label for="observaciones">Instrucciones previas / Observaciones</label>
+              <input id="observaciones" type="text" formControlName="observaciones" placeholder="Ej. Ayuno de 8 horas, traer bozal" />
+            </div>
+          </div>
+
+          @if (errorFormulario()) {
+            <div class="alerta-form-error">{{ errorFormulario() }}</div>
+          }
+
+          <div class="modal-acciones">
+            <button type="button" class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-guardar" [disabled]="guardando()">
+              @if (guardando()) {
+                <span>Guardando…</span>
+              } @else {
+                <span>{{ citaEnEdicion() ? 'Guardar Cambios' : 'Agendar Cita' }}</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

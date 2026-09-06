@@ -1,0 +1,128 @@
+<div class="detalle-page">
+  <div class="detalle-page__header">
+    <a routerLink="/panel/pacientes" class="detalle-page__volver">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Volver al listado de pacientes
+    </a>
+  </div>
+
+  @if (cargando()) {
+    <div class="detalle-page__cargando">Cargando ficha del paciente…</div>
+  } @else if (paciente(); as p) {
+    <!-- Tarjeta Principal de la Mascota -->
+    <div class="ficha-mascota">
+      <div class="ficha-mascota__avatar">
+        @switch (p.especie.toLowerCase()) {
+          @case ('canino') { 🐕 }
+          @case ('felino') { 🐈 }
+          @case ('ave') { 🦜 }
+          @case ('equino') { 🐎 }
+          @default { 🐾 }
+        }
+      </div>
+
+      <div class="ficha-mascota__info">
+        <div class="ficha-mascota__top">
+          <h1>{{ p.nombre }}</h1>
+          <span class="badge-estado" [class]="'badge-estado--' + p.estado">{{ p.estado }}</span>
+        </div>
+
+        <div class="ficha-mascota__tags">
+          <span class="tag-meta"><strong>Especie:</strong> {{ p.especie }}</span>
+          <span class="tag-meta"><strong>Raza:</strong> {{ p.raza || 'Mestizo' }}</span>
+          <span class="tag-meta"><strong>Sexo:</strong> {{ p.sexo }}</span>
+          @if (p.peso_kg) {
+            <span class="tag-meta"><strong>Peso:</strong> {{ p.peso_kg }} kg</span>
+          }
+          @if (p.fecha_nacimiento) {
+            <span class="tag-meta"><strong>Nacimiento:</strong> {{ p.fecha_nacimiento }}</span>
+          }
+          @if (p.microchip) {
+            <span class="tag-meta"><strong>Microchip:</strong> {{ p.microchip }}</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid de Ficha Médica y Propietario -->
+    <div class="detalle-grid">
+      <!-- Datos del Propietario -->
+      <div class="panel-info">
+        <div class="panel-info__header">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <h3>Responsable / Propietario</h3>
+        </div>
+
+        <div class="panel-info__body">
+          <div class="info-item">
+            <span class="info-label">Nombre Completo</span>
+            <strong class="info-valor">{{ p.propietario.nombre }}</strong>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Documento de Identificación</span>
+            <span class="info-valor">{{ p.propietario.tipo_identificacion || 'ID' }}: {{ p.propietario.numero_identificacion || '—' }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Teléfono / WhatsApp</span>
+            <span class="info-valor">{{ p.propietario.celular || '—' }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Correo Electrónico</span>
+            <span class="info-valor">{{ p.propietario.correo || '—' }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Dirección</span>
+            <span class="info-valor">{{ p.propietario.direccion || '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Observaciones y Alergias -->
+      <div class="panel-info">
+        <div class="panel-info__header">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <h3>Notas y Alertas Médicas</h3>
+        </div>
+
+        <div class="panel-info__body">
+          <p class="notas-texto">{{ p.notas || 'Sin observaciones médicas registradas hasta el momento.' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secciones Clínicas Preparadas para el Futuro -->
+    <div class="secciones-futuras">
+      <div class="secciones-futuras__header">
+        <h3>Historial Clínico y Procedimientos</h3>
+        <span class="badge-modulo-futuro">Módulos en Integración</span>
+      </div>
+
+      <div class="tabs-futuras">
+        <div class="tab-futura tab-futura--activo">📋 Consultas y Evolución</div>
+        <div class="tab-futura">💉 Vacunas y Desparasitación</div>
+        <div class="tab-futura">🔬 Exámenes de Laboratorio</div>
+        <div class="tab-futura">🏥 Hospitalización</div>
+      </div>
+
+      <div class="tab-contenido-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <p>Ficha clínica preparada para el registro de consultas, formulaciones y esquemas de vacunación.</p>
+        <small>Los módulos de Historias Clínicas y Esquemas se habilitarán próximamente según el plan de la veterinaria.</small>
+      </div>
+    </div>
+  }
+</div>

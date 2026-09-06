@@ -1,0 +1,156 @@
+<div class="perfil-page">
+  <div class="perfil-page__header">
+    <a [routerLink]="rutaVolver()" class="perfil-page__volver">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Volver
+    </a>
+    <h1 class="perfil-page__title">Mi Perfil y Configuración</h1>
+    <p class="perfil-page__subtitle">Consulta y actualiza tus datos personales de acceso a VetNova</p>
+  </div>
+
+  <div class="perfil-page__card">
+    <div class="perfil-card__resumen">
+      <div class="perfil-card__avatar">
+        <span>{{ iniciales() }}</span>
+      </div>
+      <div class="perfil-card__info-principal">
+        <h2>{{ usuario()?.nombre }}</h2>
+        <span class="perfil-card__rol-badge">{{ usuario()?.rol?.nombre }}</span>
+        @if (!esSuperAdmin() && usuario()?.empresa?.nombre) {
+          <p class="perfil-card__empresa">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 21h18M5 21V7l8-4v18M13 7l6 3v11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <strong>Veterinaria:</strong> {{ usuario()?.empresa?.nombre }}
+          </p>
+        }
+      </div>
+    </div>
+
+    <div class="perfil-page__divider"></div>
+
+    @if (mensajeExito()) {
+      <div class="perfil-alerta perfil-alerta--exito">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4L12 14.01l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>{{ mensajeExito() }}</span>
+      </div>
+    }
+
+    @if (mensajeError()) {
+      <div class="perfil-alerta perfil-alerta--error">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span>{{ mensajeError() }}</span>
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="perfil-form" novalidate>
+      <div class="perfil-form__seccion-titulo">
+        <h3>Datos Editables</h3>
+        <p>Esta información puede ser modificada por el usuario</p>
+      </div>
+
+      <div class="perfil-form__fila">
+        <div class="perfil-form__campo">
+          <label for="nombre">Nombre Completo *</label>
+          <input
+            id="nombre"
+            type="text"
+            formControlName="nombre"
+            placeholder="Tu nombre completo"
+            [class.perfil-form__input--invalido]="form.get('nombre')?.invalid && form.get('nombre')?.touched"
+          />
+          @if (form.get('nombre')?.invalid && form.get('nombre')?.touched) {
+            <span class="perfil-form__error">El nombre es obligatorio.</span>
+          }
+        </div>
+
+        <div class="perfil-form__campo">
+          <label for="correo">Correo Electrónico *</label>
+          <input
+            id="correo"
+            type="email"
+            formControlName="correo"
+            placeholder="correo@ejemplo.com"
+            [class.perfil-form__input--invalido]="form.get('correo')?.invalid && form.get('correo')?.touched"
+          />
+          @if (form.get('correo')?.invalid && form.get('correo')?.touched) {
+            <span class="perfil-form__error">Ingresa un correo electrónico válido.</span>
+          }
+        </div>
+      </div>
+
+      <div class="perfil-form__fila">
+        <div class="perfil-form__campo">
+          <label for="celular">Celular / Teléfono</label>
+          <input id="celular" type="tel" formControlName="celular" placeholder="Ej. +57 300 123 4567" />
+        </div>
+
+        <div class="perfil-form__campo">
+          <label for="fecha_nacimiento">Fecha de Nacimiento</label>
+          <input id="fecha_nacimiento" type="date" formControlName="fecha_nacimiento" />
+        </div>
+      </div>
+
+      <div class="perfil-page__divider"></div>
+
+      <div class="perfil-form__seccion-titulo">
+        <h3>Información del Sistema (Solo Lectura)</h3>
+        <p>Datos administrados por la plataforma o el administrador de la veterinaria</p>
+      </div>
+
+      <div class="perfil-form__fila perfil-form__fila--readonly">
+        <div class="perfil-form__campo">
+          <label>Tipo de Identificación</label>
+          <div class="perfil-form__static">{{ usuario()?.tipo_identificacion || '—' }}</div>
+        </div>
+
+        <div class="perfil-form__campo">
+          <label>Número de Identificación</label>
+          <div class="perfil-form__static">{{ usuario()?.numero_identificacion || '—' }}</div>
+        </div>
+      </div>
+
+      <div class="perfil-form__fila perfil-form__fila--readonly">
+        <div class="perfil-form__campo">
+          <label>Rol asignado</label>
+          <div class="perfil-form__static">{{ usuario()?.rol?.nombre || '—' }}</div>
+        </div>
+
+        @if (!esSuperAdmin()) {
+          <div class="perfil-form__campo">
+            <label>Empresa / Veterinaria</label>
+            <div class="perfil-form__static">{{ usuario()?.empresa?.nombre || '—' }}</div>
+          </div>
+        }
+      </div>
+
+      @if (!esSuperAdmin() && usuario()?.modulos && usuario()!.modulos.length > 0) {
+        <div class="perfil-form__modulos">
+          <label>Módulos Asignados en la Empresa</label>
+          <div class="perfil-form__badges">
+            @for (mod of usuario()!.modulos; track mod.id) {
+              <span class="perfil-badge">{{ mod.nombre }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="perfil-form__acciones">
+        <button type="submit" class="perfil-form__btn-guardar" [disabled]="guardando()">
+          @if (guardando()) {
+            <span>Guardando cambios…</span>
+          } @else {
+            <span>Guardar Cambios</span>
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,74 @@
+<div class="recuperar-page">
+  <div class="recuperar-page__wrapper">
+
+    <div class="recuperar-page__logo">
+      <span class="recuperar-page__logo-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 3v6M9 6h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M12 21s-7-4.35-9.5-8.5C.7 9 2 5 6 5c2 0 3.5 1.5 4 2.5C10.5 6.5 12 5 14 5c4 0 5.3 4 3.5 7.5C15 16.65 12 21 12 21Z"
+                stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span class="recuperar-page__logo-text">
+        <span class="recuperar-page__logo-vet">Vet</span><span class="recuperar-page__logo-nova">Nova</span>
+      </span>
+    </div>
+
+    <div class="recuperar-page__heading">
+      <h2>Recuperar contraseña</h2>
+      <p>Introduce tu correo eletronico de registro para restablecer tu contraseña</p>
+    </div>
+
+    @if (!enviado()) {
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+        <div class="recuperar-page__field-label-row">
+          <button type="button" class="recuperar-page__back-link" (click)="volverAlInicio()">
+            Volver al inicio
+          </button>
+        </div>
+
+        <div class="recuperar-page__field">
+          <div class="recuperar-page__input" [class.recuperar-page__input--invalid]="correoInvalido">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M4.5 20c1.2-3.4 4-5.2 7.5-5.2s6.3 1.8 7.5 5.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <input
+              id="correo"
+              type="email"
+              formControlName="correo"
+              placeholder="correo electronico"
+              autocomplete="email"
+            />
+          </div>
+          @if (correoInvalido) {
+            <span class="recuperar-page__field-error">Ingresa un correo electrónico válido.</span>
+          }
+        </div>
+
+        @if (error()) {
+          <p class="recuperar-page__error">{{ error() }}</p>
+        }
+
+        <button type="submit" class="recuperar-page__submit" [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+            <span>Enviando...</span>
+          } @else {
+            <span>Enviar</span>
+          }
+        </button>
+      </form>
+    } @else {
+      <div class="recuperar-page__confirmacion">
+        <p>
+          Si el correo <strong>{{ form.value.correo }}</strong> está registrado, te enviamos
+          un enlace para restablecer tu contraseña. Revisa también la carpeta de spam.
+        </p>
+        <button type="button" class="recuperar-page__submit" (click)="volverAlInicio()">
+          Volver al inicio
+        </button>
+      </div>
+    }
+  </div>
+</div>

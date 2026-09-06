@@ -1,0 +1,66 @@
+<div class="page-header">
+  <div class="header-content">
+    <div class="icon-wrapper">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M19 11v2"></path>
+        <path d="M22 12h-2"></path>
+        <path d="M17 12h-2"></path>
+        <path d="M19 9v2"></path>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Gestión de Usuarios</h1>
+      <p>Administra los usuarios de la plataforma, asigna roles y permisos</p>
+    </div>
+  </div>
+  <button class="btn-primary" disabled>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+    </svg>
+    Nuevo Usuario
+  </button>
+</div>
+
+<div class="card content-card">
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Correo</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of [1,2,3]; track item) {
+          <tr>
+            <td><div class="skeleton skeleton-text" style="width: 140px;"></div></td>
+            <td><div class="skeleton skeleton-text" style="width: 180px;"></div></td>
+            <td><div class="skeleton skeleton-badge" style="width: 80px;"></div></td>
+            <td><div class="skeleton skeleton-badge" style="width: 70px;"></div></td>
+            <td>
+              <div class="action-skeletons">
+                <div class="skeleton skeleton-btn"></div>
+                <div class="skeleton skeleton-btn"></div>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="info-banner">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="16" x2="12" y2="12"></line>
+    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+  </svg>
+  <span>Este módulo estará disponible cuando el backend exponga el endpoint GET /usuarios</span>
+</div>
