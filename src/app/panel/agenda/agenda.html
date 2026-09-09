@@ -111,6 +111,9 @@
                     </span>
                     <strong>{{ cita.paciente_nombre }}</strong>
                     <span class="badge-tipo-consulta">{{ cita.tipo_consulta }}</span>
+                    @if (cita.servicio_nombre) {
+                      <span class="badge-servicio">{{ cita.servicio_nombre }}</span>
+                    }
                   </div>
 
                   <p class="cita-card__motivo">{{ cita.motivo }}</p>
@@ -216,6 +219,20 @@
             @if (form.get('paciente_id')?.invalid && form.get('paciente_id')?.touched) {
               <span class="error-texto">Debes seleccionar un paciente.</span>
             }
+          </div>
+
+          <div class="form-campo">
+            <label for="servicio_id">Tipo de Servicio</label>
+            <select
+              id="servicio_id"
+              formControlName="servicio_id"
+              (change)="onServicioSeleccionado(form.get('servicio_id')?.value)"
+            >
+              <option value="">Sin servicio específico</option>
+              @for (s of servicios(); track s.id) {
+                <option [value]="s.id">{{ s.nombre }} ({{ s.duracion_minutos }} min)</option>
+              }
+            </select>
           </div>
 
           <div class="form-fila">
