@@ -51,7 +51,7 @@ export class AuthService {
    */
   solicitarRecuperacion(payload: { correo: string }): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(
-      `${environment.apiUrl}/auth/recuperar-contrasena`,
+      `${environment.apiUrl}/recuperar-contrasena`,
       payload
     );
   }
@@ -63,7 +63,7 @@ export class AuthService {
     contrasena_confirmation: string;
   }): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(
-      `${environment.apiUrl}/auth/restablecer-contrasena`,
+      `${environment.apiUrl}/restablecer-contrasena`,
       payload
     );
   }
