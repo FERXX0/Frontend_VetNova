@@ -1,66 +1,245 @@
-<div class="page-header">
-  <div class="header-content">
-    <div class="icon-wrapper">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-        <circle cx="9" cy="7" r="4"></circle>
-        <path d="M19 11v2"></path>
-        <path d="M22 12h-2"></path>
-        <path d="M17 12h-2"></path>
-        <path d="M19 9v2"></path>
-      </svg>
-    </div>
-    <div class="header-text">
-      <h1>Gestión de Usuarios</h1>
-      <p>Administra los usuarios de la plataforma, asigna roles y permisos</p>
-    </div>
-  </div>
-  <button class="btn-primary" disabled>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-    </svg>
-    Nuevo Usuario
-  </button>
-</div>
+<div class="usuarios-page">
 
-<div class="card content-card">
-  <div class="table-container">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Correo</th>
-          <th>Rol</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (item of [1,2,3]; track item) {
-          <tr>
-            <td><div class="skeleton skeleton-text" style="width: 140px;"></div></td>
-            <td><div class="skeleton skeleton-text" style="width: 180px;"></div></td>
-            <td><div class="skeleton skeleton-badge" style="width: 80px;"></div></td>
-            <td><div class="skeleton skeleton-badge" style="width: 70px;"></div></td>
-            <td>
-              <div class="action-skeletons">
-                <div class="skeleton skeleton-btn"></div>
-                <div class="skeleton skeleton-btn"></div>
-              </div>
-            </td>
-          </tr>
+  <header class="usuarios-page__header">
+    <div>
+      <h1 class="usuarios-page__title">Gestión de Usuarios</h1>
+      <p class="usuarios-page__subtitle">Administra los usuarios de todas las empresas de la plataforma, asigna roles y permisos</p>
+    </div>
+
+    <button type="button" class="btn-primary" (click)="abrirModalCrear()">
+      Nuevo Usuario
+    </button>
+  </header>
+
+  <!-- Filtros -->
+  <div class="usuarios-page__filtros">
+    <input
+      type="text"
+      class="filtro-input"
+      placeholder="Buscar por nombre o correo..."
+      [value]="filtroBuscar()"
+      (input)="filtroBuscar.set($any($event.target).value)"
+      (keyup.enter)="aplicarFiltros()"
+    />
+
+    <select class="filtro-select" [value]="filtroEmpresaId()" (change)="filtroEmpresaId.set($any($event.target).value); aplicarFiltros()">
+      <option value="">Todas las empresas</option>
+      @for (empresa of empresas(); track empresa.id) {
+        <option [value]="empresa.id">{{ empresa.nombre }}</option>
+      }
+    </select>
+
+    <select class="filtro-select" [value]="filtroRolId()" (change)="filtroRolId.set($any($event.target).value); aplicarFiltros()">
+      <option value="">Todos los roles</option>
+      @for (rol of roles(); track rol.id) {
+        <option [value]="rol.id">{{ rol.nombre }}</option>
+      }
+    </select>
+
+    <select class="filtro-select" [value]="filtroActivo()" (change)="filtroActivo.set($any($event.target).value); aplicarFiltros()">
+      <option value="">Cualquier estado</option>
+      <option value="1">Activos</option>
+      <option value="0">Inactivos</option>
+    </select>
+
+    <button type="button" class="btn-secundario" (click)="aplicarFiltros()">Buscar</button>
+    <button type="button" class="btn-texto" (click)="limpiarFiltros()">Limpiar</button>
+  </div>
+
+  @if (error()) {
+    <div class="alerta-error">
+      <span>{{ error() }}</span>
+      <button type="button" (click)="cargarUsuarios(paginaActual())">Reintentar</button>
+    </div>
+  }
+
+  <div class="card content-card">
+    <div class="table-container">
+      @if (cargando()) {
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Empresa</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of [1,2,3]; track item) {
+              <tr>
+                <td><div class="skeleton skeleton-text" style="width: 140px;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 180px;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 120px;"></div></td>
+                <td><div class="skeleton skeleton-badge" style="width: 80px;"></div></td>
+                <td><div class="skeleton skeleton-badge" style="width: 70px;"></div></td>
+                <td>
+                  <div class="action-skeletons">
+                    <div class="skeleton skeleton-btn"></div>
+                    <div class="skeleton skeleton-btn"></div>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else if (usuarios().length === 0) {
+        <div class="empty-state">
+          <p>No se encontraron usuarios con los filtros actuales.</p>
+        </div>
+      } @else {
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Empresa</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (usuario of usuarios(); track usuario.id) {
+              <tr>
+                <td>
+                  <strong>{{ usuario.nombre }}</strong>
+                  @if (usuario.es_super_administrador) {
+                    <span class="badge-super">Super Admin</span>
+                  }
+                </td>
+                <td>{{ usuario.correo }}</td>
+                <td>{{ usuario.empresa?.nombre || '—' }}</td>
+                <td><span class="badge-rol">{{ usuario.rol?.nombre || '—' }}</span></td>
+                <td>
+                  <span class="status-pill" [class.status-pill--activa]="usuario.activo" [class.status-pill--inactiva]="!usuario.activo">
+                    {{ usuario.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="text-right">
+                  <div class="action-buttons">
+                    <button type="button" class="btn-icon" title="Editar usuario" (click)="abrirModalEditar(usuario)">
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="btn-icon btn-icon--danger" title="Eliminar usuario" (click)="eliminar(usuario)">
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 .8 12.1a2 2 0 0 0 2 1.9h4.4a2 2 0 0 0 2-1.9L18 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        @if (totalPaginas() > 1) {
+          <div class="paginacion">
+            <button type="button" [disabled]="paginaActual() === 1" (click)="irAPagina(paginaActual() - 1)">‹ Anterior</button>
+            <span>Página {{ paginaActual() }} de {{ totalPaginas() }} ({{ total() }} usuarios)</span>
+            <button type="button" [disabled]="paginaActual() === totalPaginas()" (click)="irAPagina(paginaActual() + 1)">Siguiente ›</button>
+          </div>
         }
-      </tbody>
-    </table>
+      }
+    </div>
   </div>
-</div>
 
-<div class="info-banner">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="10"></circle>
-    <line x1="12" y1="16" x2="12" y2="12"></line>
-    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-  </svg>
-  <span>Este módulo estará disponible cuando el backend exponga el endpoint GET /usuarios</span>
+  <!-- Modal Crear / Editar Usuario -->
+  @if (modalAbierto()) {
+    <div class="modal-overlay" (click)="cerrarModal()">
+      <div class="modal-panel" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <h2>{{ usuarioEnEdicion() ? 'Editar Usuario' : 'Nuevo Usuario' }}</h2>
+          <button type="button" class="modal-close-btn" (click)="cerrarModal()" aria-label="Cerrar">✕</button>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+          <div class="form-group">
+            <label for="empresa_id">Empresa *</label>
+            <select id="empresa_id" formControlName="empresa_id">
+              @for (empresa of empresas(); track empresa.id) {
+                <option [value]="empresa.id">{{ empresa.nombre }}</option>
+              }
+            </select>
+            @if (usuarioEnEdicion()) {
+              <small class="form-hint">La empresa no se puede cambiar desde aquí.</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="nombre">Nombre Completo *</label>
+            <input id="nombre" type="text" formControlName="nombre" placeholder="Ej: Camila Torres" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="tipo_identificacion">Tipo de Identificación *</label>
+              <select id="tipo_identificacion" formControlName="tipo_identificacion">
+                <option value="CC">Cédula de Ciudadanía</option>
+                <option value="CE">Cédula de Extranjería</option>
+                <option value="PAS">Pasaporte</option>
+                <option value="TI">Tarjeta de Identidad</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="numero_identificacion">Número de Identificación *</label>
+              <input id="numero_identificacion" type="text" formControlName="numero_identificacion" placeholder="1000000000" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="celular">Celular</label>
+              <input id="celular" type="text" formControlName="celular" placeholder="3001234567" />
+            </div>
+
+            <div class="form-group">
+              <label for="rol_id">Rol *</label>
+              <select id="rol_id" formControlName="rol_id">
+                <option value="" disabled>Selecciona un rol</option>
+                @for (rol of roles(); track rol.id) {
+                  <option [value]="rol.id">{{ rol.nombre }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="correo">Correo Electrónico *</label>
+            <input id="correo" type="email" formControlName="correo" placeholder="usuario@empresa.com" />
+          </div>
+
+          <div class="form-group">
+            <label for="contrasena">Contraseña {{ usuarioEnEdicion() ? '(dejar vacío para no cambiarla)' : '*' }}</label>
+            <input id="contrasena" type="password" formControlName="contrasena" placeholder="Mínimo 8 caracteres" />
+          </div>
+
+          <div class="form-group form-group--checkbox">
+            <label>
+              <input type="checkbox" formControlName="activo" />
+              Usuario activo
+            </label>
+          </div>
+
+          @if (errorFormulario()) {
+            <p class="error-msg">{{ errorFormulario() }}</p>
+          }
+
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-submit" [disabled]="guardando()">
+              {{ guardando() ? 'Guardando…' : (usuarioEnEdicion() ? 'Guardar Cambios' : 'Crear Usuario') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
 </div>
