@@ -1,0 +1,1180 @@
+<section class="formulaciones-page">
+
+  <!-- HEADER -->
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">GESTIÓN CLÍNICA</span>
+      <h1>Formulaciones</h1>
+      <p>
+        Gestiona las formulaciones médicas y medicamentos prescritos
+        a los pacientes.
+      </p>
+    </div>
+
+    <button class="btn-primary" type="button" (click)="abrirNuevaFormulacion()">
+      <span class="material-symbols-rounded">add</span>
+      Nueva formulación
+    </button>
+  </header>
+
+
+  <!-- ESTADÍSTICAS -->
+  <section class="stats-grid">
+
+    <article class="stat-card">
+      <div class="stat-icon">
+        <span class="material-symbols-rounded">description</span>
+      </div>
+
+      <div>
+        <span>Total formulaciones</span>
+        <strong>{{ totalFormulaciones() }}</strong>
+      </div>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-icon">
+        <span class="material-symbols-rounded">medication</span>
+      </div>
+
+      <div>
+        <span>Activas</span>
+        <strong>{{ formulacionesActivas() }}</strong>
+      </div>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-icon">
+        <span class="material-symbols-rounded">task_alt</span>
+      </div>
+
+      <div>
+        <span>Finalizadas</span>
+        <strong>{{ formulacionesFinalizadas() }}</strong>
+      </div>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-icon">
+        <span class="material-symbols-rounded">vaccines</span>
+      </div>
+
+      <div>
+        <span>Medicamentos formulados</span>
+        <strong>{{ totalMedicamentos() }}</strong>
+      </div>
+    </article>
+
+  </section>
+
+
+  <!-- FILTROS -->
+  <section class="filters-card">
+
+    <div class="search-box">
+      <span class="material-symbols-rounded">search</span>
+
+      <input
+        type="text"
+        placeholder="Buscar por paciente, propietario, diagnóstico..."
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event)"
+      />
+    </div>
+
+    <div class="filter-control">
+
+      <label>Estado</label>
+
+      <select
+        [ngModel]="filtroEstado()"
+        (ngModelChange)="filtroEstado.set($event)"
+      >
+        <option value="Todos">Todos</option>
+        <option value="Activa">Activas</option>
+        <option value="Finalizada">Finalizadas</option>
+        <option value="Cancelada">Canceladas</option>
+      </select>
+
+    </div>
+
+    <div class="filter-control">
+
+      <label>Especie</label>
+
+      <select
+        [ngModel]="filtroEspecie()"
+        (ngModelChange)="filtroEspecie.set($event)"
+      >
+        <option value="Todas">Todas</option>
+        <option value="Canino">Caninos</option>
+        <option value="Felino">Felinos</option>
+        <option value="Otro">Otros</option>
+      </select>
+
+    </div>
+
+    <button
+      class="btn-filter-clear"
+      type="button"
+      (click)="limpiarFiltros()"
+    >
+      <span class="material-symbols-rounded">filter_alt_off</span>
+      Limpiar
+    </button>
+
+  </section>
+
+
+  <!-- TABLA -->
+  <section class="table-card">
+
+    <div class="table-header">
+      <div>
+        <h2>Formulaciones registradas</h2>
+        <p>
+          {{ formulacionesFiltradas().length }}
+          resultado(s) encontrado(s)
+        </p>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>FORMULACIÓN</th>
+            <th>PACIENTE</th>
+            <th>VETERINARIO</th>
+            <th>DIAGNÓSTICO</th>
+            <th>MEDICAMENTOS</th>
+            <th>FECHA</th>
+            <th>ESTADO</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          @for (formulacion of formulacionesFiltradas(); track formulacion.id) {
+
+            <tr>
+
+              <td>
+                <div class="form-number">
+                  <strong>{{ formulacion.numero }}</strong>
+                </div>
+              </td>
+
+              <td>
+                <div class="patient-cell">
+
+                  <div class="avatar">
+                    {{ obtenerIniciales(formulacion.paciente) }}
+                  </div>
+
+                  <div>
+                    <strong>{{ formulacion.paciente }}</strong>
+
+                    <span>
+                      {{ formulacion.especie }} · {{ formulacion.raza }}
+                    </span>
+                  </div>
+
+                </div>
+              </td>
+
+              <td>
+                <span class="text-main">
+                  {{ formulacion.veterinario }}
+                </span>
+              </td>
+
+              <td>
+                <span class="diagnostico">
+                  {{ formulacion.diagnostico }}
+                </span>
+              </td>
+
+              <td>
+                <span class="medicine-count">
+                  <span class="material-symbols-rounded">medication</span>
+                  {{ formulacion.medicamentos.length }}
+                </span>
+              </td>
+
+              <td>
+                {{ formulacion.fecha | date:'dd/MM/yyyy' }}
+              </td>
+
+              <td>
+
+                <span
+                  class="status-badge"
+                  [class.active]="formulacion.estado === 'Activa'"
+                  [class.finished]="formulacion.estado === 'Finalizada'"
+                  [class.cancelled]="formulacion.estado === 'Cancelada'"
+                >
+                  {{ formulacion.estado }}
+                </span>
+
+              </td>
+
+              <td>
+
+                <div class="row-actions">
+
+                  <button
+                    type="button"
+                    title="Ver formulación"
+                    (click)="abrirDetalle(formulacion)"
+                  >
+                    <span class="material-symbols-rounded">
+                      visibility
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    title="Editar"
+                    (click)="editarFormulacion(formulacion)"
+                  >
+                    <span class="material-symbols-rounded">
+                      edit
+                    </span>
+                  </button>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          }
+
+          @if (formulacionesFiltradas().length === 0) {
+
+            <tr>
+
+              <td colspan="8">
+
+                <div class="empty-state">
+
+                  <span class="material-symbols-rounded">
+                    medication
+                  </span>
+
+                  <h3>No se encontraron formulaciones</h3>
+
+                  <p>
+                    Intenta cambiar los filtros o registra una nueva
+                    formulación.
+                  </p>
+
+                  <button
+                    type="button"
+                    class="btn-primary"
+                    (click)="abrirNuevaFormulacion()"
+                  >
+                    Nueva formulación
+                  </button>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</section>
+
+
+<!-- ========================================================= -->
+<!-- MODAL DETALLE -->
+<!-- ========================================================= -->
+
+@if (modalDetalleAbierto() && formulacionSeleccionada(); as formulacion) {
+
+  <div class="modal-backdrop" (click)="cerrarDetalle()">
+
+    <div class="modal modal-large" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+
+        <div>
+          <span class="eyebrow">FORMULACIÓN</span>
+
+          <h2>{{ formulacion.numero }}</h2>
+
+          <p>
+            {{ formulacion.fecha | date:'dd/MM/yyyy' }}
+          </p>
+        </div>
+
+        <button
+          class="modal-close"
+          type="button"
+          (click)="cerrarDetalle()"
+        >
+          <span class="material-symbols-rounded">close</span>
+        </button>
+
+      </div>
+
+
+      <div class="modal-body">
+
+        <!-- PACIENTE -->
+        <section class="detail-section">
+
+          <div class="section-title">
+            <span class="material-symbols-rounded">pets</span>
+            <h3>Información del paciente</h3>
+          </div>
+
+          <div class="detail-grid">
+
+            <div>
+              <label>Paciente</label>
+              <strong>{{ formulacion.paciente }}</strong>
+            </div>
+
+            <div>
+              <label>Propietario</label>
+              <strong>{{ formulacion.propietario }}</strong>
+            </div>
+
+            <div>
+              <label>Especie</label>
+              <strong>{{ formulacion.especie }}</strong>
+            </div>
+
+            <div>
+              <label>Raza</label>
+              <strong>{{ formulacion.raza }}</strong>
+            </div>
+
+            <div>
+              <label>Edad</label>
+              <strong>{{ formulacion.edad }}</strong>
+            </div>
+
+            <div>
+              <label>Veterinario</label>
+              <strong>{{ formulacion.veterinario }}</strong>
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- DIAGNÓSTICO -->
+        <section class="detail-section">
+
+          <div class="section-title">
+            <span class="material-symbols-rounded">
+              medical_information
+            </span>
+
+            <h3>Información clínica</h3>
+          </div>
+
+          <div class="clinical-info">
+
+            <div>
+              <label>Diagnóstico</label>
+              <p>{{ formulacion.diagnostico }}</p>
+            </div>
+
+            <div>
+              <label>Observaciones</label>
+              <p>
+                {{ formulacion.observaciones || 'Sin observaciones.' }}
+              </p>
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- MEDICAMENTOS -->
+        <section class="detail-section">
+
+          <div class="section-title section-title-between">
+
+            <div class="title-with-icon">
+              <span class="material-symbols-rounded">medication</span>
+
+              <h3>
+                Medicamentos
+                <span>{{ formulacion.medicamentos.length }}</span>
+              </h3>
+            </div>
+
+          </div>
+
+
+          <div class="medications-list">
+
+            @for (
+              medicamento of formulacion.medicamentos;
+              track $index
+            ) {
+
+              <article class="medication-card">
+
+                <div class="medication-icon">
+                  <span class="material-symbols-rounded">
+                    medication
+                  </span>
+                </div>
+
+                <div class="medication-content">
+
+                  <div class="medication-title">
+
+                    <strong>
+                      {{ medicamento.nombre }}
+                    </strong>
+
+                    <span>
+                      {{ medicamento.concentracion }}
+                    </span>
+
+                  </div>
+
+                  <div class="medication-details">
+
+                    <span>
+                      <b>Presentación:</b>
+                      {{ medicamento.presentacion }}
+                    </span>
+
+                    <span>
+                      <b>Cantidad:</b>
+                      {{ medicamento.cantidad }}
+                      {{ medicamento.unidad }}
+                    </span>
+
+                    <span>
+                      <b>Frecuencia:</b>
+                      {{ medicamento.frecuencia }}
+                    </span>
+
+                    <span>
+                      <b>Duración:</b>
+                      {{ medicamento.duracion }}
+                    </span>
+
+                    <span>
+                      <b>Vía:</b>
+                      {{ medicamento.via }}
+                    </span>
+
+                  </div>
+
+                  @if (medicamento.indicaciones) {
+
+                    <div class="indications">
+
+                      <span class="material-symbols-rounded">
+                        info
+                      </span>
+
+                      {{ medicamento.indicaciones }}
+
+                    </div>
+
+                  }
+
+                </div>
+
+              </article>
+
+            }
+
+          </div>
+
+        </section>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <div class="footer-status">
+
+          <span>Estado:</span>
+
+          <span
+            class="status-badge"
+            [class.active]="formulacion.estado === 'Activa'"
+            [class.finished]="formulacion.estado === 'Finalizada'"
+            [class.cancelled]="formulacion.estado === 'Cancelada'"
+          >
+            {{ formulacion.estado }}
+          </span>
+
+        </div>
+
+        <div class="footer-actions">
+
+          @if (formulacion.estado === 'Activa') {
+
+            <button
+              class="btn-secondary"
+              type="button"
+              (click)="cambiarEstado(formulacion, 'Finalizada')"
+            >
+              <span class="material-symbols-rounded">
+                task_alt
+              </span>
+              Finalizar
+            </button>
+
+          }
+
+          @if (formulacion.estado !== 'Cancelada') {
+
+            <button
+              class="btn-danger-outline"
+              type="button"
+              (click)="cambiarEstado(formulacion, 'Cancelada')"
+            >
+              <span class="material-symbols-rounded">
+                cancel
+              </span>
+              Cancelar
+            </button>
+
+          }
+
+          <button
+            class="btn-secondary"
+            type="button"
+            (click)="editarFormulacion(formulacion)"
+          >
+            <span class="material-symbols-rounded">edit</span>
+            Editar
+          </button>
+
+          <button
+            class="btn-danger"
+            type="button"
+            (click)="eliminarFormulacion(formulacion)"
+          >
+            <span class="material-symbols-rounded">delete</span>
+            Eliminar
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}
+
+
+<!-- ========================================================= -->
+<!-- MODAL NUEVA / EDITAR FORMULACIÓN -->
+<!-- ========================================================= -->
+
+@if (modalFormularioAbierto()) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarFormulario()"
+  >
+
+    <div
+      class="modal modal-extra-large"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="modal-header">
+
+        <div>
+
+          <span class="eyebrow">
+            {{ modoEdicion() ? 'EDITAR' : 'NUEVA' }}
+          </span>
+
+          <h2>
+            {{ modoEdicion()
+              ? 'Editar formulación'
+              : 'Nueva formulación' }}
+          </h2>
+
+          <p>
+            Registra la información clínica y los medicamentos.
+          </p>
+
+        </div>
+
+        <button
+          class="modal-close"
+          type="button"
+          (click)="cerrarFormulario()"
+        >
+          <span class="material-symbols-rounded">close</span>
+        </button>
+
+      </div>
+
+
+      <div class="modal-body">
+
+        <!-- DATOS DEL PACIENTE -->
+        <section class="form-section">
+
+          <div class="section-title">
+
+            <span class="material-symbols-rounded">
+              pets
+            </span>
+
+            <h3>Paciente</h3>
+
+          </div>
+
+
+          <div class="form-grid">
+
+            <div class="form-group">
+
+              <label>Paciente *</label>
+
+              <input
+                type="text"
+                placeholder="Nombre del paciente"
+                [ngModel]="formulario().paciente"
+                (ngModelChange)="actualizarFormulario('paciente', $event)"
+              />
+
+            </div>
+
+            <div class="form-group">
+
+              <label>Propietario *</label>
+
+              <input
+                type="text"
+                placeholder="Nombre del propietario"
+                [ngModel]="formulario().propietario"
+                (ngModelChange)="actualizarFormulario('propietario', $event)"
+              />
+
+            </div>
+
+            <div class="form-group">
+
+              <label>Especie</label>
+
+              <select
+                [ngModel]="formulario().especie"
+                (ngModelChange)="actualizarFormulario('especie', $event)"
+              >
+                <option value="Canino">Canino</option>
+                <option value="Felino">Felino</option>
+                <option value="Otro">Otro</option>
+              </select>
+
+            </div>
+
+            <div class="form-group">
+
+              <label>Raza</label>
+
+              <input
+                type="text"
+                placeholder="Raza"
+                [ngModel]="formulario().raza"
+                (ngModelChange)="actualizarFormulario('raza', $event)"
+              />
+
+            </div>
+
+            <div class="form-group">
+
+              <label>Edad</label>
+
+              <input
+                type="text"
+                placeholder="Ej. 5 años"
+                [ngModel]="formulario().edad"
+                (ngModelChange)="actualizarFormulario('edad', $event)"
+              />
+
+            </div>
+
+            <div class="form-group">
+
+              <label>Veterinario *</label>
+
+              <input
+                type="text"
+                placeholder="Veterinario responsable"
+                [ngModel]="formulario().veterinario"
+                (ngModelChange)="actualizarFormulario('veterinario', $event)"
+              />
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- INFORMACIÓN CLÍNICA -->
+        <section class="form-section">
+
+          <div class="section-title">
+
+            <span class="material-symbols-rounded">
+              medical_information
+            </span>
+
+            <h3>Información clínica</h3>
+
+          </div>
+
+
+          <div class="form-grid">
+
+            <div class="form-group full">
+
+              <label>Diagnóstico *</label>
+
+              <input
+                type="text"
+                placeholder="Diagnóstico"
+                [ngModel]="formulario().diagnostico"
+                (ngModelChange)="actualizarFormulario('diagnostico', $event)"
+              />
+
+            </div>
+
+            <div class="form-group full">
+
+              <label>Observaciones</label>
+
+              <textarea
+                rows="3"
+                placeholder="Indicaciones u observaciones generales..."
+                [ngModel]="formulario().observaciones"
+                (ngModelChange)="actualizarFormulario('observaciones', $event)"
+              ></textarea>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- MEDICAMENTOS -->
+        <section class="form-section">
+
+          <div class="section-title section-title-between">
+
+            <div class="title-with-icon">
+
+              <span class="material-symbols-rounded">
+                medication
+              </span>
+
+              <h3>
+                Medicamentos
+                <span>{{ medicamentosTemporales().length }}</span>
+              </h3>
+
+            </div>
+
+            <button
+              type="button"
+              class="btn-secondary"
+              (click)="abrirNuevoMedicamento()"
+            >
+              <span class="material-symbols-rounded">add</span>
+              Agregar medicamento
+            </button>
+
+          </div>
+
+
+          @if (medicamentosTemporales().length === 0) {
+
+            <div class="empty-medications">
+
+              <span class="material-symbols-rounded">
+                medication
+              </span>
+
+              <strong>No hay medicamentos agregados</strong>
+
+              <p>
+                Agrega al menos un medicamento para guardar
+                la formulación.
+              </p>
+
+              <button
+                type="button"
+                class="btn-primary"
+                (click)="abrirNuevoMedicamento()"
+              >
+                Agregar medicamento
+              </button>
+
+            </div>
+
+          } @else {
+
+            <div class="temporary-medications">
+
+              @for (
+                medicamento of medicamentosTemporales();
+                track $index
+              ) {
+
+                <article class="temporary-medication">
+
+                  <div class="medication-icon">
+
+                    <span class="material-symbols-rounded">
+                      medication
+                    </span>
+
+                  </div>
+
+                  <div class="temporary-medication-content">
+
+                    <strong>
+                      {{ medicamento.nombre }}
+                    </strong>
+
+                    <span>
+                      {{ medicamento.concentracion }}
+                      ·
+                      {{ medicamento.presentacion }}
+                    </span>
+
+                    <small>
+                      {{ medicamento.frecuencia }}
+                      ·
+                      {{ medicamento.duracion }}
+                      ·
+                      {{ medicamento.via }}
+                    </small>
+
+                  </div>
+
+                  <div class="temporary-actions">
+
+                    <button
+                      type="button"
+                      title="Editar medicamento"
+                      (click)="editarMedicamento($index)"
+                    >
+                      <span class="material-symbols-rounded">
+                        edit
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      title="Eliminar medicamento"
+                      (click)="eliminarMedicamento($index)"
+                    >
+                      <span class="material-symbols-rounded">
+                        delete
+                      </span>
+                    </button>
+
+                  </div>
+
+                </article>
+
+              }
+
+            </div>
+
+          }
+
+        </section>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="cerrarFormulario()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="
+            !formulario().paciente ||
+            !formulario().propietario ||
+            !formulario().veterinario ||
+            !formulario().diagnostico ||
+            medicamentosTemporales().length === 0
+          "
+          (click)="guardarFormulacion()"
+        >
+          <span class="material-symbols-rounded">
+            save
+          </span>
+
+          {{ modoEdicion()
+            ? 'Guardar cambios'
+            : 'Guardar formulación' }}
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}
+
+
+<!-- ========================================================= -->
+<!-- MODAL MEDICAMENTO -->
+<!-- ========================================================= -->
+
+@if (modalMedicamentoAbierto()) {
+
+  <div
+    class="modal-backdrop modal-nested"
+    (click)="modalMedicamentoAbierto.set(false)"
+  >
+
+    <div
+      class="modal modal-medium"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="modal-header">
+
+        <div>
+
+          <span class="eyebrow">MEDICAMENTO</span>
+
+          <h2>Agregar medicamento</h2>
+
+          <p>
+            Define la dosis y las indicaciones.
+          </p>
+
+        </div>
+
+        <button
+          class="modal-close"
+          type="button"
+          (click)="modalMedicamentoAbierto.set(false)"
+        >
+          <span class="material-symbols-rounded">close</span>
+        </button>
+
+      </div>
+
+
+      <div class="modal-body">
+
+        <div class="form-grid">
+
+          <div class="form-group full">
+
+            <label>Medicamento *</label>
+
+            <input
+              type="text"
+              placeholder="Nombre del medicamento"
+              [ngModel]="medicamentoFormulario().nombre"
+              (ngModelChange)="actualizarMedicamento('nombre', $event)"
+            />
+
+          </div>
+
+          <div class="form-group">
+
+            <label>Concentración *</label>
+
+            <input
+              type="text"
+              placeholder="Ej. 50 mg"
+              [ngModel]="medicamentoFormulario().concentracion"
+              (ngModelChange)="actualizarMedicamento('concentracion', $event)"
+            />
+
+          </div>
+
+          <div class="form-group">
+
+            <label>Presentación</label>
+
+            <input
+              type="text"
+              placeholder="Ej. Tabletas"
+              [ngModel]="medicamentoFormulario().presentacion"
+              (ngModelChange)="actualizarMedicamento('presentacion', $event)"
+            />
+
+          </div>
+
+          <div class="form-group">
+
+            <label>Cantidad</label>
+
+            <input
+              type="number"
+              min="1"
+              [ngModel]="medicamentoFormulario().cantidad"
+              (ngModelChange)="actualizarMedicamento('cantidad', $event)"
+            />
+
+          </div>
+
+          <div class="form-group">
+
+            <label>Unidad</label>
+
+            <select
+              [ngModel]="medicamentoFormulario().unidad"
+              (ngModelChange)="actualizarMedicamento('unidad', $event)"
+            >
+              <option value="tableta">Tableta</option>
+              <option value="cápsula">Cápsula</option>
+              <option value="ml">ml</option>
+              <option value="gota">Gota</option>
+              <option value="aplicación">Aplicación</option>
+              <option value="dosis">Dosis</option>
+            </select>
+
+          </div>
+
+          <div class="form-group">
+
+            <label>Frecuencia *</label>
+
+            <select
+              [ngModel]="medicamentoFormulario().frecuencia"
+              (ngModelChange)="actualizarMedicamento('frecuencia', $event)"
+            >
+              <option value="">Seleccionar</option>
+              <option value="Dosis única">Dosis única</option>
+              <option value="Cada 4 horas">Cada 4 horas</option>
+              <option value="Cada 6 horas">Cada 6 horas</option>
+              <option value="Cada 8 horas">Cada 8 horas</option>
+              <option value="Cada 12 horas">Cada 12 horas</option>
+              <option value="Cada 24 horas">Cada 24 horas</option>
+            </select>
+
+          </div>
+
+          <div class="form-group">
+
+            <label>Duración *</label>
+
+            <input
+              type="text"
+              placeholder="Ej. 7 días"
+              [ngModel]="medicamentoFormulario().duracion"
+              (ngModelChange)="actualizarMedicamento('duracion', $event)"
+            />
+
+          </div>
+
+          <div class="form-group">
+
+            <label>Vía</label>
+
+            <select
+              [ngModel]="medicamentoFormulario().via"
+              (ngModelChange)="actualizarMedicamento('via', $event)"
+            >
+              <option value="Oral">Oral</option>
+              <option value="Tópica">Tópica</option>
+              <option value="Ótica">Ótica</option>
+              <option value="Oftálmica">Oftálmica</option>
+              <option value="Subcutánea">Subcutánea</option>
+              <option value="Intramuscular">Intramuscular</option>
+              <option value="Intravenosa">Intravenosa</option>
+            </select>
+
+          </div>
+
+          <div class="form-group full">
+
+            <label>Indicaciones</label>
+
+            <textarea
+              rows="3"
+              placeholder="Indicaciones específicas..."
+              [ngModel]="medicamentoFormulario().indicaciones"
+              (ngModelChange)="actualizarMedicamento('indicaciones', $event)"
+            ></textarea>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="modalMedicamentoAbierto.set(false)"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="
+            !medicamentoFormulario().nombre ||
+            !medicamentoFormulario().concentracion ||
+            !medicamentoFormulario().frecuencia ||
+            !medicamentoFormulario().duracion
+          "
+          (click)="guardarMedicamento()"
+        >
+          <span class="material-symbols-rounded">add</span>
+          Agregar medicamento
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}

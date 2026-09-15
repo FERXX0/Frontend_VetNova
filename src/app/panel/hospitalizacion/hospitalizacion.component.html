@@ -1,0 +1,1436 @@
+<div class="modulo-container">
+
+  <!-- ENCABEZADO -->
+  <header class="page-header">
+
+    <div>
+      <div class="breadcrumb">
+        Módulos / Hospitalización
+      </div>
+
+      <h1>Hospitalización</h1>
+
+      <p>
+        Gestiona el ingreso, seguimiento y salida de pacientes hospitalizados.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="btn-primary"
+      (click)="abrirNuevaHospitalizacion()"
+    >
+      + Nueva hospitalización
+    </button>
+
+  </header>
+
+
+  <!-- ESTADÍSTICAS -->
+  <section class="stats-grid">
+
+    <div class="stat-card">
+
+      <div class="stat-icon hospitalizados">
+        🏥
+      </div>
+
+      <div>
+        <span>Hospitalizados</span>
+        <strong>{{ totalHospitalizados() }}</strong>
+      </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+      <div class="stat-icon observacion">
+        👁️
+      </div>
+
+      <div>
+        <span>En observación</span>
+        <strong>{{ totalObservacion() }}</strong>
+      </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+      <div class="stat-icon salida">
+        ✓
+      </div>
+
+      <div>
+        <span>Listos para salida</span>
+        <strong>{{ totalListosSalida() }}</strong>
+      </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+      <div class="stat-icon critico">
+        ⚠️
+      </div>
+
+      <div>
+        <span>Alta prioridad</span>
+        <strong>{{ totalCriticos() }}</strong>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- RESUMEN -->
+  <section class="summary-card">
+
+    <div class="summary-title">
+      <div>
+        <h2>Estado de hospitalización</h2>
+        <p>Resumen de los pacientes actualmente registrados.</p>
+      </div>
+
+      <span class="total-badge">
+        {{ hospitalizaciones().length }} pacientes
+      </span>
+    </div>
+
+    <div class="summary-progress">
+
+      <div class="progress-item">
+
+        <div class="progress-label">
+          <span>Hospitalizados</span>
+          <strong>{{ totalHospitalizados() }}</strong>
+        </div>
+
+        <div class="progress-bar">
+          <div
+            class="progress-fill hospitalizados"
+            [style.width.%]="
+              hospitalizaciones().length
+                ? (totalHospitalizados() / hospitalizaciones().length) * 100
+                : 0
+            "
+          ></div>
+        </div>
+
+      </div>
+
+
+      <div class="progress-item">
+
+        <div class="progress-label">
+          <span>En observación</span>
+          <strong>{{ totalObservacion() }}</strong>
+        </div>
+
+        <div class="progress-bar">
+          <div
+            class="progress-fill observacion"
+            [style.width.%]="
+              hospitalizaciones().length
+                ? (totalObservacion() / hospitalizaciones().length) * 100
+                : 0
+            "
+          ></div>
+        </div>
+
+      </div>
+
+
+      <div class="progress-item">
+
+        <div class="progress-label">
+          <span>Listos para salida</span>
+          <strong>{{ totalListosSalida() }}</strong>
+        </div>
+
+        <div class="progress-bar">
+          <div
+            class="progress-fill salida"
+            [style.width.%]="
+              hospitalizaciones().length
+                ? (totalListosSalida() / hospitalizaciones().length) * 100
+                : 0
+            "
+          ></div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- FILTROS -->
+  <section class="filters-card">
+
+    <div class="search-box">
+
+      <span class="search-icon">⌕</span>
+
+      <input
+        type="text"
+        placeholder="Buscar paciente, propietario, diagnóstico..."
+        [value]="busqueda()"
+        (input)="busqueda.set($any($event.target).value)"
+      />
+
+    </div>
+
+
+    <select
+      [value]="filtroEstado()"
+      (change)="filtroEstado.set($any($event.target).value)"
+    >
+
+      <option value="Todos">
+        Todos los estados
+      </option>
+
+      <option value="Hospitalizado">
+        Hospitalizado
+      </option>
+
+      <option value="En observación">
+        En observación
+      </option>
+
+      <option value="Listo para salida">
+        Listo para salida
+      </option>
+
+      <option value="Finalizado">
+        Finalizado
+      </option>
+
+    </select>
+
+
+    <select
+      [value]="filtroPrioridad()"
+      (change)="filtroPrioridad.set($any($event.target).value)"
+    >
+
+      <option value="Todas">
+        Todas las prioridades
+      </option>
+
+      <option value="Baja">
+        Baja
+      </option>
+
+      <option value="Media">
+        Media
+      </option>
+
+      <option value="Alta">
+        Alta
+      </option>
+
+      <option value="Crítica">
+        Crítica
+      </option>
+
+    </select>
+
+
+    <select
+      [value]="filtroEspecie()"
+      (change)="filtroEspecie.set($any($event.target).value)"
+    >
+
+      <option value="Todas">
+        Todas las especies
+      </option>
+
+      <option value="Canino">
+        Caninos
+      </option>
+
+      <option value="Felino">
+        Felinos
+      </option>
+
+    </select>
+
+
+    <button
+      type="button"
+      class="btn-secondary"
+      (click)="limpiarFiltros()"
+    >
+      Limpiar
+    </button>
+
+  </section>
+
+
+  <!-- TABLA -->
+  <section class="table-card">
+
+    <div class="table-header">
+
+      <div>
+        <h2>Pacientes hospitalizados</h2>
+
+        <span>
+          {{ hospitalizacionesFiltradas().length }}
+          registros encontrados
+        </span>
+      </div>
+
+    </div>
+
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>Paciente</th>
+            <th>Motivo / Diagnóstico</th>
+            <th>Ingreso</th>
+            <th>Salida estimada</th>
+            <th>Ubicación</th>
+            <th>Prioridad</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+
+          </tr>
+
+        </thead>
+
+
+        <tbody>
+
+          @for (
+            item of hospitalizacionesFiltradas();
+            track item.id
+          ) {
+
+            <tr>
+
+              <!-- PACIENTE -->
+              <td>
+
+                <div class="patient-cell">
+
+                  <div class="patient-avatar">
+                    {{ item.paciente.charAt(0) }}
+                  </div>
+
+                  <div>
+
+                    <strong>
+                      {{ item.paciente }}
+                    </strong>
+
+                    <small>
+                      {{ item.especie }}
+                      ·
+                      {{ item.raza }}
+                    </small>
+
+                    <small>
+                      {{ item.propietario }}
+                    </small>
+
+                  </div>
+
+                </div>
+
+              </td>
+
+
+              <!-- MOTIVO -->
+              <td>
+
+                <div class="diagnosis-cell">
+
+                  <strong>
+                    {{ item.motivo }}
+                  </strong>
+
+                  <small>
+                    {{ item.diagnostico }}
+                  </small>
+
+                </div>
+
+              </td>
+
+
+              <!-- INGRESO -->
+              <td>
+
+                <div class="date-cell">
+
+                  <strong>
+                    {{ formatearFecha(item.fechaIngreso) }}
+                  </strong>
+
+                  <small>
+                    {{ item.horaIngreso }}
+                  </small>
+
+                </div>
+
+              </td>
+
+
+              <!-- SALIDA -->
+              <td>
+                {{ formatearFecha(item.fechaSalidaEstimada) }}
+              </td>
+
+
+              <!-- UBICACIÓN -->
+              <td>
+
+                <span class="location-badge">
+                  🛏️ {{ item.ubicacion }}
+                </span>
+
+              </td>
+
+
+              <!-- PRIORIDAD -->
+              <td>
+
+                <span
+                  class="priority-badge"
+                  [ngClass]="obtenerClasePrioridad(item.prioridad)"
+                >
+                  {{ item.prioridad }}
+                </span>
+
+              </td>
+
+
+              <!-- ESTADO -->
+              <td>
+
+                <span
+                  class="status-badge"
+                  [ngClass]="obtenerClaseEstado(item.estado)"
+                >
+                  {{ item.estado }}
+                </span>
+
+              </td>
+
+
+              <!-- ACCIONES -->
+              <td>
+
+                <div class="actions">
+
+                  <button
+                    type="button"
+                    class="action-view"
+                    (click)="abrirDetalle(item)"
+                  >
+                    Ver
+                  </button>
+
+                  <button
+                    type="button"
+                    class="action-edit"
+                    (click)="editarHospitalizacion(item)"
+                  >
+                    Editar
+                  </button>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          }
+
+
+          @if (
+            hospitalizacionesFiltradas().length === 0
+          ) {
+
+            <tr>
+
+              <td
+                colspan="8"
+                class="empty-state"
+              >
+
+                <div>
+
+                  <span>🔎</span>
+
+                  <strong>
+                    No encontramos hospitalizaciones
+                  </strong>
+
+                  <p>
+                    Intenta cambiar los filtros de búsqueda.
+                  </p>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- MODAL DETALLE -->
+<!-- ====================================================== -->
+
+@if (
+  modalDetalleAbierto() &&
+  hospitalizacionSeleccionada()
+) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarDetalle()"
+  >
+
+    <div
+      class="modal modal-large"
+      (click)="$event.stopPropagation()"
+    >
+
+      <!-- HEADER -->
+      <div class="modal-header">
+
+        <div class="patient-header">
+
+          <div class="patient-avatar large">
+            {{ hospitalizacionSeleccionada()!.paciente.charAt(0) }}
+          </div>
+
+          <div>
+
+            <div class="patient-title-row">
+
+              <h2>
+                {{ hospitalizacionSeleccionada()!.paciente }}
+              </h2>
+
+              <span
+                class="status-badge"
+                [ngClass]="
+                  obtenerClaseEstado(
+                    hospitalizacionSeleccionada()!.estado
+                  )
+                "
+              >
+                {{ hospitalizacionSeleccionada()!.estado }}
+              </span>
+
+            </div>
+
+            <p>
+              {{ hospitalizacionSeleccionada()!.especie }}
+              ·
+              {{ hospitalizacionSeleccionada()!.raza }}
+              ·
+              {{ hospitalizacionSeleccionada()!.edad }}
+            </p>
+
+            <small>
+              Propietario:
+              {{ hospitalizacionSeleccionada()!.propietario }}
+            </small>
+
+          </div>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="close-button"
+          (click)="cerrarDetalle()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <!-- INFORMACIÓN GENERAL -->
+      <section class="detail-section">
+
+        <div class="section-heading">
+
+          <div>
+
+            <h3>Información de hospitalización</h3>
+
+            <p>
+              Datos generales del ingreso.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="detail-grid">
+
+          <div class="detail-item">
+
+            <span>Motivo</span>
+
+            <strong>
+              {{ hospitalizacionSeleccionada()!.motivo }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>Diagnóstico</span>
+
+            <strong>
+              {{ hospitalizacionSeleccionada()!.diagnostico }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>Fecha de ingreso</span>
+
+            <strong>
+              {{
+                formatearFecha(
+                  hospitalizacionSeleccionada()!.fechaIngreso
+                )
+              }}
+              ·
+              {{ hospitalizacionSeleccionada()!.horaIngreso }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>Salida estimada</span>
+
+            <strong>
+              {{
+                formatearFecha(
+                  hospitalizacionSeleccionada()!.fechaSalidaEstimada
+                )
+              }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>Veterinario responsable</span>
+
+            <strong>
+              {{ hospitalizacionSeleccionada()!.veterinario }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>Ubicación</span>
+
+            <strong>
+              🛏️
+              {{ hospitalizacionSeleccionada()!.ubicacion }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>Prioridad</span>
+
+            <span
+              class="priority-badge"
+              [ngClass]="
+                obtenerClasePrioridad(
+                  hospitalizacionSeleccionada()!.prioridad
+                )
+              "
+            >
+              {{ hospitalizacionSeleccionada()!.prioridad }}
+            </span>
+
+          </div>
+
+        </div>
+
+
+        @if (
+          hospitalizacionSeleccionada()!.observaciones
+        ) {
+
+          <div class="observations">
+
+            <span>Observaciones</span>
+
+            <p>
+              {{ hospitalizacionSeleccionada()!.observaciones }}
+            </p>
+
+          </div>
+
+        }
+
+      </section>
+
+
+      <!-- EVOLUCIONES -->
+      <section class="detail-section">
+
+        <div class="section-heading">
+
+          <div>
+
+            <h3>Seguimiento y evoluciones</h3>
+
+            <p>
+              {{ hospitalizacionSeleccionada()!.evoluciones.length }}
+              registros de evolución.
+            </p>
+
+          </div>
+
+
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="abrirNuevaEvolucion()"
+          >
+            + Registrar evolución
+          </button>
+
+        </div>
+
+
+        @if (
+          hospitalizacionSeleccionada()!.evoluciones.length > 0
+        ) {
+
+          <div class="timeline">
+
+            @for (
+              evolucion of hospitalizacionSeleccionada()!.evoluciones;
+              track evolucion.id
+            ) {
+
+              <div class="timeline-item">
+
+                <div class="timeline-dot"></div>
+
+                <div class="timeline-content">
+
+                  <div class="timeline-header">
+
+                    <div>
+
+                      <strong>
+                        {{ evolucion.estado }}
+                      </strong>
+
+                      <span>
+                        {{ evolucion.veterinario }}
+                      </span>
+
+                    </div>
+
+                    <time>
+                      {{ formatearFecha(evolucion.fecha) }}
+                      ·
+                      {{ evolucion.hora }}
+                    </time>
+
+                  </div>
+
+                  <p>
+                    {{ evolucion.observaciones }}
+                  </p>
+
+                </div>
+
+              </div>
+
+            }
+
+          </div>
+
+        } @else {
+
+          <div class="section-empty">
+
+            <span>📋</span>
+
+            <strong>
+              No hay evoluciones registradas
+            </strong>
+
+            <p>
+              Registra la primera evolución del paciente.
+            </p>
+
+          </div>
+
+        }
+
+      </section>
+
+
+      <!-- FOOTER -->
+      <div class="modal-footer">
+
+        <div class="footer-left">
+
+          @if (
+            hospitalizacionSeleccionada()!.estado !== 'Finalizado'
+          ) {
+
+            <button
+              type="button"
+              class="btn-danger-outline"
+              (click)="
+                registrarSalida(
+                  hospitalizacionSeleccionada()!
+                )
+              "
+            >
+              Registrar salida
+            </button>
+
+          }
+
+        </div>
+
+
+        <div class="footer-right">
+
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="cerrarDetalle()"
+          >
+            Cerrar
+          </button>
+
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="
+              editarHospitalizacion(
+                hospitalizacionSeleccionada()!
+              )
+            "
+          >
+            Editar hospitalización
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}
+
+
+<!-- ====================================================== -->
+<!-- MODAL NUEVA / EDITAR HOSPITALIZACIÓN -->
+<!-- ====================================================== -->
+
+@if (modalHospitalizacionAbierto()) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarHospitalizacion()"
+  >
+
+    <div
+      class="modal modal-form"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="modal-header">
+
+        <div>
+
+          <h2>
+            {{
+              modoEdicion()
+                ? 'Editar hospitalización'
+                : 'Nueva hospitalización'
+            }}
+          </h2>
+
+          <p>
+            Registra la información del paciente y su ingreso.
+          </p>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="close-button"
+          (click)="cerrarHospitalizacion()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="form-grid">
+
+        <!-- PACIENTE -->
+        <div class="form-group">
+
+          <label>Paciente *</label>
+
+          <input
+            type="text"
+            [value]="formulario().paciente"
+            (input)="
+              actualizarFormulario(
+                'paciente',
+                $any($event.target).value
+              )
+            "
+            placeholder="Nombre del paciente"
+          />
+
+        </div>
+
+
+        <!-- PROPIETARIO -->
+        <div class="form-group">
+
+          <label>Propietario *</label>
+
+          <input
+            type="text"
+            [value]="formulario().propietario"
+            (input)="
+              actualizarFormulario(
+                'propietario',
+                $any($event.target).value
+              )
+            "
+            placeholder="Nombre del propietario"
+          />
+
+        </div>
+
+
+        <!-- ESPECIE -->
+        <div class="form-group">
+
+          <label>Especie</label>
+
+          <select
+            [value]="formulario().especie"
+            (change)="
+              actualizarFormulario(
+                'especie',
+                $any($event.target).value
+              )
+            "
+          >
+
+            <option value="Canino">
+              Canino
+            </option>
+
+            <option value="Felino">
+              Felino
+            </option>
+
+            <option value="Ave">
+              Ave
+            </option>
+
+            <option value="Otro">
+              Otro
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <!-- RAZA -->
+        <div class="form-group">
+
+          <label>Raza</label>
+
+          <input
+            type="text"
+            [value]="formulario().raza"
+            (input)="
+              actualizarFormulario(
+                'raza',
+                $any($event.target).value
+              )
+            "
+            placeholder="Raza"
+          />
+
+        </div>
+
+
+        <!-- EDAD -->
+        <div class="form-group">
+
+          <label>Edad</label>
+
+          <input
+            type="text"
+            [value]="formulario().edad"
+            (input)="
+              actualizarFormulario(
+                'edad',
+                $any($event.target).value
+              )
+            "
+            placeholder="Ej. 4 años"
+          />
+
+        </div>
+
+
+        <!-- MOTIVO -->
+        <div class="form-group">
+
+          <label>Motivo de hospitalización *</label>
+
+          <input
+            type="text"
+            [value]="formulario().motivo"
+            (input)="
+              actualizarFormulario(
+                'motivo',
+                $any($event.target).value
+              )
+            "
+            placeholder="Ej. Postoperatorio"
+          />
+
+        </div>
+
+
+        <!-- DIAGNÓSTICO -->
+        <div class="form-group full">
+
+          <label>Diagnóstico</label>
+
+          <input
+            type="text"
+            [value]="formulario().diagnostico"
+            (input)="
+              actualizarFormulario(
+                'diagnostico',
+                $any($event.target).value
+              )
+            "
+            placeholder="Diagnóstico del paciente"
+          />
+
+        </div>
+
+
+        <!-- FECHA INGRESO -->
+        <div class="form-group">
+
+          <label>Fecha de ingreso *</label>
+
+          <input
+            type="date"
+            [value]="formulario().fechaIngreso"
+            (input)="
+              actualizarFormulario(
+                'fechaIngreso',
+                $any($event.target).value
+              )
+            "
+          />
+
+        </div>
+
+
+        <!-- HORA -->
+        <div class="form-group">
+
+          <label>Hora de ingreso *</label>
+
+          <input
+            type="time"
+            [value]="formulario().horaIngreso"
+            (input)="
+              actualizarFormulario(
+                'horaIngreso',
+                $any($event.target).value
+              )
+            "
+          />
+
+        </div>
+
+
+        <!-- SALIDA -->
+        <div class="form-group">
+
+          <label>Salida estimada *</label>
+
+          <input
+            type="date"
+            [value]="formulario().fechaSalidaEstimada"
+            (input)="
+              actualizarFormulario(
+                'fechaSalidaEstimada',
+                $any($event.target).value
+              )
+            "
+          />
+
+        </div>
+
+
+        <!-- VETERINARIO -->
+        <div class="form-group">
+
+          <label>Veterinario responsable *</label>
+
+          <input
+            type="text"
+            [value]="formulario().veterinario"
+            (input)="
+              actualizarFormulario(
+                'veterinario',
+                $any($event.target).value
+              )
+            "
+            placeholder="Nombre del veterinario"
+          />
+
+        </div>
+
+
+        <!-- UBICACIÓN -->
+        <div class="form-group">
+
+          <label>Ubicación *</label>
+
+          <input
+            type="text"
+            [value]="formulario().ubicacion"
+            (input)="
+              actualizarFormulario(
+                'ubicacion',
+                $any($event.target).value
+              )
+            "
+            placeholder="Ej. Jaula A-01"
+          />
+
+        </div>
+
+
+        <!-- PRIORIDAD -->
+        <div class="form-group">
+
+          <label>Prioridad</label>
+
+          <select
+            [value]="formulario().prioridad"
+            (change)="
+              actualizarFormulario(
+                'prioridad',
+                $any($event.target).value
+              )
+            "
+          >
+
+            <option value="Baja">
+              Baja
+            </option>
+
+            <option value="Media">
+              Media
+            </option>
+
+            <option value="Alta">
+              Alta
+            </option>
+
+            <option value="Crítica">
+              Crítica
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <!-- ESTADO -->
+        <div class="form-group">
+
+          <label>Estado</label>
+
+          <select
+            [value]="formulario().estado"
+            (change)="
+              actualizarFormulario(
+                'estado',
+                $any($event.target).value
+              )
+            "
+          >
+
+            <option value="Hospitalizado">
+              Hospitalizado
+            </option>
+
+            <option value="En observación">
+              En observación
+            </option>
+
+            <option value="Listo para salida">
+              Listo para salida
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <!-- OBSERVACIONES -->
+        <div class="form-group full">
+
+          <label>Observaciones</label>
+
+          <textarea
+            rows="4"
+            [value]="formulario().observaciones"
+            (input)="
+              actualizarFormulario(
+                'observaciones',
+                $any($event.target).value
+              )
+            "
+            placeholder="Observaciones del ingreso..."
+          ></textarea>
+
+        </div>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="cerrarHospitalizacion()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="guardarHospitalizacion()"
+        >
+          {{
+            modoEdicion()
+              ? 'Guardar cambios'
+              : 'Registrar hospitalización'
+          }}
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}
+
+
+<!-- ====================================================== -->
+<!-- MODAL EVOLUCIÓN -->
+<!-- ====================================================== -->
+
+@if (modalEvolucionAbierto()) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarEvolucion()"
+  >
+
+    <div
+      class="modal modal-small"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="modal-header">
+
+        <div>
+
+          <h2>Registrar evolución</h2>
+
+          <p>
+            {{ hospitalizacionSeleccionada()?.paciente }}
+          </p>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="close-button"
+          (click)="cerrarEvolucion()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="form-grid single">
+
+        <div class="form-group">
+
+          <label>Estado del paciente *</label>
+
+          <select
+            [value]="formularioEvolucion().estado"
+            (change)="
+              actualizarFormularioEvolucion(
+                'estado',
+                $any($event.target).value
+              )
+            "
+          >
+
+            <option value="">
+              Seleccionar estado
+            </option>
+
+            <option value="Estable">
+              Estable
+            </option>
+
+            <option value="Mejorando">
+              Mejorando
+            </option>
+
+            <option value="Mejorado">
+              Mejorado
+            </option>
+
+            <option value="Sin cambios">
+              Sin cambios
+            </option>
+
+            <option value="Empeorando">
+              Empeorando
+            </option>
+
+            <option value="Crítico">
+              Crítico
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label>Observaciones *</label>
+
+          <textarea
+            rows="6"
+            [value]="formularioEvolucion().observaciones"
+            (input)="
+              actualizarFormularioEvolucion(
+                'observaciones',
+                $any($event.target).value
+              )
+            "
+            placeholder="Describe la evolución del paciente..."
+          ></textarea>
+
+        </div>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="cerrarEvolucion()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="guardarEvolucion()"
+        >
+          Guardar evolución
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}

@@ -1,0 +1,925 @@
+<div class="modulo-container">
+
+  <!-- ENCABEZADO -->
+  <header class="page-header">
+
+    <div>
+      <div class="breadcrumb">
+        Módulos / Vacunación y Desparasitación
+      </div>
+
+      <h1>Vacunación y Desparasitación</h1>
+
+      <p>
+        Gestiona los esquemas de vacunación y
+        desparasitación de los pacientes.
+      </p>
+    </div>
+
+  </header>
+
+
+  <!-- ESTADÍSTICAS -->
+  <section class="stats-grid">
+
+    <div class="stat-card">
+      <div class="stat-icon pacientes">
+        🐾
+      </div>
+
+      <div>
+        <span>Pacientes</span>
+        <strong>{{ pacientes().length }}</strong>
+      </div>
+    </div>
+
+
+    <div class="stat-card">
+      <div class="stat-icon vacunas">
+        💉
+      </div>
+
+      <div>
+        <span>Vacunas aplicadas</span>
+        <strong>{{ totalVacunas() }}</strong>
+      </div>
+    </div>
+
+
+    <div class="stat-card">
+      <div class="stat-icon desparasitacion">
+        🧪
+      </div>
+
+      <div>
+        <span>Desparasitaciones</span>
+        <strong>{{ totalDesparasitaciones() }}</strong>
+      </div>
+    </div>
+
+
+    <div class="stat-card">
+      <div class="stat-icon alerta">
+        ⚠️
+      </div>
+
+      <div>
+        <span>Requieren atención</span>
+        <strong>
+          {{ pacientesProximos() + pacientesVencidos() }}
+        </strong>
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- ESTADOS -->
+  <section class="status-summary">
+
+    <div class="status-item">
+      <span class="status-dot activo"></span>
+      <span>Al día</span>
+      <strong>{{ pacientesAlDia() }}</strong>
+    </div>
+
+    <div class="status-item">
+      <span class="status-dot proximo"></span>
+      <span>Próximas</span>
+      <strong>{{ pacientesProximos() }}</strong>
+    </div>
+
+    <div class="status-item">
+      <span class="status-dot vencido"></span>
+      <span>Vencidas</span>
+      <strong>{{ pacientesVencidos() }}</strong>
+    </div>
+
+  </section>
+
+
+  <!-- FILTROS -->
+  <section class="filters-card">
+
+    <div class="search-box">
+
+      <span class="search-icon">⌕</span>
+
+      <input
+        type="text"
+        placeholder="Buscar paciente, propietario o raza..."
+        [value]="busqueda()"
+        (input)="busqueda.set($any($event.target).value)"
+      />
+
+    </div>
+
+
+    <select
+      [value]="filtroEstado()"
+      (change)="filtroEstado.set($any($event.target).value)"
+    >
+      <option value="Todos">Todos los estados</option>
+      <option value="Al día">Al día</option>
+      <option value="Próxima">Próxima</option>
+      <option value="Vencida">Vencida</option>
+    </select>
+
+
+    <select
+      [value]="filtroEspecie()"
+      (change)="filtroEspecie.set($any($event.target).value)"
+    >
+      <option value="Todas">Todas las especies</option>
+      <option value="Canino">Caninos</option>
+      <option value="Felino">Felinos</option>
+    </select>
+
+
+    <button
+      type="button"
+      class="btn-secondary"
+      (click)="limpiarFiltros()"
+    >
+      Limpiar
+    </button>
+
+  </section>
+
+
+  <!-- TABLA -->
+  <section class="table-card">
+
+    <div class="table-header">
+
+      <div>
+        <h2>Esquemas de pacientes</h2>
+
+        <span>
+          {{ pacientesFiltrados().length }} registros
+        </span>
+      </div>
+
+    </div>
+
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>Paciente</th>
+            <th>Propietario</th>
+            <th>Especie</th>
+            <th>Última vacuna</th>
+            <th>Próxima vacuna</th>
+            <th>Desparasitaciones</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+
+
+        <tbody>
+
+          @for (
+            paciente of pacientesFiltrados();
+            track paciente.id
+          ) {
+
+            <tr>
+
+              <td>
+                <div class="patient-cell">
+
+                  <div class="patient-avatar">
+                    {{ paciente.paciente.charAt(0) }}
+                  </div>
+
+                  <div>
+                    <strong>
+                      {{ paciente.paciente }}
+                    </strong>
+
+                    <small>
+                      {{ paciente.raza }} · {{ paciente.edad }}
+                    </small>
+                  </div>
+
+                </div>
+              </td>
+
+
+              <td>
+                {{ paciente.propietario }}
+              </td>
+
+
+              <td>
+                <span class="species">
+                  {{ paciente.especie }}
+                </span>
+              </td>
+
+
+              <td>
+                {{ formatearFecha(
+                  obtenerUltimaVacuna(paciente)
+                ) }}
+              </td>
+
+
+              <td>
+                {{ formatearFecha(
+                  obtenerProximaVacuna(paciente)
+                ) }}
+              </td>
+
+
+              <td>
+                <span class="count-badge">
+                  {{ paciente.desparasitaciones.length }}
+                </span>
+              </td>
+
+
+              <td>
+                <span
+                  class="status-badge"
+                  [ngClass]="obtenerClaseEstado(paciente.estado)"
+                >
+                  {{ paciente.estado }}
+                </span>
+              </td>
+
+
+              <td>
+
+                <button
+                  type="button"
+                  class="btn-view"
+                  (click)="abrirPaciente(paciente)"
+                >
+                  Ver esquema
+                </button>
+
+              </td>
+
+            </tr>
+
+          }
+
+
+          @if (pacientesFiltrados().length === 0) {
+
+            <tr>
+
+              <td
+                colspan="8"
+                class="empty-state"
+              >
+                <div>
+                  <span>🔎</span>
+
+                  <strong>
+                    No encontramos pacientes
+                  </strong>
+
+                  <p>
+                    Intenta cambiar los filtros de búsqueda.
+                  </p>
+                </div>
+              </td>
+
+            </tr>
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</div>
+
+
+<!-- MODAL ESQUEMA -->
+@if (
+  modalPacienteAbierto() &&
+  pacienteSeleccionado()
+) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarPaciente()"
+  >
+
+    <div
+      class="modal modal-large"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="modal-header">
+
+        <div class="modal-patient">
+
+          <div class="patient-avatar large">
+            {{ pacienteSeleccionado()!.paciente.charAt(0) }}
+          </div>
+
+          <div>
+
+            <h2>
+              {{ pacienteSeleccionado()!.paciente }}
+            </h2>
+
+            <p>
+              {{ pacienteSeleccionado()!.especie }}
+              ·
+              {{ pacienteSeleccionado()!.raza }}
+              ·
+              {{ pacienteSeleccionado()!.edad }}
+            </p>
+
+            <small>
+              Propietario:
+              {{ pacienteSeleccionado()!.propietario }}
+            </small>
+
+          </div>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="close-button"
+          (click)="cerrarPaciente()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <!-- VACUNAS -->
+      <section class="modal-section">
+
+        <div class="section-title">
+
+          <div>
+            <h3>💉 Vacunación</h3>
+
+            <span>
+              {{ pacienteSeleccionado()!.vacunas.length }}
+              registros
+            </span>
+          </div>
+
+
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="abrirNuevoRegistro('vacuna')"
+          >
+            + Registrar vacuna
+          </button>
+
+        </div>
+
+
+        @if (
+          pacienteSeleccionado()!.vacunas.length > 0
+        ) {
+
+          <div class="records-list">
+
+            @for (
+              vacuna of pacienteSeleccionado()!.vacunas;
+              track vacuna.id
+            ) {
+
+              <article class="record-card">
+
+                <div class="record-main">
+
+                  <div class="record-icon vaccine">
+                    💉
+                  </div>
+
+                  <div>
+
+                    <strong>
+                      {{ vacuna.nombre }}
+                    </strong>
+
+                    <span>
+                      {{ vacuna.tipo }}
+                    </span>
+
+                  </div>
+
+                </div>
+
+
+                <div class="record-info">
+
+                  <div>
+                    <small>Aplicación</small>
+                    <strong>
+                      {{ formatearFecha(
+                        vacuna.fechaAplicacion
+                      ) }}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <small>Próxima</small>
+                    <strong>
+                      {{ formatearFecha(
+                        vacuna.proximaFecha
+                      ) }}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <small>Lote</small>
+                    <strong>
+                      {{ vacuna.lote || '-' }}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <small>Veterinario</small>
+                    <strong>
+                      {{ vacuna.veterinario }}
+                    </strong>
+                  </div>
+
+                </div>
+
+
+                <div class="record-actions">
+
+                  <button
+                    type="button"
+                    (click)="editarVacuna(vacuna)"
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    type="button"
+                    class="danger"
+                    (click)="eliminarVacuna(vacuna.id)"
+                  >
+                    Eliminar
+                  </button>
+
+                </div>
+
+              </article>
+
+            }
+
+          </div>
+
+        } @else {
+
+          <div class="section-empty">
+            No hay vacunas registradas.
+          </div>
+
+        }
+
+      </section>
+
+
+      <!-- DESPARASITACIONES -->
+      <section class="modal-section">
+
+        <div class="section-title">
+
+          <div>
+            <h3>🧪 Desparasitación</h3>
+
+            <span>
+              {{
+                pacienteSeleccionado()!.desparasitaciones.length
+              }}
+              registros
+            </span>
+          </div>
+
+
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="abrirNuevoRegistro('desparasitacion')"
+          >
+            + Registrar desparasitación
+          </button>
+
+        </div>
+
+
+        @if (
+          pacienteSeleccionado()!.desparasitaciones.length > 0
+        ) {
+
+          <div class="records-list">
+
+            @for (
+              registro of pacienteSeleccionado()!.desparasitaciones;
+              track registro.id
+            ) {
+
+              <article class="record-card">
+
+                <div class="record-main">
+
+                  <div class="record-icon deworming">
+                    🧪
+                  </div>
+
+                  <div>
+
+                    <strong>
+                      {{ registro.producto }}
+                    </strong>
+
+                    <span>
+                      {{ registro.tipo }}
+                    </span>
+
+                  </div>
+
+                </div>
+
+
+                <div class="record-info">
+
+                  <div>
+                    <small>Aplicación</small>
+                    <strong>
+                      {{ formatearFecha(
+                        registro.fechaAplicacion
+                      ) }}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <small>Próxima</small>
+                    <strong>
+                      {{ formatearFecha(
+                        registro.proximaFecha
+                      ) }}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <small>Veterinario</small>
+                    <strong>
+                      {{ registro.veterinario }}
+                    </strong>
+                  </div>
+
+                </div>
+
+
+                <div class="record-actions">
+
+                  <button
+                    type="button"
+                    (click)="editarDesparasitacion(registro)"
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    type="button"
+                    class="danger"
+                    (click)="eliminarDesparasitacion(registro.id)"
+                  >
+                    Eliminar
+                  </button>
+
+                </div>
+
+              </article>
+
+            }
+
+          </div>
+
+        } @else {
+
+          <div class="section-empty">
+            No hay desparasitaciones registradas.
+          </div>
+
+        }
+
+      </section>
+
+    </div>
+
+  </div>
+
+}
+
+
+<!-- MODAL REGISTRO -->
+@if (modalRegistroAbierto()) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarRegistro()"
+  >
+
+    <div
+      class="modal modal-form"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="modal-header">
+
+        <div>
+
+          <h2>
+            {{
+              modoEdicion()
+                ? 'Editar registro'
+                : formulario().tipo === 'vacuna'
+                  ? 'Registrar vacunación'
+                  : 'Registrar desparasitación'
+            }}
+          </h2>
+
+          <p>
+            Paciente:
+            {{ pacienteSeleccionado()?.paciente }}
+          </p>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="close-button"
+          (click)="cerrarRegistro()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="form-grid">
+
+        <div class="form-group">
+
+          <label>Tipo de registro</label>
+
+          <select
+            [value]="formulario().tipo"
+            [disabled]="modoEdicion()"
+            (change)="
+              actualizarFormulario(
+                'tipo',
+                $any($event.target).value
+              )
+            "
+          >
+            <option value="vacuna">
+              Vacunación
+            </option>
+
+            <option value="desparasitacion">
+              Desparasitación
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label>
+            {{
+              formulario().tipo === 'vacuna'
+                ? 'Nombre de la vacuna'
+                : 'Producto'
+            }}
+            *
+          </label>
+
+          <input
+            type="text"
+            [value]="formulario().nombre"
+            (input)="
+              actualizarFormulario(
+                'nombre',
+                $any($event.target).value
+              )
+            "
+            placeholder="Ej. Rabia"
+          />
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label>Tipo *</label>
+
+          <select
+            [value]="formulario().tipoRegistro"
+            (change)="
+              actualizarFormulario(
+                'tipoRegistro',
+                $any($event.target).value
+              )
+            "
+          >
+
+            @if (formulario().tipo === 'vacuna') {
+
+              <option value="">
+                Seleccionar
+              </option>
+
+              <option value="Antirrábica">
+                Antirrábica
+              </option>
+
+              <option value="Polivalente">
+                Polivalente
+              </option>
+
+              <option value="Refuerzo">
+                Refuerzo
+              </option>
+
+              <option value="Otra">
+                Otra
+              </option>
+
+            } @else {
+
+              <option value="">
+                Seleccionar
+              </option>
+
+              <option value="Interna">
+                Interna
+              </option>
+
+              <option value="Externa">
+                Externa
+              </option>
+
+              <option value="Interna y Externa">
+                Interna y Externa
+              </option>
+
+            }
+
+          </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label>Fecha de aplicación *</label>
+
+          <input
+            type="date"
+            [value]="formulario().fechaAplicacion"
+            (input)="
+              actualizarFormulario(
+                'fechaAplicacion',
+                $any($event.target).value
+              )
+            "
+          />
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label>Próxima fecha *</label>
+
+          <input
+            type="date"
+            [value]="formulario().proximaFecha"
+            (input)="
+              actualizarFormulario(
+                'proximaFecha',
+                $any($event.target).value
+              )
+            "
+          />
+
+        </div>
+
+
+        @if (formulario().tipo === 'vacuna') {
+
+          <div class="form-group">
+
+            <label>Lote</label>
+
+            <input
+              type="text"
+              [value]="formulario().lote"
+              (input)="
+                actualizarFormulario(
+                  'lote',
+                  $any($event.target).value
+                )
+              "
+              placeholder="Ej. RAB-2026-001"
+            />
+
+          </div>
+
+        }
+
+
+        <div class="form-group">
+
+          <label>Veterinario *</label>
+
+          <input
+            type="text"
+            [value]="formulario().veterinario"
+            (input)="
+              actualizarFormulario(
+                'veterinario',
+                $any($event.target).value
+              )
+            "
+            placeholder="Nombre del veterinario"
+          />
+
+        </div>
+
+
+        <div class="form-group full">
+
+          <label>Observaciones</label>
+
+          <textarea
+            rows="4"
+            [value]="formulario().observaciones"
+            (input)="
+              actualizarFormulario(
+                'observaciones',
+                $any($event.target).value
+              )
+            "
+            placeholder="Observaciones adicionales..."
+          ></textarea>
+
+        </div>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="cerrarRegistro()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="guardarRegistro()"
+        >
+          {{
+            modoEdicion()
+              ? 'Guardar cambios'
+              : 'Guardar registro'
+          }}
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}

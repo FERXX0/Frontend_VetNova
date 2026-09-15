@@ -22,14 +22,11 @@
   margin-bottom: 28px;
 }
 
-.page-header__content {
-  min-width: 0;
-}
-
-.page-header__eyebrow {
+.page-header__eyebrow,
+.modal__eyebrow {
   margin-bottom: 6px;
   color: #64748b;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -47,59 +44,6 @@
   margin: 8px 0 0;
   color: #64748b;
   font-size: 14px;
-}
-
-/* =========================================================
-   BOTONES
-========================================================= */
-
-.btn-primary,
-.btn-secondary {
-  height: 42px;
-  padding: 0 17px;
-  border-radius: 9px;
-  border: 1px solid transparent;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 650;
-  cursor: pointer;
-  transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.18s ease;
-}
-
-.btn-primary {
-  color: #fff;
-  background: #2563eb;
-  border-color: #2563eb;
-  white-space: nowrap;
-}
-
-.btn-primary:hover {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-}
-
-.btn-primary:active {
-  transform: translateY(1px);
-}
-
-.btn-secondary {
-  color: #475569;
-  background: #fff;
-  border-color: #d9e0ea;
-}
-
-.btn-secondary:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
 }
 
 /* =========================================================
@@ -217,7 +161,7 @@
 
 .search-box {
   height: 42px;
-  min-width: 280px;
+  min-width: 300px;
   flex: 1;
   position: relative;
 }
@@ -243,7 +187,6 @@
   background: #fff;
   font-family: inherit;
   font-size: 13px;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .search-box input:focus {
@@ -276,20 +219,62 @@
   font-size: 13px;
 }
 
-.filter-group select:focus {
-  border-color: #93b4f4;
-}
-
 .btn-clear {
   height: 42px;
   padding: 0 13px;
   border: 0;
-  background: transparent;
   color: #2563eb;
+  background: transparent;
   font-family: inherit;
   font-size: 13px;
   font-weight: 650;
   cursor: pointer;
+}
+
+/* =========================================================
+   BOTONES
+========================================================= */
+
+.btn-primary,
+.btn-secondary {
+  height: 42px;
+  padding: 0 17px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.btn-primary {
+  color: #fff;
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-primary--small {
+  height: 36px;
+  padding: 0 13px;
+  font-size: 12px;
+}
+
+.btn-secondary {
+  color: #475569;
+  background: #fff;
+  border-color: #d9e0ea;
+}
+
+.btn-secondary:hover {
+  background: #f8fafc;
 }
 
 /* =========================================================
@@ -313,7 +298,6 @@
   margin: 0 0 3px;
   color: #172033;
   font-size: 15px;
-  font-weight: 700;
 }
 
 .table-header span {
@@ -328,7 +312,7 @@
 
 .vn-table {
   width: 100%;
-  min-width: 900px;
+  min-width: 1000px;
   border-collapse: collapse;
 }
 
@@ -341,7 +325,6 @@
   text-align: left;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.03em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -355,12 +338,12 @@
   vertical-align: middle;
 }
 
-.vn-table tbody tr:last-child td {
-  border-bottom: 0;
-}
-
 .vn-table tbody tr:hover {
   background: #fafcff;
+}
+
+.vn-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .text-right {
@@ -368,16 +351,16 @@
 }
 
 /* =========================================================
-   USUARIO
+   PACIENTE
 ========================================================= */
 
-.user-cell {
+.patient-cell {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.avatar {
+.patient-avatar {
   width: 40px;
   height: 40px;
   flex: 0 0 40px;
@@ -391,71 +374,57 @@
   font-weight: 750;
 }
 
-.user-info {
-  min-width: 0;
+.patient-avatar--large {
+  width: 50px;
+  height: 50px;
+  flex-basis: 50px;
 }
 
-.user-info strong {
+.patient-info strong,
+.owner-cell strong,
+.species-cell strong {
   display: block;
-  margin-bottom: 4px;
   color: #1e293b;
   font-size: 13px;
   font-weight: 650;
 }
 
-.user-info span {
+.patient-info span,
+.owner-cell span,
+.species-cell span {
   display: block;
-  max-width: 240px;
-  overflow: hidden;
+  margin-top: 4px;
   color: #94a3b8;
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.phone {
-  color: #64748b;
-  white-space: nowrap;
-}
-
-/* =========================================================
-   BADGES
-========================================================= */
-
-.role-badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 27px;
-  padding: 0 10px;
-  border-radius: 999px;
-  color: #475569;
-  background: #f1f5f9;
   font-size: 11px;
-  font-weight: 650;
+}
+
+.owner-cell,
+.species-cell {
+  min-width: 130px;
+}
+
+.date {
+  color: #64748b;
   white-space: nowrap;
 }
 
-.module-count {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #64748b;
-  font-size: 12px;
-}
-
-.module-count__number {
-  min-width: 25px;
-  height: 25px;
-  padding: 0 6px;
-  box-sizing: border-box;
+.consultation-count {
+  min-width: 27px;
+  height: 27px;
+  padding: 0 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 7px;
   color: #2563eb;
   background: #eff6ff;
+  font-size: 12px;
   font-weight: 750;
 }
+
+/* =========================================================
+   STATUS
+========================================================= */
 
 .status-badge {
   display: inline-flex;
@@ -489,7 +458,8 @@
    ACCIONES
 ========================================================= */
 
-.actions {
+.actions,
+.consultation-actions {
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
@@ -508,16 +478,16 @@
   color: #64748b;
   background: transparent;
   cursor: pointer;
-  transition:
-    color 0.18s ease,
-    background-color 0.18s ease,
-    border-color 0.18s ease;
 }
 
 .action-btn:hover {
   color: #2563eb;
   background: #eff6ff;
   border-color: #dbeafe;
+}
+
+.action-btn--primary {
+  color: #2563eb;
 }
 
 .action-btn--danger:hover {
@@ -527,7 +497,7 @@
 }
 
 /* =========================================================
-   EMPTY STATE
+   EMPTY
 ========================================================= */
 
 .empty-state {
@@ -547,14 +517,16 @@
   background: #f8fafc;
 }
 
-.empty-state strong {
+.empty-state strong,
+.no-consultations strong {
   display: block;
   margin-bottom: 5px;
   color: #334155;
   font-size: 14px;
 }
 
-.empty-state span {
+.empty-state span,
+.no-consultations span {
   color: #94a3b8;
   font-size: 12px;
 }
@@ -576,6 +548,10 @@
   backdrop-filter: blur(2px);
 }
 
+.modal-backdrop--front {
+  z-index: 1100;
+}
+
 .modal {
   width: min(760px, 100%);
   max-height: calc(100vh - 50px);
@@ -588,6 +564,14 @@
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.2);
 }
 
+.modal--large {
+  width: min(1000px, 100%);
+}
+
+.modal--consultation {
+  width: min(820px, 100%);
+}
+
 .modal__header {
   padding: 22px 24px;
   display: flex;
@@ -597,14 +581,10 @@
   border-bottom: 1px solid #edf0f4;
 }
 
-.modal__eyebrow {
-  display: block;
-  margin-bottom: 5px;
-  color: #2563eb;
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+.history-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .modal__header h2 {
@@ -645,6 +625,222 @@
   padding: 22px 24px;
 }
 
+.modal__footer {
+  min-height: 68px;
+  padding: 12px 24px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  border-top: 1px solid #edf0f4;
+  background: #fafbfc;
+}
+
+.modal__footer > span {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.modal__footer > span strong {
+  color: #334155;
+}
+
+/* =========================================================
+   HISTORIA
+========================================================= */
+
+.history-section + .history-section {
+  margin-top: 28px;
+  padding-top: 25px;
+  border-top: 1px solid #edf0f4;
+}
+
+.section-heading {
+  margin-bottom: 16px;
+}
+
+.section-heading--actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.section-heading h3 {
+  margin: 0 0 4px;
+  color: #334155;
+  font-size: 14px;
+}
+
+.section-heading span {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.patient-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.patient-summary > div {
+  padding: 13px;
+  border: 1px solid #edf0f4;
+  border-radius: 9px;
+  background: #fafbfc;
+}
+
+.patient-summary span {
+  display: block;
+  margin-bottom: 5px;
+  color: #94a3b8;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.patient-summary strong {
+  color: #334155;
+  font-size: 12px;
+}
+
+.clinical-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.clinical-card {
+  padding: 15px;
+  border: 1px solid #e5eaf1;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.clinical-card--full {
+  grid-column: 1 / -1;
+}
+
+.clinical-card__title {
+  margin-bottom: 7px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.clinical-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* =========================================================
+   CONSULTAS
+========================================================= */
+
+.consultations {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.consultation-card {
+  padding: 17px;
+  border: 1px solid #e3e8ef;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.consultation-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 16px;
+}
+
+.consultation-date {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.date-icon {
+  color: #2563eb;
+}
+
+.veterinarian {
+  display: block;
+  margin-top: 5px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.consultation-vitals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 15px;
+  border: 1px solid #edf0f4;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.consultation-vitals > div {
+  padding: 10px 12px;
+  border-right: 1px solid #edf0f4;
+}
+
+.consultation-vitals > div:last-child {
+  border-right: 0;
+}
+
+.consultation-vitals span,
+.consultation-details span {
+  display: block;
+  margin-bottom: 5px;
+  color: #94a3b8;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.consultation-vitals strong {
+  color: #475569;
+  font-size: 12px;
+}
+
+.consultation-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.consultation-details > div:last-child {
+  grid-column: 1 / -1;
+}
+
+.consultation-details p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.no-consultations {
+  padding: 45px 20px;
+  text-align: center;
+  border: 1px dashed #dbe1e9;
+  border-radius: 10px;
+}
+
+/* =========================================================
+   FORMULARIO
+========================================================= */
+
 .form-section + .form-section {
   margin-top: 28px;
   padding-top: 25px;
@@ -655,18 +851,10 @@
   margin-bottom: 16px;
 }
 
-.form-section__header--modules {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-}
-
 .form-section__header h3 {
   margin: 0 0 4px;
   color: #334155;
   font-size: 14px;
-  font-weight: 700;
 }
 
 .form-section__header span {
@@ -701,9 +889,9 @@
 }
 
 .form-field input,
+.form-field textarea,
 .form-field select {
   width: 100%;
-  height: 40px;
   padding: 0 11px;
   box-sizing: border-box;
   border: 1px solid #dbe1e9;
@@ -713,146 +901,34 @@
   background: #fff;
   font-family: inherit;
   font-size: 13px;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.form-field input::placeholder {
-  color: #b1bac8;
+.form-field input,
+.form-field select {
+  height: 40px;
+}
+
+.form-field textarea {
+  min-height: 80px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  resize: vertical;
+  line-height: 1.5;
 }
 
 .form-field input:focus,
+.form-field textarea:focus,
 .form-field select:focus {
   border-color: #93b4f4;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
-/* =========================================================
-   MÓDULOS
-========================================================= */
-
-.module-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
-
-.module-actions button {
-  padding: 0;
-  border: 0;
-  color: #2563eb;
-  background: transparent;
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.module-actions button:hover {
-  text-decoration: underline;
-}
-
-.modules-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
-}
-
-.module-option {
-  min-height: 61px;
-  padding: 10px 11px;
-  border: 1px solid #e2e8f0;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-align: left;
-  background: #fff;
-  cursor: pointer;
-  transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
-}
-
-.module-option:hover {
-  border-color: #bfdbfe;
-  background: #f8fbff;
-}
-
-.module-option--selected {
-  border-color: #93c5fd;
-  background: #eff6ff;
-}
-
-.module-option__check {
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  background: #fff;
-}
-
-.module-option--selected .module-option__check {
-  border-color: #2563eb;
-  background: #2563eb;
-}
-
-.module-option__content {
-  min-width: 0;
-}
-
-.module-option__content strong {
-  display: block;
-  overflow: hidden;
-  color: #334155;
-  font-size: 12px;
-  font-weight: 650;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.module-option__content small {
-  display: block;
-  margin-top: 3px;
-  color: #94a3b8;
-  font-size: 10px;
-}
-
-.module-option--selected .module-option__content small {
-  color: #2563eb;
-}
-
-/* =========================================================
-   MODAL FOOTER
-========================================================= */
-
-.modal__footer {
-  min-height: 68px;
-  padding: 12px 24px;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  border-top: 1px solid #edf0f4;
-  background: #fafbfc;
-}
-
-.selected-modules {
-  color: #64748b;
-  font-size: 11px;
-}
-
-.modal__buttons {
-  display: flex;
-  align-items: center;
-  gap: 9px;
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  color: #b1bac8;
 }
 
 /* =========================================================
@@ -867,15 +943,10 @@
 
 }
 
-@media (max-width: 800px) {
+@media (max-width: 850px) {
 
   .page-container {
     padding: 22px;
-  }
-
-  .page-header {
-    align-items: flex-start;
-    flex-direction: column;
   }
 
   .filters-card {
@@ -893,13 +964,13 @@
     width: auto;
   }
 
-  .modules-grid {
-    grid-template-columns: 1fr;
+  .patient-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
 }
 
-@media (max-width: 600px) {
+@media (max-width: 650px) {
 
   .page-container {
     padding: 16px;
@@ -921,8 +992,34 @@
     width: 100%;
   }
 
-  .btn-clear {
-    align-self: flex-start;
+  .patient-summary,
+  .clinical-grid,
+  .consultation-details,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .clinical-card--full,
+  .form-field--full,
+  .consultation-details > div:last-child {
+    grid-column: auto;
+  }
+
+  .section-heading--actions {
+    flex-direction: column;
+  }
+
+  .consultation-vitals {
+    grid-template-columns: 1fr;
+  }
+
+  .consultation-vitals > div {
+    border-right: 0;
+    border-bottom: 1px solid #edf0f4;
+  }
+
+  .consultation-vitals > div:last-child {
+    border-bottom: 0;
   }
 
   .modal-backdrop {
@@ -940,29 +1037,9 @@
     padding-right: 17px;
   }
 
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .form-field--full {
-    grid-column: auto;
-  }
-
-  .form-section__header--modules {
-    flex-direction: column;
-  }
-
   .modal__footer {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .modal__buttons {
-    width: 100%;
-  }
-
-  .modal__buttons button {
-    flex: 1;
   }
 
 }

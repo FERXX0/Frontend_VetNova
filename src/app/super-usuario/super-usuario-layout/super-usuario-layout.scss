@@ -1,6 +1,7 @@
 :host {
   display: block;
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+
   --vn-teal: #1aa7a0;
   --vn-teal-dark: #0e7c86;
   --vn-navy: #10263a;
@@ -18,7 +19,10 @@
   background: var(--vn-bg);
   position: relative;
 
-  // ---------- Overlay móvil ----------
+  // =========================================================
+  // OVERLAY MÓVIL
+  // =========================================================
+
   &__overlay {
     display: none;
     position: fixed;
@@ -32,7 +36,10 @@
     }
   }
 
-  // ---------- Sidebar ----------
+  // =========================================================
+  // SIDEBAR
+  // =========================================================
+
   &__sidebar {
     width: 16.5rem;
     flex-shrink: 0;
@@ -62,6 +69,10 @@
       }
     }
   }
+
+  // =========================================================
+  // MARCA
+  // =========================================================
 
   &__brand {
     display: flex;
@@ -128,6 +139,10 @@
     box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
   }
 
+  // =========================================================
+  // NAVEGACIÓN
+  // =========================================================
+
   &__nav {
     display: flex;
     flex-direction: column;
@@ -164,7 +179,12 @@
     }
 
     &--activo {
-      background: linear-gradient(90deg, rgba(26, 167, 160, 0.12) 0%, rgba(26, 167, 160, 0.03) 100%);
+      background: linear-gradient(
+        90deg,
+        rgba(26, 167, 160, 0.12) 0%,
+        rgba(26, 167, 160, 0.03) 100%
+      );
+
       color: var(--vn-teal-dark);
       font-weight: 600;
       border-left: 3px solid var(--vn-teal);
@@ -195,7 +215,130 @@
     text-overflow: ellipsis;
   }
 
-  // ---------- Main Content Area ----------
+  // =========================================================
+  // SECCIÓN MÓDULOS
+  // =========================================================
+
+  &__nav-divider {
+    height: 1px;
+    background: var(--vn-border);
+    margin: 0.75rem 0;
+    flex-shrink: 0;
+  }
+
+  &__nav-section {
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--vn-text-muted);
+    padding: 0.5rem 0.75rem 0.25rem;
+  }
+
+  // Botón principal "Módulos"
+
+  &__modules-toggle {
+    width: 100%;
+    border: 0;
+    outline: none;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    background: transparent;
+  }
+
+  &__modules-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    color: var(--vn-text-muted);
+    transition: transform 0.2s ease;
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    &--open {
+      transform: rotate(180deg);
+    }
+  }
+
+  // Contenedor de los módulos
+
+  &__modules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+
+    margin: 0.15rem 0 0.4rem;
+    padding-left: 0.75rem;
+  }
+
+  // Cada módulo
+
+  &__module-item {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+
+    min-height: 2rem;
+    padding: 0.45rem 0.65rem;
+
+    border-radius: 0.45rem;
+
+    color: var(--vn-text-dark);
+    text-decoration: none;
+
+    font-size: 0.8rem;
+    font-weight: 500;
+
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
+
+    &:hover {
+      background: var(--vn-surface);
+      color: var(--vn-teal-dark);
+    }
+  }
+
+  // Punto de cada módulo
+
+  &__module-dot {
+    width: 0.35rem;
+    height: 0.35rem;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: var(--vn-teal);
+  }
+
+  // Módulos que todavía no están disponibles
+
+  &__module-item--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    &:hover {
+      background: transparent;
+      color: var(--vn-text-dark);
+    }
+
+    small {
+      margin-left: auto;
+      font-size: 0.62rem;
+      color: var(--vn-text-muted);
+    }
+  }
+
+  // =========================================================
+  // MAIN CONTENT
+  // =========================================================
+
   &__main {
     flex: 1;
     display: flex;
@@ -207,8 +350,11 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+
     height: 4.25rem;
+
     padding: 0 2rem;
+
     background: var(--vn-white);
     border-bottom: 1px solid var(--vn-border);
 
@@ -219,11 +365,16 @@
 
   &__menu-toggle {
     display: none;
+
     background: none;
     border: none;
+
     padding: 0.4rem;
+
     cursor: pointer;
+
     color: var(--vn-text-dark);
+
     border-radius: 0.35rem;
 
     svg {
@@ -240,8 +391,10 @@
 
   &__page-title {
     margin: 0;
+
     font-size: 1.25rem;
     font-weight: 700;
+
     color: var(--vn-text-dark);
 
     @media (max-width: 640px) {
@@ -251,6 +404,7 @@
 
   &__topbar-right {
     margin-left: auto;
+
     display: flex;
     align-items: center;
     gap: 1.25rem;

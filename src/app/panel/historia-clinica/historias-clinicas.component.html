@@ -1,0 +1,1376 @@
+<div class="page-container">
+
+  <!-- =====================================================
+       HEADER
+  ====================================================== -->
+
+  <header class="page-header">
+
+    <div class="page-header__content">
+
+      <div class="page-header__eyebrow">
+        Atención médica
+      </div>
+
+      <h1 class="page-header__title">
+        Historias Clínicas
+      </h1>
+
+      <p class="page-header__desc">
+        Consulta y administra el historial médico de los pacientes.
+      </p>
+
+    </div>
+
+  </header>
+
+
+  <!-- =====================================================
+       MENSAJE
+  ====================================================== -->
+
+  @if (mensaje()) {
+
+    <div
+      class="toast"
+      [class.toast--success]="tipoMensaje() === 'success'"
+      [class.toast--error]="tipoMensaje() === 'error'"
+    >
+
+      @if (tipoMensaje() === 'success') {
+
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+
+      } @else {
+
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+
+      }
+
+      <span>
+        {{ mensaje() }}
+      </span>
+
+    </div>
+
+  }
+
+
+  <!-- =====================================================
+       ESTADÍSTICAS
+  ====================================================== -->
+
+  <section class="stats-grid">
+
+    <div class="stat-card">
+
+      <div class="stat-card__icon stat-card__icon--blue">
+
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+
+      </div>
+
+      <div>
+
+        <span class="stat-card__label">
+          Historias clínicas
+        </span>
+
+        <strong class="stat-card__value">
+          {{ totalHistorias() }}
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+      <div class="stat-card__icon stat-card__icon--green">
+
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+
+      </div>
+
+      <div>
+
+        <span class="stat-card__label">
+          Pacientes activos
+        </span>
+
+        <strong class="stat-card__value">
+          {{ pacientesActivos() }}
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+      <div class="stat-card__icon stat-card__icon--orange">
+
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+
+      </div>
+
+      <div>
+
+        <span class="stat-card__label">
+          Pacientes inactivos
+        </span>
+
+        <strong class="stat-card__value">
+          {{ pacientesInactivos() }}
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+      <div class="stat-card__icon stat-card__icon--purple">
+
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"></path>
+        </svg>
+
+      </div>
+
+      <div>
+
+        <span class="stat-card__label">
+          Consultas registradas
+        </span>
+
+        <strong class="stat-card__value">
+          {{ totalConsultas() }}
+        </strong>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       FILTROS
+  ====================================================== -->
+
+  <section class="filters-card">
+
+    <div class="search-box">
+
+      <svg
+        width="19"
+        height="19"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+
+      <input
+        type="text"
+        placeholder="Buscar paciente, propietario o identificación..."
+        [value]="busqueda()"
+        (input)="cambiarBusqueda($any($event.target).value)"
+      />
+
+    </div>
+
+
+    <div class="filter-group">
+
+      <label>
+        Especie
+      </label>
+
+      <select
+        [value]="filtroEspecie()"
+        (change)="cambiarFiltroEspecie($any($event.target).value)"
+      >
+
+        <option value="Todos">
+          Todas
+        </option>
+
+        @for (especie of especies; track especie) {
+
+          <option [value]="especie">
+            {{ especie }}
+          </option>
+
+        }
+
+      </select>
+
+    </div>
+
+
+    <div class="filter-group">
+
+      <label>
+        Estado
+      </label>
+
+      <select
+        [value]="filtroEstado()"
+        (change)="cambiarFiltroEstado($any($event.target).value)"
+      >
+
+        <option value="Todos">
+          Todos
+        </option>
+
+        <option value="Activo">
+          Activos
+        </option>
+
+        <option value="Inactivo">
+          Inactivos
+        </option>
+
+      </select>
+
+    </div>
+
+
+    @if (
+      busqueda() ||
+      filtroEspecie() !== 'Todos' ||
+      filtroEstado() !== 'Todos'
+    ) {
+
+      <button
+        type="button"
+        class="btn-clear"
+        (click)="limpiarFiltros()"
+      >
+        Limpiar
+      </button>
+
+    }
+
+  </section>
+
+
+  <!-- =====================================================
+       TABLA
+  ====================================================== -->
+
+  <section class="card">
+
+    <div class="table-header">
+
+      <div>
+
+        <h2>
+          Historias clínicas
+        </h2>
+
+        <span>
+          {{ historiasFiltradas().length }}
+          paciente(s)
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <div class="table-responsive">
+
+      <table class="vn-table">
+
+        <thead>
+
+          <tr>
+
+            <th>
+              Paciente
+            </th>
+
+            <th>
+              Propietario
+            </th>
+
+            <th>
+              Especie
+            </th>
+
+            <th>
+              Última consulta
+            </th>
+
+            <th>
+              Consultas
+            </th>
+
+            <th>
+              Estado
+            </th>
+
+            <th class="text-right">
+              Acciones
+            </th>
+
+          </tr>
+
+        </thead>
+
+
+        <tbody>
+
+          @for (
+            historia of historiasFiltradas();
+            track historia.id
+          ) {
+
+            <tr>
+
+              <!-- PACIENTE -->
+
+              <td>
+
+                <div class="patient-cell">
+
+                  <div class="patient-avatar">
+                    {{ obtenerIniciales(historia.paciente) }}
+                  </div>
+
+                  <div class="patient-info">
+
+                    <strong>
+                      {{ historia.paciente }}
+                    </strong>
+
+                    <span>
+                      {{ historia.identificacion }}
+                    </span>
+
+                  </div>
+
+                </div>
+
+              </td>
+
+
+              <!-- PROPIETARIO -->
+
+              <td>
+
+                <div class="owner-cell">
+
+                  <strong>
+                    {{ historia.propietario }}
+                  </strong>
+
+                  <span>
+                    {{ historia.telefono }}
+                  </span>
+
+                </div>
+
+              </td>
+
+
+              <!-- ESPECIE -->
+
+              <td>
+
+                <div class="species-cell">
+
+                  <strong>
+                    {{ historia.especie }}
+                  </strong>
+
+                  <span>
+                    {{ historia.raza }}
+                  </span>
+
+                </div>
+
+              </td>
+
+
+              <!-- ÚLTIMA CONSULTA -->
+
+              <td>
+
+                <span class="date">
+                  {{ formatearFecha(historia.ultimaConsulta) }}
+                </span>
+
+              </td>
+
+
+              <!-- CONSULTAS -->
+
+              <td>
+
+                <span class="consultation-count">
+                  {{ historia.consultas.length }}
+                </span>
+
+              </td>
+
+
+              <!-- ESTADO -->
+
+              <td>
+
+                <span
+                  class="status-badge"
+                  [class.status-badge--active]="historia.estado === 'Activo'"
+                  [class.status-badge--inactive]="historia.estado === 'Inactivo'"
+                >
+
+                  <span class="status-dot"></span>
+
+                  {{ historia.estado }}
+
+                </span>
+
+              </td>
+
+
+              <!-- ACCIONES -->
+
+              <td class="text-right">
+
+                <div class="actions">
+
+                  <button
+                    type="button"
+                    class="action-btn"
+                    title="Ver historia clínica"
+                    (click)="verHistoria(historia)"
+                  >
+
+                    <svg
+                      width="17"
+                      height="17"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+
+                  </button>
+
+
+                  <button
+                    type="button"
+                    class="action-btn action-btn--primary"
+                    title="Nueva consulta"
+                    (click)="nuevaConsulta(historia)"
+                  >
+
+                    <svg
+                      width="17"
+                      height="17"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+
+                  </button>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          }
+
+
+          @if (historiasFiltradas().length === 0) {
+
+            <tr>
+
+              <td
+                colspan="7"
+                class="empty-state"
+              >
+
+                <div class="empty-state__icon">
+
+                  <svg
+                    width="30"
+                    height="30"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  >
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+
+                </div>
+
+                <strong>
+                  No se encontraron historias clínicas
+                </strong>
+
+                <span>
+                  Intenta cambiar los filtros de búsqueda.
+                </span>
+
+              </td>
+
+            </tr>
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</div>
+
+
+<!-- =========================================================
+     MODAL HISTORIA CLÍNICA
+========================================================== -->
+
+@if (modalHistoriaAbierto() && historiaSeleccionada()) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarHistoria()"
+  >
+
+    <div
+      class="modal modal--large"
+      (click)="$event.stopPropagation()"
+    >
+
+      <!-- HEADER -->
+
+      <div class="modal__header">
+
+        <div class="history-title">
+
+          <div class="patient-avatar patient-avatar--large">
+            {{ obtenerIniciales(historiaSeleccionada()!.paciente) }}
+          </div>
+
+          <div>
+
+            <span class="modal__eyebrow">
+              Historia clínica
+            </span>
+
+            <h2>
+              {{ historiaSeleccionada()!.paciente }}
+            </h2>
+
+            <p>
+              {{ historiaSeleccionada()!.identificacion }}
+              ·
+              {{ historiaSeleccionada()!.especie }}
+              ·
+              {{ historiaSeleccionada()!.raza }}
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="modal__close"
+          (click)="cerrarHistoria()"
+        >
+
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+
+        </button>
+
+      </div>
+
+
+      <!-- BODY -->
+
+      <div class="modal__body">
+
+        <!-- INFORMACIÓN DEL PACIENTE -->
+
+        <section class="history-section">
+
+          <div class="section-heading">
+
+            <div>
+
+              <h3>
+                Información del paciente
+              </h3>
+
+              <span>
+                Información general
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="patient-summary">
+
+            <div>
+              <span>Paciente</span>
+              <strong>{{ historiaSeleccionada()!.paciente }}</strong>
+            </div>
+
+            <div>
+              <span>Especie</span>
+              <strong>{{ historiaSeleccionada()!.especie }}</strong>
+            </div>
+
+            <div>
+              <span>Raza</span>
+              <strong>{{ historiaSeleccionada()!.raza }}</strong>
+            </div>
+
+            <div>
+              <span>Sexo</span>
+              <strong>{{ historiaSeleccionada()!.sexo }}</strong>
+            </div>
+
+            <div>
+              <span>Edad</span>
+              <strong>{{ historiaSeleccionada()!.edad }}</strong>
+            </div>
+
+            <div>
+              <span>Propietario</span>
+              <strong>{{ historiaSeleccionada()!.propietario }}</strong>
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- ANTECEDENTES -->
+
+        <section class="history-section">
+
+          <div class="clinical-grid">
+
+            <div class="clinical-card">
+
+              <div class="clinical-card__title">
+                Antecedentes
+              </div>
+
+              <p>
+                {{ historiaSeleccionada()!.antecedentes || 'Sin antecedentes registrados.' }}
+              </p>
+
+            </div>
+
+
+            <div class="clinical-card">
+
+              <div class="clinical-card__title">
+                Alergias
+              </div>
+
+              <p>
+                {{ historiaSeleccionada()!.alergias || 'Sin alergias registradas.' }}
+              </p>
+
+            </div>
+
+
+            <div class="clinical-card clinical-card--full">
+
+              <div class="clinical-card__title">
+                Observaciones generales
+              </div>
+
+              <p>
+                {{ historiaSeleccionada()!.observaciones || 'Sin observaciones registradas.' }}
+              </p>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- CONSULTAS -->
+
+        <section class="history-section">
+
+          <div class="section-heading section-heading--actions">
+
+            <div>
+
+              <h3>
+                Historial de consultas
+              </h3>
+
+              <span>
+                {{ historiaSeleccionada()!.consultas.length }}
+                consulta(s) registrada(s)
+              </span>
+
+            </div>
+
+
+            <button
+              type="button"
+              class="btn-primary btn-primary--small"
+              (click)="nuevaConsulta(historiaSeleccionada()!)"
+            >
+
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+
+              Nueva consulta
+
+            </button>
+
+          </div>
+
+
+          <div class="consultations">
+
+            @for (
+              consulta of historiaSeleccionada()!.consultas;
+              track consulta.id
+            ) {
+
+              <article class="consultation-card">
+
+                <div class="consultation-card__header">
+
+                  <div>
+
+                    <div class="consultation-date">
+
+                      <span class="date-icon">
+
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                          <line x1="16" y1="2" x2="16" y2="6"></line>
+                          <line x1="8" y1="2" x2="8" y2="6"></line>
+                          <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+
+                      </span>
+
+                      {{ formatearFecha(consulta.fecha) }}
+
+                    </div>
+
+                    <span class="veterinarian">
+                      {{ consulta.veterinario }}
+                    </span>
+
+                  </div>
+
+
+                  <div class="consultation-actions">
+
+                    <button
+                      type="button"
+                      class="action-btn"
+                      title="Editar consulta"
+                      (click)="editarConsulta(historiaSeleccionada()!, consulta)"
+                    >
+
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                      </svg>
+
+                    </button>
+
+
+                    <button
+                      type="button"
+                      class="action-btn action-btn--danger"
+                      title="Eliminar consulta"
+                      (click)="eliminarConsulta(historiaSeleccionada()!, consulta)"
+                    >
+
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                      </svg>
+
+                    </button>
+
+                  </div>
+
+                </div>
+
+
+                <div class="consultation-vitals">
+
+                  <div>
+                    <span>Motivo</span>
+                    <strong>{{ consulta.motivo }}</strong>
+                  </div>
+
+                  <div>
+                    <span>Peso</span>
+                    <strong>{{ consulta.peso || '—' }}</strong>
+                  </div>
+
+                  <div>
+                    <span>Temperatura</span>
+                    <strong>{{ consulta.temperatura || '—' }}</strong>
+                  </div>
+
+                </div>
+
+
+                <div class="consultation-details">
+
+                  <div>
+                    <span>Diagnóstico</span>
+                    <p>{{ consulta.diagnostico || '—' }}</p>
+                  </div>
+
+                  <div>
+                    <span>Tratamiento</span>
+                    <p>{{ consulta.tratamiento || '—' }}</p>
+                  </div>
+
+                  <div>
+                    <span>Medicamentos</span>
+                    <p>{{ consulta.medicamentos || '—' }}</p>
+                  </div>
+
+                  <div>
+                    <span>Observaciones</span>
+                    <p>{{ consulta.observaciones || '—' }}</p>
+                  </div>
+
+                  <div>
+                    <span>Evolución</span>
+                    <p>{{ consulta.evolucion || '—' }}</p>
+                  </div>
+
+                </div>
+
+              </article>
+
+            }
+
+
+            @if (historiaSeleccionada()!.consultas.length === 0) {
+
+              <div class="no-consultations">
+
+                <div class="empty-state__icon">
+
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  >
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"></path>
+                  </svg>
+
+                </div>
+
+                <strong>
+                  No hay consultas registradas
+                </strong>
+
+                <span>
+                  Registra la primera consulta de este paciente.
+                </span>
+
+              </div>
+
+            }
+
+          </div>
+
+        </section>
+
+      </div>
+
+
+      <!-- FOOTER -->
+
+      <div class="modal__footer">
+
+        <span>
+          Última consulta:
+          <strong>
+            {{ formatearFecha(historiaSeleccionada()!.ultimaConsulta) }}
+          </strong>
+        </span>
+
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="cerrarHistoria()"
+        >
+          Cerrar
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}
+
+
+<!-- =========================================================
+     MODAL NUEVA / EDITAR CONSULTA
+========================================================== -->
+
+@if (modalConsultaAbierto() && historiaSeleccionada()) {
+
+  <div
+    class="modal-backdrop modal-backdrop--front"
+    (click)="cerrarModalConsulta()"
+  >
+
+    <div
+      class="modal modal--consultation"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="modal__header">
+
+        <div>
+
+          <span class="modal__eyebrow">
+            {{ historiaSeleccionada()!.paciente }}
+          </span>
+
+          <h2>
+            {{ modoEdicionConsulta()
+              ? 'Editar consulta'
+              : 'Nueva consulta'
+            }}
+          </h2>
+
+          <p>
+            Registra la información clínica de la atención.
+          </p>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="modal__close"
+          (click)="cerrarModalConsulta()"
+        >
+
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+
+        </button>
+
+      </div>
+
+
+      <div class="modal__body">
+
+        <!-- DATOS DE CONSULTA -->
+
+        <section class="form-section">
+
+          <div class="form-section__header">
+
+            <h3>
+              Datos de la consulta
+            </h3>
+
+            <span>
+              Información de la atención
+            </span>
+
+          </div>
+
+
+          <div class="form-grid">
+
+            <div class="form-field">
+
+              <label>
+                Fecha
+                <span>*</span>
+              </label>
+
+              <input
+                type="date"
+                [value]="formularioConsulta().fecha"
+                (input)="actualizarCampo('fecha', $any($event.target).value)"
+              />
+
+            </div>
+
+
+            <div class="form-field">
+
+              <label>
+                Veterinario
+                <span>*</span>
+              </label>
+
+              <input
+                type="text"
+                placeholder="Ej. Dra. Laura Martínez"
+                [value]="formularioConsulta().veterinario"
+                (input)="actualizarCampo('veterinario', $any($event.target).value)"
+              />
+
+            </div>
+
+
+            <div class="form-field form-field--full">
+
+              <label>
+                Motivo de consulta
+                <span>*</span>
+              </label>
+
+              <input
+                type="text"
+                placeholder="Describe el motivo de la consulta..."
+                [value]="formularioConsulta().motivo"
+                (input)="actualizarCampo('motivo', $any($event.target).value)"
+              />
+
+            </div>
+
+
+            <div class="form-field">
+
+              <label>
+                Peso
+              </label>
+
+              <input
+                type="text"
+                placeholder="Ej. 25 kg"
+                [value]="formularioConsulta().peso"
+                (input)="actualizarCampo('peso', $any($event.target).value)"
+              />
+
+            </div>
+
+
+            <div class="form-field">
+
+              <label>
+                Temperatura
+              </label>
+
+              <input
+                type="text"
+                placeholder="Ej. 38.5 °C"
+                [value]="formularioConsulta().temperatura"
+                (input)="actualizarCampo('temperatura', $any($event.target).value)"
+              />
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- INFORMACIÓN CLÍNICA -->
+
+        <section class="form-section">
+
+          <div class="form-section__header">
+
+            <h3>
+              Información clínica
+            </h3>
+
+            <span>
+              Evaluación y tratamiento
+            </span>
+
+          </div>
+
+
+          <div class="form-grid">
+
+            <div class="form-field form-field--full">
+
+              <label>
+                Diagnóstico
+                <span>*</span>
+              </label>
+
+              <textarea
+                rows="3"
+                placeholder="Describe el diagnóstico..."
+                [value]="formularioConsulta().diagnostico"
+                (input)="actualizarCampo('diagnostico', $any($event.target).value)"
+              ></textarea>
+
+            </div>
+
+
+            <div class="form-field form-field--full">
+
+              <label>
+                Tratamiento
+              </label>
+
+              <textarea
+                rows="3"
+                placeholder="Describe el tratamiento indicado..."
+                [value]="formularioConsulta().tratamiento"
+                (input)="actualizarCampo('tratamiento', $any($event.target).value)"
+              ></textarea>
+
+            </div>
+
+
+            <div class="form-field form-field--full">
+
+              <label>
+                Medicamentos
+              </label>
+
+              <textarea
+                rows="3"
+                placeholder="Medicamentos prescritos, dosis, frecuencia..."
+                [value]="formularioConsulta().medicamentos"
+                (input)="actualizarCampo('medicamentos', $any($event.target).value)"
+              ></textarea>
+
+            </div>
+
+
+            <div class="form-field">
+
+              <label>
+                Observaciones
+              </label>
+
+              <textarea
+                rows="3"
+                placeholder="Observaciones de la consulta..."
+                [value]="formularioConsulta().observaciones"
+                (input)="actualizarCampo('observaciones', $any($event.target).value)"
+              ></textarea>
+
+            </div>
+
+
+            <div class="form-field">
+
+              <label>
+                Evolución
+              </label>
+
+              <textarea
+                rows="3"
+                placeholder="Evolución y seguimiento..."
+                [value]="formularioConsulta().evolucion"
+                (input)="actualizarCampo('evolucion', $any($event.target).value)"
+              ></textarea>
+
+            </div>
+
+          </div>
+
+        </section>
+
+      </div>
+
+
+      <div class="modal__footer">
+
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="cerrarModalConsulta()"
+        >
+          Cancelar
+        </button>
+
+
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="guardarConsulta()"
+        >
+
+          <svg
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+
+          {{ modoEdicionConsulta()
+            ? 'Guardar cambios'
+            : 'Registrar consulta'
+          }}
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}

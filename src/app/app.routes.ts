@@ -16,6 +16,11 @@ import { ReportesAdminComponent } from './super-usuario/reportes-admin/reportes-
 import { ConfiguracionGlobalComponent } from './super-usuario/configuracion-global/configuracion-global';
 
 // Panel Empresa / Tenant
+import { FarmaciaComponent } from './panel/farmacia/farmacia.component';
+import { ProcedimientosComponent } from './panel/procedimientos/procedimientos.component';
+import { HospitalizacionComponent } from './panel/hospitalizacion/hospitalizacion.component';
+import { EsquemaVDComponent } from './panel/esquema-v-d/esquema-v-d.component';
+import { HistoriasClinicasComponent } from './panel/historia-clinica/historias-clinicas.component';
 import { PanelLayoutComponent } from './panel/panel-layout/panel-layout';
 import { PanelDashboardComponent } from './panel/dashboard/panel-dashboard.component';
 import { AgendaComponent } from './panel/agenda/agenda';
@@ -32,6 +37,8 @@ import { SinModulosComponent } from './shared/components/sin-modulos/sin-modulos
 import { authGuard } from './core/guards/auth.guard';
 import { superAdminGuard } from './core/guards/super-admin.guard';
 import { moduloGuard, moduloChildGuard } from './core/guards/modulo.guard';
+import { LaboratorioComponent } from './panel/laboratorio/laboratorio.component';
+import { FormulacionesComponent } from './panel/formulaciones/formulaciones.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -62,7 +69,7 @@ export const routes: Routes = [
   // Rutas del Área de Empresa / Tenant (con módulos dinámicos según suscripción)
   {
     path: 'panel',
-    component: PanelLayoutComponent,
+    component: SuperUsuarioLayoutComponent,
     canActivate: [authGuard],
     canActivateChild: [authGuard, moduloChildGuard],
     children: [
@@ -70,15 +77,46 @@ export const routes: Routes = [
         path: 'dashboard',
         component: PanelDashboardComponent,
       },
+
       {
         path: 'agenda',
         component: AgendaComponent,
         data: { modulo: 'citas' },
       },
       {
+        path: 'hospitalizacion',
+        component: HospitalizacionComponent,
+        data: { modulo: 'hospitalizacion' }
+      },
+      {
         path: 'pacientes',
         component: PacientesComponent,
         data: { modulo: 'clientes_pacientes' },
+      },
+      {
+        path: 'procedimientos',component: ProcedimientosComponent,
+        data: { modulo: 'procedimientos' }
+      },
+      {
+        path: 'laboratorio',
+        component: LaboratorioComponent,
+        data: { modulo: ' laboratorio'}
+      },
+      {
+        path: 'formulaciones',
+        component: FormulacionesComponent,
+        data: { modulo: ' formulaciones'}
+      },
+
+      {
+        path: 'esquema-v-d',
+        component: EsquemaVDComponent,
+        data: { modulo: 'esquema_v_d' }
+      },
+      {
+        path: 'farmacia',
+        component: FarmaciaComponent,
+        data: { modulo: 'farmacia'}
       },
       {
         path: 'pacientes/:id',
@@ -88,10 +126,17 @@ export const routes: Routes = [
       {
         path: 'usuarios',
         component: UsuariosEmpresaComponent,
+        data: {modulo: 'usuarios'},
+      },
+      {
+        path: 'historias-clinicas',
+        component: HistoriasClinicasComponent,
+        data: { modulo: 'historias_clinicas' }
       },
       {
         path: 'reportes',
         component: ReportesEmpresaComponent,
+        data: {modulo: 'reportes'},
       },
       {
         path: 'perfil',

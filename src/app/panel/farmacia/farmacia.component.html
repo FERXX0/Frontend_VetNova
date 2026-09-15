@@ -1,0 +1,1505 @@
+<section class="farmacia-page">
+
+  <!-- HEADER -->
+  <header class="page-header">
+
+    <div>
+      <span class="eyebrow">GESTIÓN DE INVENTARIO</span>
+
+      <h1>Farmacia</h1>
+
+      <p>
+        Administra el inventario, existencias y movimientos de medicamentos.
+      </p>
+    </div>
+
+    <button
+      class="btn-primary"
+      type="button"
+      (click)="abrirNuevoMedicamento()"
+    >
+      <span class="material-symbols-rounded">add</span>
+      Nuevo medicamento
+    </button>
+
+  </header>
+
+
+  <!-- ESTADÍSTICAS -->
+  <section class="stats-grid">
+
+    <article class="stat-card">
+
+      <div class="stat-icon">
+        <span class="material-symbols-rounded">
+          medication
+        </span>
+      </div>
+
+      <div>
+        <span>Total medicamentos</span>
+        <strong>{{ totalMedicamentos() }}</strong>
+      </div>
+
+    </article>
+
+
+    <article class="stat-card">
+
+      <div class="stat-icon">
+        <span class="material-symbols-rounded">
+          inventory_2
+        </span>
+      </div>
+
+      <div>
+        <span>Medicamentos activos</span>
+        <strong>{{ medicamentosActivos() }}</strong>
+      </div>
+
+    </article>
+
+
+    <article
+      class="stat-card warning-card"
+      [class.has-alert]="stockBajo() > 0"
+    >
+
+      <div class="stat-icon">
+        <span class="material-symbols-rounded">
+          warning
+        </span>
+      </div>
+
+      <div>
+        <span>Stock bajo</span>
+        <strong>{{ stockBajo() }}</strong>
+      </div>
+
+    </article>
+
+
+    <article
+      class="stat-card warning-card"
+      [class.has-alert]="proximosVencer() > 0"
+    >
+
+      <div class="stat-icon">
+        <span class="material-symbols-rounded">
+          event
+        </span>
+      </div>
+
+      <div>
+        <span>Próximos a vencer</span>
+        <strong>{{ proximosVencer() }}</strong>
+      </div>
+
+    </article>
+
+  </section>
+
+
+  <!-- RESUMEN -->
+  <section class="inventory-summary">
+
+    <div class="summary-item">
+
+      <span class="material-symbols-rounded">
+        account_balance_wallet
+      </span>
+
+      <div>
+        <span>Valor del inventario</span>
+
+        <strong>
+          {{ formatearMoneda(valorInventario()) }}
+        </strong>
+      </div>
+
+    </div>
+
+    <div class="summary-divider"></div>
+
+    <div class="summary-info">
+      Mantén actualizado el inventario para controlar existencias
+      y detectar medicamentos próximos a vencer.
+    </div>
+
+  </section>
+
+
+  <!-- FILTROS -->
+  <section class="filters-card">
+
+    <div class="search-box">
+
+      <span class="material-symbols-rounded">
+        search
+      </span>
+
+      <input
+        type="text"
+        placeholder="Buscar medicamento, principio activo, lote..."
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event)"
+      />
+
+    </div>
+
+
+    <div class="filter-control">
+
+      <label>Categoría</label>
+
+      <select
+        [ngModel]="filtroCategoria()"
+        (ngModelChange)="filtroCategoria.set($event)"
+      >
+
+        <option value="Todas">
+          Todas
+        </option>
+
+        @for (categoria of categorias(); track categoria) {
+          <option [value]="categoria">
+            {{ categoria }}
+          </option>
+        }
+
+      </select>
+
+    </div>
+
+
+    <div class="filter-control">
+
+      <label>Estado</label>
+
+      <select
+        [ngModel]="filtroEstado()"
+        (ngModelChange)="filtroEstado.set($event)"
+      >
+
+        <option value="Todos">Todos</option>
+        <option value="Activo">Activos</option>
+        <option value="Inactivo">Inactivos</option>
+
+      </select>
+
+    </div>
+
+
+    <div class="filter-control">
+
+      <label>Inventario</label>
+
+      <select
+        [ngModel]="filtroStock()"
+        (ngModelChange)="filtroStock.set($event)"
+      >
+
+        <option value="Todos">Todos</option>
+        <option value="Disponible">Disponible</option>
+        <option value="Bajo">Stock bajo</option>
+        <option value="Agotado">Agotado</option>
+
+      </select>
+
+    </div>
+
+
+    <button
+      type="button"
+      class="btn-filter-clear"
+      (click)="limpiarFiltros()"
+    >
+
+      <span class="material-symbols-rounded">
+        filter_alt_off
+      </span>
+
+      Limpiar
+
+    </button>
+
+  </section>
+
+
+  <!-- TABLA -->
+  <section class="table-card">
+
+    <div class="table-header">
+
+      <div>
+        <h2>Inventario de medicamentos</h2>
+
+        <p>
+          {{ medicamentosFiltrados().length }}
+          resultado(s) encontrado(s)
+        </p>
+      </div>
+
+    </div>
+
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>MEDICAMENTO</th>
+            <th>CATEGORÍA</th>
+            <th>LOTE</th>
+            <th>VENCIMIENTO</th>
+            <th>EXISTENCIAS</th>
+            <th>UBICACIÓN</th>
+            <th>ESTADO</th>
+            <th></th>
+          </tr>
+
+        </thead>
+
+
+        <tbody>
+
+          @for (
+            medicamento of medicamentosFiltrados();
+            track medicamento.id
+          ) {
+
+            <tr>
+
+              <!-- MEDICAMENTO -->
+              <td>
+
+                <div class="medicine-cell">
+
+                  <div class="medicine-icon">
+
+                    <span class="material-symbols-rounded">
+                      medication
+                    </span>
+
+                  </div>
+
+                  <div>
+
+                    <strong>
+                      {{ medicamento.nombre }}
+                    </strong>
+
+                    <span>
+                      {{ medicamento.concentracion }}
+                      ·
+                      {{ medicamento.presentacion }}
+                    </span>
+
+                  </div>
+
+                </div>
+
+              </td>
+
+
+              <!-- CATEGORIA -->
+              <td>
+
+                <span class="category-badge">
+                  {{ medicamento.categoria }}
+                </span>
+
+              </td>
+
+
+              <!-- LOTE -->
+              <td>
+
+                <span class="lot-number">
+                  {{ medicamento.lote }}
+                </span>
+
+              </td>
+
+
+              <!-- VENCIMIENTO -->
+              <td>
+
+                <div class="expiration-cell">
+
+                  <span>
+                    {{ medicamento.fechaVencimiento | date:'dd/MM/yyyy' }}
+                  </span>
+
+                  @if (
+                    obtenerDiasParaVencer(
+                      medicamento.fechaVencimiento
+                    ) <= 90
+                  ) {
+
+                    <small>
+                      {{ obtenerDiasParaVencer(
+                        medicamento.fechaVencimiento
+                      ) }} días
+
+                    </small>
+
+                  }
+
+                </div>
+
+              </td>
+
+
+              <!-- STOCK -->
+              <td>
+
+                <div class="stock-cell">
+
+                  <div class="stock-number">
+
+                    <strong>
+                      {{ medicamento.stock }}
+                    </strong>
+
+                    <span>
+                      {{ medicamento.unidad }}
+                    </span>
+
+                  </div>
+
+                  <small>
+                    Mín. {{ medicamento.stockMinimo }}
+                  </small>
+
+                </div>
+
+              </td>
+
+
+              <!-- UBICACIÓN -->
+              <td>
+
+                <span class="location-cell">
+
+                  <span class="material-symbols-rounded">
+                    location_on
+                  </span>
+
+                  {{ medicamento.ubicacion }}
+
+                </span>
+
+              </td>
+
+
+              <!-- ESTADO -->
+              <td>
+
+                <div class="status-stack">
+
+                  <span
+                    class="stock-status"
+                    [class.available]="
+                      obtenerEstadoStock(medicamento) === 'Disponible'
+                    "
+                    [class.low]="
+                      obtenerEstadoStock(medicamento) === 'Stock bajo'
+                    "
+                    [class.empty]="
+                      obtenerEstadoStock(medicamento) === 'Agotado'
+                    "
+                  >
+                    {{ obtenerEstadoStock(medicamento) }}
+                  </span>
+
+                </div>
+
+              </td>
+
+
+              <!-- ACCIONES -->
+              <td>
+
+                <div class="row-actions">
+
+                  <button
+                    type="button"
+                    title="Ver detalle"
+                    (click)="abrirDetalle(medicamento)"
+                  >
+                    <span class="material-symbols-rounded">
+                      visibility
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    title="Entrada"
+                    (click)="abrirMovimiento(medicamento, 'Entrada')"
+                  >
+                    <span class="material-symbols-rounded">
+                      add_box
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    title="Salida"
+                    (click)="abrirMovimiento(medicamento, 'Salida')"
+                  >
+                    <span class="material-symbols-rounded">
+                      remove_circle
+                    </span>
+                  </button>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          }
+
+
+          @if (medicamentosFiltrados().length === 0) {
+
+            <tr>
+
+              <td colspan="8">
+
+                <div class="empty-state">
+
+                  <span class="material-symbols-rounded">
+                    medication
+                  </span>
+
+                  <h3>
+                    No se encontraron medicamentos
+                  </h3>
+
+                  <p>
+                    Intenta cambiar los filtros o registra un nuevo
+                    medicamento.
+                  </p>
+
+                  <button
+                    type="button"
+                    class="btn-primary"
+                    (click)="abrirNuevoMedicamento()"
+                  >
+                    Nuevo medicamento
+                  </button>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</section>
+
+
+<!-- ========================================================= -->
+<!-- MODAL DETALLE -->
+<!-- ========================================================= -->
+
+@if (
+  modalDetalleAbierto() &&
+  medicamentoSeleccionado();
+  as medicamento
+) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarDetalle()"
+  >
+
+    <div
+      class="modal modal-large"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="modal-header">
+
+        <div>
+
+          <span class="eyebrow">
+            INVENTARIO
+          </span>
+
+          <h2>
+            {{ medicamento.nombre }}
+          </h2>
+
+          <p>
+            {{ medicamento.codigo }}
+            ·
+            {{ medicamento.principioActivo }}
+          </p>
+
+        </div>
+
+        <button
+          class="modal-close"
+          type="button"
+          (click)="cerrarDetalle()"
+        >
+          <span class="material-symbols-rounded">
+            close
+          </span>
+        </button>
+
+      </div>
+
+
+      <div class="modal-body">
+
+        <!-- INFORMACION -->
+        <section class="detail-section">
+
+          <div class="section-title">
+
+            <span class="material-symbols-rounded">
+              medication
+            </span>
+
+            <h3>
+              Información del medicamento
+            </h3>
+
+          </div>
+
+
+          <div class="detail-grid">
+
+            <div>
+              <label>Medicamento</label>
+              <strong>{{ medicamento.nombre }}</strong>
+            </div>
+
+            <div>
+              <label>Principio activo</label>
+              <strong>{{ medicamento.principioActivo }}</strong>
+            </div>
+
+            <div>
+              <label>Concentración</label>
+              <strong>{{ medicamento.concentracion }}</strong>
+            </div>
+
+            <div>
+              <label>Presentación</label>
+              <strong>{{ medicamento.presentacion }}</strong>
+            </div>
+
+            <div>
+              <label>Categoría</label>
+              <strong>{{ medicamento.categoria }}</strong>
+            </div>
+
+            <div>
+              <label>Laboratorio</label>
+              <strong>{{ medicamento.laboratorio }}</strong>
+            </div>
+
+            <div>
+              <label>Lote</label>
+              <strong>{{ medicamento.lote }}</strong>
+            </div>
+
+            <div>
+              <label>Ubicación</label>
+              <strong>{{ medicamento.ubicacion }}</strong>
+            </div>
+
+            <div>
+              <label>Vencimiento</label>
+              <strong>
+                {{ medicamento.fechaVencimiento | date:'dd/MM/yyyy' }}
+              </strong>
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- EXISTENCIAS -->
+        <section class="detail-section">
+
+          <div class="section-title">
+
+            <span class="material-symbols-rounded">
+              inventory_2
+            </span>
+
+            <h3>
+              Existencias
+            </h3>
+
+          </div>
+
+
+          <div class="stock-overview">
+
+            <div class="stock-main">
+
+              <span>Existencia actual</span>
+
+              <strong>
+                {{ medicamento.stock }}
+              </strong>
+
+              <small>
+                {{ medicamento.unidad }}
+              </small>
+
+            </div>
+
+
+            <div class="stock-detail">
+
+              <div>
+                <span>Stock mínimo</span>
+                <strong>
+                  {{ medicamento.stockMinimo }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Precio compra</span>
+                <strong>
+                  {{ formatearMoneda(medicamento.precioCompra) }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Precio venta</span>
+                <strong>
+                  {{ formatearMoneda(medicamento.precioVenta) }}
+                </strong>
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- MOVIMIENTOS -->
+        <section class="detail-section">
+
+          <div class="section-title section-title-between">
+
+            <div class="title-with-icon">
+
+              <span class="material-symbols-rounded">
+                history
+              </span>
+
+              <h3>
+                Movimientos
+              </h3>
+
+            </div>
+
+
+            <div class="movement-actions">
+
+              <button
+                type="button"
+                class="btn-secondary"
+                (click)="abrirMovimiento(medicamento, 'Entrada')"
+              >
+                <span class="material-symbols-rounded">
+                  add
+                </span>
+
+                Entrada
+              </button>
+
+              <button
+                type="button"
+                class="btn-secondary"
+                (click)="abrirMovimiento(medicamento, 'Salida')"
+              >
+                <span class="material-symbols-rounded">
+                  remove
+                </span>
+
+                Salida
+              </button>
+
+            </div>
+
+          </div>
+
+
+          @if (medicamento.movimientos.length > 0) {
+
+            <div class="movements-list">
+
+              @for (
+                movimiento of medicamento.movimientos;
+                track movimiento.id
+              ) {
+
+                <article class="movement-item">
+
+                  <div
+                    class="movement-icon"
+                    [class.entry]="movimiento.tipo === 'Entrada'"
+                    [class.exit]="movimiento.tipo === 'Salida'"
+                    [class.adjustment]="movimiento.tipo === 'Ajuste'"
+                  >
+
+                    <span class="material-symbols-rounded">
+
+                      {{
+                        movimiento.tipo === 'Entrada'
+                          ? 'south_west'
+                          : movimiento.tipo === 'Salida'
+                            ? 'north_east'
+                            : 'sync_alt'
+                      }}
+
+                    </span>
+
+                  </div>
+
+
+                  <div class="movement-info">
+
+                    <strong>
+                      {{ movimiento.tipo }}
+                    </strong>
+
+                    <span>
+                      {{ movimiento.motivo }}
+                    </span>
+
+                  </div>
+
+
+                  <div class="movement-quantity">
+
+                    <strong
+                      [class.positive]="
+                        movimiento.tipo === 'Entrada'
+                      "
+                      [class.negative]="
+                        movimiento.tipo === 'Salida'
+                      "
+                    >
+
+                      {{
+                        movimiento.tipo === 'Entrada'
+                          ? '+'
+                          : movimiento.tipo === 'Salida'
+                            ? '-'
+                            : ''
+                      }}
+
+                      {{ movimiento.cantidad }}
+
+                    </strong>
+
+                    <span>
+                      {{ movimiento.fecha | date:'dd/MM/yyyy' }}
+                    </span>
+
+                  </div>
+
+
+                  <div class="movement-responsible">
+
+                    <span>Responsable</span>
+
+                    <strong>
+                      {{ movimiento.responsable }}
+                    </strong>
+
+                  </div>
+
+                </article>
+
+              }
+
+            </div>
+
+          } @else {
+
+            <div class="empty-movements">
+
+              <span class="material-symbols-rounded">
+                history
+              </span>
+
+              <p>
+                No hay movimientos registrados.
+              </p>
+
+            </div>
+
+          }
+
+        </section>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <div class="footer-status">
+
+          <span>Estado:</span>
+
+          <span
+            class="status-badge"
+            [class.active]="medicamento.estado === 'Activo'"
+            [class.inactive]="medicamento.estado === 'Inactivo'"
+          >
+            {{ medicamento.estado }}
+          </span>
+
+        </div>
+
+
+        <div class="footer-actions">
+
+          @if (medicamento.estado === 'Activo') {
+
+            <button
+              type="button"
+              class="btn-danger-outline"
+              (click)="cambiarEstado(medicamento, 'Inactivo')"
+            >
+              <span class="material-symbols-rounded">
+                block
+              </span>
+
+              Desactivar
+            </button>
+
+          } @else {
+
+            <button
+              type="button"
+              class="btn-secondary"
+              (click)="cambiarEstado(medicamento, 'Activo')"
+            >
+              <span class="material-symbols-rounded">
+                check_circle
+              </span>
+
+              Activar
+            </button>
+
+          }
+
+
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="editarMedicamento(medicamento)"
+          >
+            <span class="material-symbols-rounded">
+              edit
+            </span>
+
+            Editar
+          </button>
+
+
+          <button
+            type="button"
+            class="btn-danger"
+            (click)="eliminarMedicamento(medicamento)"
+          >
+            <span class="material-symbols-rounded">
+              delete
+            </span>
+
+            Eliminar
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}
+
+
+<!-- ========================================================= -->
+<!-- MODAL NUEVO / EDITAR -->
+<!-- ========================================================= -->
+
+@if (modalFormularioAbierto()) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarFormulario()"
+  >
+
+    <div
+      class="modal modal-extra-large"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="modal-header">
+
+        <div>
+
+          <span class="eyebrow">
+            {{ modoEdicion() ? 'EDITAR' : 'NUEVO' }}
+          </span>
+
+          <h2>
+            {{
+              modoEdicion()
+                ? 'Editar medicamento'
+                : 'Nuevo medicamento'
+            }}
+          </h2>
+
+          <p>
+            Registra la información del medicamento e inventario.
+          </p>
+
+        </div>
+
+
+        <button
+          class="modal-close"
+          type="button"
+          (click)="cerrarFormulario()"
+        >
+          <span class="material-symbols-rounded">
+            close
+          </span>
+        </button>
+
+      </div>
+
+
+      <div class="modal-body">
+
+        <!-- DATOS GENERALES -->
+        <section class="form-section">
+
+          <div class="section-title">
+
+            <span class="material-symbols-rounded">
+              medication
+            </span>
+
+            <h3>
+              Información general
+            </h3>
+
+          </div>
+
+
+          <div class="form-grid">
+
+            <div class="form-group">
+
+              <label>Nombre *</label>
+
+              <input
+                type="text"
+                placeholder="Nombre del medicamento"
+                [ngModel]="formulario().nombre"
+                (ngModelChange)="actualizarFormulario('nombre', $event)"
+              />
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label>Principio activo *</label>
+
+              <input
+                type="text"
+                placeholder="Principio activo"
+                [ngModel]="formulario().principioActivo"
+                (ngModelChange)="actualizarFormulario('principioActivo', $event)"
+              />
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label>Concentración *</label>
+
+              <input
+                type="text"
+                placeholder="Ej. 50 mg"
+                [ngModel]="formulario().concentracion"
+                (ngModelChange)="actualizarFormulario('concentracion', $event)"
+              />
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label>Presentación *</label>
+
+              <input
+                type="text"
+                placeholder="Ej. Tabletas"
+                [ngModel]="formulario().presentacion"
+                (ngModelChange)="actualizarFormulario('presentacion', $event)"
+              />
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label>Categoría *</label>
+
+              <input
+                type="text"
+                placeholder="Ej. Antibióticos"
+                [ngModel]="formulario().categoria"
+                (ngModelChange)="actualizarFormulario('categoria', $event)"
+              />
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label>Laboratorio</label>
+
+              <input
+                type="text"
+                placeholder="Laboratorio fabricante"
+                [ngModel]="formulario().laboratorio"
+                (ngModelChange)="actualizarFormulario('laboratorio', $event)"
+              />
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- INVENTARIO -->
+        <section class="form-section">
+
+          <div class="section-title">
+
+            <span class="material-symbols-rounded">
+              inventory_2
+            </span>
+
+            <h3>
+              Inventario
+            </h3>
+
+          </div>
+
+
+          <div class="form-grid">
+
+            <div class="form-group">
+
+              <label>Lote</label>
+
+              <input
+                type="text"
+                placeholder="Número de lote"
+                [ngModel]="formulario().lote"
+                (ngModelChange)="actualizarFormulario('lote', $event)"
+              />
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label>Fecha de vencimiento *</label>
+
+              <input
+                type="date"
+                [ngModel]="formulario().fechaVencimiento"
+                (ngModelChange)="actualizarFormulario('fechaVencimiento', $event)"
+              />
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label>Existencias</label>
+
+              <input
+                type="number"
+                min="0"
+                [ngModel]="formulario().stock"
+                (ngModelChange)="actualizarFormulario('stock', $event)"
+              />
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label>Stock mínimo</label>
+
+              <input
+                type="number"
+                min="0"
+                [ngModel]="formulario().stockMinimo"
+                (ngModelChange)="actualizarFormulario('stockMinimo', $event)"
+              />
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label>Unidad</label>
+
+              <select
+                [ngModel]="formulario().unidad"
+                (ngModelChange)="actualizarFormulario('unidad', $event)"
+              >
+                <option value="Unidades">Unidades</option>
+                <option value="Tabletas">Tabletas</option>
+                <option value="Cápsulas">Cápsulas</option>
+                <option value="Frascos">Frascos</option>
+                <option value="Ampollas">Ampollas</option>
+                <option value="Tubos">Tubos</option>
+                <option value="Sobres">Sobres</option>
+              </select>
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label>Ubicación</label>
+
+              <input
+                type="text"
+                placeholder="Ej. Estante A-01"
+                [ngModel]="formulario().ubicacion"
+                (ngModelChange)="actualizarFormulario('ubicacion', $event)"
+              />
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- PRECIOS -->
+        <section class="form-section">
+
+          <div class="section-title">
+
+            <span class="material-symbols-rounded">
+              payments
+            </span>
+
+            <h3>
+              Información comercial
+            </h3>
+
+          </div>
+
+
+          <div class="form-grid">
+
+            <div class="form-group">
+
+              <label>Precio de compra</label>
+
+              <input
+                type="number"
+                min="0"
+                [ngModel]="formulario().precioCompra"
+                (ngModelChange)="actualizarFormulario('precioCompra', $event)"
+              />
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label>Precio de venta</label>
+
+              <input
+                type="number"
+                min="0"
+                [ngModel]="formulario().precioVenta"
+                (ngModelChange)="actualizarFormulario('precioVenta', $event)"
+              />
+
+            </div>
+
+          </div>
+
+        </section>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="cerrarFormulario()"
+        >
+          Cancelar
+        </button>
+
+
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="
+            !formulario().nombre ||
+            !formulario().principioActivo ||
+            !formulario().concentracion ||
+            !formulario().presentacion ||
+            !formulario().categoria ||
+            !formulario().fechaVencimiento
+          "
+          (click)="guardarMedicamento()"
+        >
+
+          <span class="material-symbols-rounded">
+            save
+          </span>
+
+          {{
+            modoEdicion()
+              ? 'Guardar cambios'
+              : 'Guardar medicamento'
+          }}
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}
+
+
+<!-- ========================================================= -->
+<!-- MODAL MOVIMIENTO -->
+<!-- ========================================================= -->
+
+@if (
+  modalMovimientoAbierto() &&
+  medicamentoSeleccionado();
+  as medicamento
+) {
+
+  <div
+    class="modal-backdrop modal-nested"
+    (click)="cerrarMovimiento()"
+  >
+
+    <div
+      class="modal modal-medium"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="modal-header">
+
+        <div>
+
+          <span class="eyebrow">
+            INVENTARIO
+          </span>
+
+          <h2>
+            Movimiento de inventario
+          </h2>
+
+          <p>
+            {{ medicamento.nombre }}
+          </p>
+
+        </div>
+
+
+        <button
+          class="modal-close"
+          type="button"
+          (click)="cerrarMovimiento()"
+        >
+          <span class="material-symbols-rounded">
+            close
+          </span>
+        </button>
+
+      </div>
+
+
+      <div class="modal-body">
+
+        <div class="movement-current-stock">
+
+          <span>Existencia actual</span>
+
+          <strong>
+            {{ medicamento.stock }}
+          </strong>
+
+          <small>
+            {{ medicamento.unidad }}
+          </small>
+
+        </div>
+
+
+        <div class="form-grid">
+
+          <div class="form-group full">
+
+            <label>Tipo de movimiento</label>
+
+            <select
+              [ngModel]="formularioMovimiento().tipo"
+              (ngModelChange)="actualizarMovimiento('tipo', $event)"
+            >
+
+              <option value="Entrada">
+                Entrada
+              </option>
+
+              <option value="Salida">
+                Salida
+              </option>
+
+              <option value="Ajuste">
+                Ajuste
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="form-group full">
+
+            <label>
+              {{
+                formularioMovimiento().tipo === 'Ajuste'
+                  ? 'Nueva existencia'
+                  : 'Cantidad'
+              }}
+            </label>
+
+            <input
+              type="number"
+              min="1"
+              [ngModel]="formularioMovimiento().cantidad"
+              (ngModelChange)="actualizarMovimiento('cantidad', $event)"
+            />
+
+          </div>
+
+
+          <div class="form-group full">
+
+            <label>Motivo *</label>
+
+            <input
+              type="text"
+              placeholder="Ej. Compra a proveedor"
+              [ngModel]="formularioMovimiento().motivo"
+              (ngModelChange)="actualizarMovimiento('motivo', $event)"
+            />
+
+          </div>
+
+
+          <div class="form-group full">
+
+            <label>Responsable *</label>
+
+            <input
+              type="text"
+              placeholder="Persona responsable"
+              [ngModel]="formularioMovimiento().responsable"
+              (ngModelChange)="actualizarMovimiento('responsable', $event)"
+            />
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="cerrarMovimiento()"
+        >
+          Cancelar
+        </button>
+
+
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="
+            formularioMovimiento().cantidad <= 0 ||
+            !formularioMovimiento().motivo ||
+            !formularioMovimiento().responsable
+          "
+          (click)="guardarMovimiento()"
+        >
+
+          <span class="material-symbols-rounded">
+            save
+          </span>
+
+          Registrar movimiento
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}

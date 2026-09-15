@@ -1,0 +1,1696 @@
+<div class="modulo-container">
+
+  <!-- ENCABEZADO -->
+  <header class="page-header">
+
+    <div>
+
+      <div class="breadcrumb">
+        Módulos / Procedimientos
+      </div>
+
+      <h1>Procedimientos</h1>
+
+      <p>
+        Gestiona los procedimientos médicos y terapéuticos
+        realizados a los pacientes.
+      </p>
+
+    </div>
+
+    <button
+      type="button"
+      class="btn-primary"
+      (click)="abrirNuevoProcedimiento()"
+    >
+      + Nuevo procedimiento
+    </button>
+
+  </header>
+
+
+  <!-- ESTADÍSTICAS -->
+  <section class="stats-grid">
+
+    <div class="stat-card">
+
+      <div class="stat-icon total">
+        🩺
+      </div>
+
+      <div>
+        <span>Total procedimientos</span>
+        <strong>{{ totalProcedimientos() }}</strong>
+      </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+      <div class="stat-icon programado">
+        📅
+      </div>
+
+      <div>
+        <span>Programados</span>
+        <strong>{{ totalProgramados() }}</strong>
+      </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+      <div class="stat-icon proceso">
+        ⚙️
+      </div>
+
+      <div>
+        <span>En proceso</span>
+        <strong>{{ totalEnProceso() }}</strong>
+      </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+      <div class="stat-icon completado">
+        ✓
+      </div>
+
+      <div>
+        <span>Completados</span>
+        <strong>{{ totalCompletados() }}</strong>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- RESUMEN -->
+  <section class="summary-card">
+
+    <div class="summary-header">
+
+      <div>
+
+        <h2>
+          Resumen de procedimientos
+        </h2>
+
+        <p>
+          Estado general de los procedimientos registrados.
+        </p>
+
+      </div>
+
+      <span class="summary-badge">
+        {{ totalAltaPrioridad() }}
+        de alta prioridad
+      </span>
+
+    </div>
+
+
+    <div class="summary-grid">
+
+      <div class="summary-item">
+
+        <span class="summary-number">
+          {{ totalProgramados() }}
+        </span>
+
+        <span>
+          Programados
+        </span>
+
+      </div>
+
+
+      <div class="summary-item">
+
+        <span class="summary-number">
+          {{ totalEnProceso() }}
+        </span>
+
+        <span>
+          En proceso
+        </span>
+
+      </div>
+
+
+      <div class="summary-item">
+
+        <span class="summary-number">
+          {{ totalCompletados() }}
+        </span>
+
+        <span>
+          Completados
+        </span>
+
+      </div>
+
+
+      <div class="summary-item">
+
+        <span class="summary-number">
+          {{ totalNotas() }}
+        </span>
+
+        <span>
+          Notas registradas
+        </span>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- FILTROS -->
+  <section class="filters-card">
+
+    <div class="search-box">
+
+      <span class="search-icon">
+        ⌕
+      </span>
+
+      <input
+        type="text"
+        placeholder="Buscar paciente, procedimiento, diagnóstico..."
+        [value]="busqueda()"
+        (input)="
+          busqueda.set(
+            $any($event.target).value
+          )
+        "
+      />
+
+    </div>
+
+
+    <select
+      [value]="filtroEstado()"
+      (change)="
+        filtroEstado.set(
+          $any($event.target).value
+        )
+      "
+    >
+
+      <option value="Todos">
+        Todos los estados
+      </option>
+
+      <option value="Programado">
+        Programado
+      </option>
+
+      <option value="En proceso">
+        En proceso
+      </option>
+
+      <option value="Completado">
+        Completado
+      </option>
+
+      <option value="Cancelado">
+        Cancelado
+      </option>
+
+    </select>
+
+
+    <select
+      [value]="filtroPrioridad()"
+      (change)="
+        filtroPrioridad.set(
+          $any($event.target).value
+        )
+      "
+    >
+
+      <option value="Todas">
+        Todas las prioridades
+      </option>
+
+      <option value="Baja">
+        Baja
+      </option>
+
+      <option value="Media">
+        Media
+      </option>
+
+      <option value="Alta">
+        Alta
+      </option>
+
+      <option value="Crítica">
+        Crítica
+      </option>
+
+    </select>
+
+
+    <select
+      [value]="filtroCategoria()"
+      (change)="
+        filtroCategoria.set(
+          $any($event.target).value
+        )
+      "
+    >
+
+      <option value="Todas">
+        Todas las categorías
+      </option>
+
+      <option value="Terapéutico">
+        Terapéutico
+      </option>
+
+      <option value="Quirúrgico">
+        Quirúrgico
+      </option>
+
+      <option value="Diagnóstico">
+        Diagnóstico
+      </option>
+
+      <option value="Curación">
+        Curación
+      </option>
+
+      <option value="Odontología">
+        Odontología
+      </option>
+
+    </select>
+
+
+    <select
+      [value]="filtroEspecie()"
+      (change)="
+        filtroEspecie.set(
+          $any($event.target).value
+        )
+      "
+    >
+
+      <option value="Todas">
+        Todas las especies
+      </option>
+
+      <option value="Canino">
+        Caninos
+      </option>
+
+      <option value="Felino">
+        Felinos
+      </option>
+
+    </select>
+
+
+    <button
+      type="button"
+      class="btn-secondary"
+      (click)="limpiarFiltros()"
+    >
+      Limpiar
+    </button>
+
+  </section>
+
+
+  <!-- TABLA -->
+  <section class="table-card">
+
+    <div class="table-header">
+
+      <div>
+
+        <h2>
+          Procedimientos registrados
+        </h2>
+
+        <span>
+          {{ procedimientosFiltrados().length }}
+          registros encontrados
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>Paciente</th>
+            <th>Procedimiento</th>
+            <th>Fecha / Hora</th>
+            <th>Veterinario</th>
+            <th>Sala</th>
+            <th>Prioridad</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+
+          </tr>
+
+        </thead>
+
+
+        <tbody>
+
+          @for (
+            item of procedimientosFiltrados();
+            track item.id
+          ) {
+
+            <tr>
+
+              <!-- PACIENTE -->
+              <td>
+
+                <div class="patient-cell">
+
+                  <div class="patient-avatar">
+                    {{ item.paciente.charAt(0) }}
+                  </div>
+
+                  <div>
+
+                    <strong>
+                      {{ item.paciente }}
+                    </strong>
+
+                    <small>
+                      {{ item.especie }}
+                      ·
+                      {{ item.raza }}
+                    </small>
+
+                    <small>
+                      {{ item.propietario }}
+                    </small>
+
+                  </div>
+
+                </div>
+
+              </td>
+
+
+              <!-- PROCEDIMIENTO -->
+              <td>
+
+                <div class="procedure-cell">
+
+                  <strong>
+                    {{ item.procedimiento }}
+                  </strong>
+
+                  <small>
+                    {{ item.categoria }}
+                    ·
+                    {{ item.diagnostico }}
+                  </small>
+
+                </div>
+
+              </td>
+
+
+              <!-- FECHA -->
+              <td>
+
+                <div class="date-cell">
+
+                  <strong>
+                    {{ formatearFecha(item.fecha) }}
+                  </strong>
+
+                  <small>
+                    {{ item.hora }}
+                    ·
+                    {{ item.duracion }}
+                  </small>
+
+                </div>
+
+              </td>
+
+
+              <!-- VETERINARIO -->
+              <td>
+                {{ item.veterinario }}
+              </td>
+
+
+              <!-- SALA -->
+              <td>
+
+                <span class="room-badge">
+                  🏥 {{ item.sala }}
+                </span>
+
+              </td>
+
+
+              <!-- PRIORIDAD -->
+              <td>
+
+                <span
+                  class="priority-badge"
+                  [ngClass]="
+                    obtenerClasePrioridad(
+                      item.prioridad
+                    )
+                  "
+                >
+                  {{ item.prioridad }}
+                </span>
+
+              </td>
+
+
+              <!-- ESTADO -->
+              <td>
+
+                <span
+                  class="status-badge"
+                  [ngClass]="
+                    obtenerClaseEstado(
+                      item.estado
+                    )
+                  "
+                >
+                  {{ item.estado }}
+                </span>
+
+              </td>
+
+
+              <!-- ACCIONES -->
+              <td>
+
+                <div class="actions">
+
+                  <button
+                    type="button"
+                    class="action-view"
+                    (click)="abrirDetalle(item)"
+                  >
+                    Ver
+                  </button>
+
+                  <button
+                    type="button"
+                    class="action-edit"
+                    (click)="editarProcedimiento(item)"
+                  >
+                    Editar
+                  </button>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          }
+
+
+          @if (
+            procedimientosFiltrados().length === 0
+          ) {
+
+            <tr>
+
+              <td
+                colspan="8"
+                class="empty-state"
+              >
+
+                <div>
+
+                  <span>🔎</span>
+
+                  <strong>
+                    No encontramos procedimientos
+                  </strong>
+
+                  <p>
+                    Intenta cambiar los filtros de búsqueda.
+                  </p>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- MODAL DETALLE -->
+<!-- ====================================================== -->
+
+@if (
+  modalDetalleAbierto() &&
+  procedimientoSeleccionado()
+) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarDetalle()"
+  >
+
+    <div
+      class="modal modal-large"
+      (click)="$event.stopPropagation()"
+    >
+
+      <!-- HEADER -->
+
+      <div class="modal-header">
+
+        <div class="patient-header">
+
+          <div class="patient-avatar large">
+            {{ procedimientoSeleccionado()!.paciente.charAt(0) }}
+          </div>
+
+          <div>
+
+            <div class="title-row">
+
+              <h2>
+                {{ procedimientoSeleccionado()!.procedimiento }}
+              </h2>
+
+              <span
+                class="status-badge"
+                [ngClass]="
+                  obtenerClaseEstado(
+                    procedimientoSeleccionado()!.estado
+                  )
+                "
+              >
+                {{ procedimientoSeleccionado()!.estado }}
+              </span>
+
+            </div>
+
+            <p>
+              Paciente:
+              {{ procedimientoSeleccionado()!.paciente }}
+              ·
+              {{ procedimientoSeleccionado()!.especie }}
+              ·
+              {{ procedimientoSeleccionado()!.raza }}
+            </p>
+
+            <small>
+              Propietario:
+              {{ procedimientoSeleccionado()!.propietario }}
+            </small>
+
+          </div>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="close-button"
+          (click)="cerrarDetalle()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <!-- INFORMACIÓN -->
+
+      <section class="detail-section">
+
+        <div class="section-heading">
+
+          <div>
+
+            <h3>
+              Información del procedimiento
+            </h3>
+
+            <p>
+              Datos generales y programación.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="detail-grid">
+
+          <div class="detail-item">
+
+            <span>
+              Procedimiento
+            </span>
+
+            <strong>
+              {{ procedimientoSeleccionado()!.procedimiento }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>
+              Categoría
+            </span>
+
+            <strong>
+              {{ procedimientoSeleccionado()!.categoria }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>
+              Diagnóstico
+            </span>
+
+            <strong>
+              {{ procedimientoSeleccionado()!.diagnostico || '-' }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>
+              Fecha
+            </span>
+
+            <strong>
+              {{
+                formatearFecha(
+                  procedimientoSeleccionado()!.fecha
+                )
+              }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>
+              Hora
+            </span>
+
+            <strong>
+              {{ procedimientoSeleccionado()!.hora }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>
+              Duración
+            </span>
+
+            <strong>
+              {{ procedimientoSeleccionado()!.duracion || '-' }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>
+              Veterinario
+            </span>
+
+            <strong>
+              {{ procedimientoSeleccionado()!.veterinario }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>
+              Sala
+            </span>
+
+            <strong>
+              {{ procedimientoSeleccionado()!.sala }}
+            </strong>
+
+          </div>
+
+
+          <div class="detail-item">
+
+            <span>
+              Prioridad
+            </span>
+
+            <span
+              class="priority-badge"
+              [ngClass]="
+                obtenerClasePrioridad(
+                  procedimientoSeleccionado()!.prioridad
+                )
+              "
+            >
+              {{ procedimientoSeleccionado()!.prioridad }}
+            </span>
+
+          </div>
+
+        </div>
+
+
+        @if (
+          procedimientoSeleccionado()!.indicaciones
+        ) {
+
+          <div class="text-block">
+
+            <span>
+              Indicaciones
+            </span>
+
+            <p>
+              {{ procedimientoSeleccionado()!.indicaciones }}
+            </p>
+
+          </div>
+
+        }
+
+
+        @if (
+          procedimientoSeleccionado()!.observaciones
+        ) {
+
+          <div class="text-block">
+
+            <span>
+              Observaciones
+            </span>
+
+            <p>
+              {{ procedimientoSeleccionado()!.observaciones }}
+            </p>
+
+          </div>
+
+        }
+
+      </section>
+
+
+      <!-- CAMBIAR ESTADO -->
+
+      <section class="detail-section">
+
+        <div class="section-heading">
+
+          <div>
+
+            <h3>
+              Estado del procedimiento
+            </h3>
+
+            <p>
+              Actualiza el estado según el avance.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="state-actions">
+
+          <button
+            type="button"
+            [class.active]="
+              procedimientoSeleccionado()!.estado ===
+              'Programado'
+            "
+            (click)="
+              cambiarEstado(
+                procedimientoSeleccionado()!,
+                'Programado'
+              )
+            "
+          >
+            📅 Programado
+          </button>
+
+
+          <button
+            type="button"
+            [class.active]="
+              procedimientoSeleccionado()!.estado ===
+              'En proceso'
+            "
+            (click)="
+              cambiarEstado(
+                procedimientoSeleccionado()!,
+                'En proceso'
+              )
+            "
+          >
+            ⚙️ En proceso
+          </button>
+
+
+          <button
+            type="button"
+            [class.active]="
+              procedimientoSeleccionado()!.estado ===
+              'Completado'
+            "
+            (click)="
+              cambiarEstado(
+                procedimientoSeleccionado()!,
+                'Completado'
+              )
+            "
+          >
+            ✓ Completado
+          </button>
+
+
+          <button
+            type="button"
+            [class.active]="
+              procedimientoSeleccionado()!.estado ===
+              'Cancelado'
+            "
+            (click)="
+              cambiarEstado(
+                procedimientoSeleccionado()!,
+                'Cancelado'
+              )
+            "
+          >
+            × Cancelado
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- NOTAS -->
+
+      <section class="detail-section">
+
+        <div class="section-heading">
+
+          <div>
+
+            <h3>
+              Notas del procedimiento
+            </h3>
+
+            <p>
+              {{ procedimientoSeleccionado()!.notas.length }}
+              notas registradas.
+            </p>
+
+          </div>
+
+
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="abrirNuevaNota()"
+          >
+            + Agregar nota
+          </button>
+
+        </div>
+
+
+        @if (
+          procedimientoSeleccionado()!.notas.length
+        ) {
+
+          <div class="notes-list">
+
+            @for (
+              nota of procedimientoSeleccionado()!.notas;
+              track nota.id
+            ) {
+
+              <article class="note-card">
+
+                <div class="note-header">
+
+                  <div>
+
+                    <strong>
+                      {{ nota.usuario }}
+                    </strong>
+
+                    <span>
+                      {{ formatearFecha(nota.fecha) }}
+                      ·
+                      {{ nota.hora }}
+                    </span>
+
+                  </div>
+
+                </div>
+
+                <p>
+                  {{ nota.nota }}
+                </p>
+
+              </article>
+
+            }
+
+          </div>
+
+        } @else {
+
+          <div class="section-empty">
+
+            <span>📝</span>
+
+            <strong>
+              No hay notas registradas
+            </strong>
+
+            <p>
+              Agrega una nota para realizar seguimiento.
+            </p>
+
+          </div>
+
+        }
+
+      </section>
+
+
+      <!-- FOOTER -->
+
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn-danger-outline"
+          (click)="
+            eliminarProcedimiento(
+              procedimientoSeleccionado()!
+            )
+          "
+        >
+          Eliminar
+        </button>
+
+
+        <div class="footer-right">
+
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="cerrarDetalle()"
+          >
+            Cerrar
+          </button>
+
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="
+              editarProcedimiento(
+                procedimientoSeleccionado()!
+              )
+            "
+          >
+            Editar procedimiento
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}
+
+
+<!-- ====================================================== -->
+<!-- MODAL PROCEDIMIENTO -->
+<!-- ====================================================== -->
+
+@if (modalFormularioAbierto()) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarFormulario()"
+  >
+
+    <div
+      class="modal modal-form"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="modal-header">
+
+        <div>
+
+          <h2>
+            {{
+              modoEdicion()
+                ? 'Editar procedimiento'
+                : 'Nuevo procedimiento'
+            }}
+          </h2>
+
+          <p>
+            Registra la información del procedimiento.
+          </p>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="close-button"
+          (click)="cerrarFormulario()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="form-grid">
+
+        <!-- PACIENTE -->
+
+        <div class="form-group">
+
+          <label>
+            Paciente *
+          </label>
+
+          <input
+            type="text"
+            [value]="formulario().paciente"
+            (input)="
+              actualizarFormulario(
+                'paciente',
+                $any($event.target).value
+              )
+            "
+            placeholder="Nombre del paciente"
+          />
+
+        </div>
+
+
+        <!-- PROPIETARIO -->
+
+        <div class="form-group">
+
+          <label>
+            Propietario *
+          </label>
+
+          <input
+            type="text"
+            [value]="formulario().propietario"
+            (input)="
+              actualizarFormulario(
+                'propietario',
+                $any($event.target).value
+              )
+            "
+            placeholder="Nombre del propietario"
+          />
+
+        </div>
+
+
+        <!-- ESPECIE -->
+
+        <div class="form-group">
+
+          <label>
+            Especie
+          </label>
+
+          <select
+            [value]="formulario().especie"
+            (change)="
+              actualizarFormulario(
+                'especie',
+                $any($event.target).value
+              )
+            "
+          >
+
+            <option value="Canino">
+              Canino
+            </option>
+
+            <option value="Felino">
+              Felino
+            </option>
+
+            <option value="Ave">
+              Ave
+            </option>
+
+            <option value="Otro">
+              Otro
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <!-- RAZA -->
+
+        <div class="form-group">
+
+          <label>
+            Raza
+          </label>
+
+          <input
+            type="text"
+            [value]="formulario().raza"
+            (input)="
+              actualizarFormulario(
+                'raza',
+                $any($event.target).value
+              )
+            "
+            placeholder="Raza"
+          />
+
+        </div>
+
+
+        <!-- PROCEDIMIENTO -->
+
+        <div class="form-group full">
+
+          <label>
+            Procedimiento *
+          </label>
+
+          <input
+            type="text"
+            [value]="formulario().procedimiento"
+            (input)="
+              actualizarFormulario(
+                'procedimiento',
+                $any($event.target).value
+              )
+            "
+            placeholder="Nombre del procedimiento"
+          />
+
+        </div>
+
+
+        <!-- CATEGORÍA -->
+
+        <div class="form-group">
+
+          <label>
+            Categoría
+          </label>
+
+          <select
+            [value]="formulario().categoria"
+            (change)="
+              actualizarFormulario(
+                'categoria',
+                $any($event.target).value
+              )
+            "
+          >
+
+            <option value="Terapéutico">
+              Terapéutico
+            </option>
+
+            <option value="Quirúrgico">
+              Quirúrgico
+            </option>
+
+            <option value="Diagnóstico">
+              Diagnóstico
+            </option>
+
+            <option value="Curación">
+              Curación
+            </option>
+
+            <option value="Odontología">
+              Odontología
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <!-- DIAGNÓSTICO -->
+
+        <div class="form-group">
+
+          <label>
+            Diagnóstico
+          </label>
+
+          <input
+            type="text"
+            [value]="formulario().diagnostico"
+            (input)="
+              actualizarFormulario(
+                'diagnostico',
+                $any($event.target).value
+              )
+            "
+            placeholder="Diagnóstico"
+          />
+
+        </div>
+
+
+        <!-- FECHA -->
+
+        <div class="form-group">
+
+          <label>
+            Fecha *
+          </label>
+
+          <input
+            type="date"
+            [value]="formulario().fecha"
+            (input)="
+              actualizarFormulario(
+                'fecha',
+                $any($event.target).value
+              )
+            "
+          />
+
+        </div>
+
+
+        <!-- HORA -->
+
+        <div class="form-group">
+
+          <label>
+            Hora *
+          </label>
+
+          <input
+            type="time"
+            [value]="formulario().hora"
+            (input)="
+              actualizarFormulario(
+                'hora',
+                $any($event.target).value
+              )
+            "
+          />
+
+        </div>
+
+
+        <!-- DURACIÓN -->
+
+        <div class="form-group">
+
+          <label>
+            Duración
+          </label>
+
+          <input
+            type="text"
+            [value]="formulario().duracion"
+            (input)="
+              actualizarFormulario(
+                'duracion',
+                $any($event.target).value
+              )
+            "
+            placeholder="Ej. 30 min"
+          />
+
+        </div>
+
+
+        <!-- VETERINARIO -->
+
+        <div class="form-group">
+
+          <label>
+            Veterinario *
+          </label>
+
+          <input
+            type="text"
+            [value]="formulario().veterinario"
+            (input)="
+              actualizarFormulario(
+                'veterinario',
+                $any($event.target).value
+              )
+            "
+            placeholder="Veterinario responsable"
+          />
+
+        </div>
+
+
+        <!-- SALA -->
+
+        <div class="form-group">
+
+          <label>
+            Sala *
+          </label>
+
+          <input
+            type="text"
+            [value]="formulario().sala"
+            (input)="
+              actualizarFormulario(
+                'sala',
+                $any($event.target).value
+              )
+            "
+            placeholder="Ej. Procedimientos 01"
+          />
+
+        </div>
+
+
+        <!-- PRIORIDAD -->
+
+        <div class="form-group">
+
+          <label>
+            Prioridad
+          </label>
+
+          <select
+            [value]="formulario().prioridad"
+            (change)="
+              actualizarFormulario(
+                'prioridad',
+                $any($event.target).value
+              )
+            "
+          >
+
+            <option value="Baja">
+              Baja
+            </option>
+
+            <option value="Media">
+              Media
+            </option>
+
+            <option value="Alta">
+              Alta
+            </option>
+
+            <option value="Crítica">
+              Crítica
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <!-- ESTADO -->
+
+        <div class="form-group">
+
+          <label>
+            Estado
+          </label>
+
+          <select
+            [value]="formulario().estado"
+            (change)="
+              actualizarFormulario(
+                'estado',
+                $any($event.target).value
+              )
+            "
+          >
+
+            <option value="Programado">
+              Programado
+            </option>
+
+            <option value="En proceso">
+              En proceso
+            </option>
+
+            <option value="Completado">
+              Completado
+            </option>
+
+            <option value="Cancelado">
+              Cancelado
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <!-- INDICACIONES -->
+
+        <div class="form-group full">
+
+          <label>
+            Indicaciones
+          </label>
+
+          <textarea
+            rows="3"
+            [value]="formulario().indicaciones"
+            (input)="
+              actualizarFormulario(
+                'indicaciones',
+                $any($event.target).value
+              )
+            "
+            placeholder="Indicaciones del procedimiento..."
+          ></textarea>
+
+        </div>
+
+
+        <!-- OBSERVACIONES -->
+
+        <div class="form-group full">
+
+          <label>
+            Observaciones
+          </label>
+
+          <textarea
+            rows="3"
+            [value]="formulario().observaciones"
+            (input)="
+              actualizarFormulario(
+                'observaciones',
+                $any($event.target).value
+              )
+            "
+            placeholder="Observaciones..."
+          ></textarea>
+
+        </div>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="cerrarFormulario()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="guardarProcedimiento()"
+        >
+          {{
+            modoEdicion()
+              ? 'Guardar cambios'
+              : 'Registrar procedimiento'
+          }}
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}
+
+
+<!-- ====================================================== -->
+<!-- MODAL NOTA -->
+<!-- ====================================================== -->
+
+@if (modalNotaAbierto()) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarNota()"
+  >
+
+    <div
+      class="modal modal-small"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="modal-header">
+
+        <div>
+
+          <h2>
+            Agregar nota
+          </h2>
+
+          <p>
+            {{ procedimientoSeleccionado()?.paciente }}
+          </p>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="close-button"
+          (click)="cerrarNota()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="form-grid single">
+
+        <div class="form-group">
+
+          <label>
+            Nota *
+          </label>
+
+          <textarea
+            rows="7"
+            [value]="formularioNota().nota"
+            (input)="
+              actualizarNota(
+                $any($event.target).value
+              )
+            "
+            placeholder="Escribe una nota sobre el procedimiento..."
+          ></textarea>
+
+        </div>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="cerrarNota()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="guardarNota()"
+        >
+          Guardar nota
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}

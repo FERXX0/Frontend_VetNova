@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateChildFn, CanActivateFn, Router } from '@angular/router';
 import { SessionService } from '../services/session.service';
+import { EsquemaVDComponent } from '../../panel/esquema-v-d/esquema-v-d.component';
 
 /**
  * Mapa de redirección de códigos de catálogo a rutas del panel de la empresa.
@@ -8,6 +9,8 @@ import { SessionService } from '../services/session.service';
 const MODULO_RUTAS: Record<string, string> = {
   citas: '/panel/agenda',
   clientes_pacientes: '/panel/pacientes',
+  usuarios: '/panel/usuarios',
+  reportes: '/panel/reportes',
 };
 
 /**
@@ -53,6 +56,20 @@ export const moduloGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
     router.navigate(['/panel/sin-modulos']);
     return false;
   }
+
+  const MODULO_RUTAS: Record<string, string> = {
+  citas: '/panel/agenda',
+  clientes_pacientes: '/panel/pacientes',
+  usuarios: '/panel/usuarios',
+  reportes: '/panel/reportes',
+  historias_clinicas: '/panel/historias-clinicas',
+  esquema_v_d: '/panel/esquema-v-d',
+  hospitalizacion: '/panel/hospitalizacion',
+  procedimientos: '/panel/procedimientos',
+  laboratorio: '/panel/laboratorio',
+  formulaciones: '/panel/formulaciones',
+  farmacia: '/panel/farmacia',
+};
 
   // Verificar si tiene el módulo requerido
   const tieneModulo = modulos.some((m) => m.codigo === moduloRequerido && m.activo !== false);
