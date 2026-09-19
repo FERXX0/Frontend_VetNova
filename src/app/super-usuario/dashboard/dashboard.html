@@ -1,128 +1,1285 @@
 <div class="dashboard-content">
 
-  <!-- KPI cards interactivas -->
+  <!-- ================================================= -->
+  <!-- KPI PRINCIPALES -->
+  <!-- ================================================= -->
+
   <div class="dashboard-content__kpi-row">
+
     @for (card of kpiCards(); track card.etiqueta) {
+
       <a
         [routerLink]="card.ruta"
         class="kpi-card kpi-card--interactive"
         [title]="'Ir a ' + card.etiqueta"
       >
-        <span class="kpi-card__icon" [style.background]="card.colorFondo" [style.color]="card.colorIcono">
+
+        <span
+          class="kpi-card__icon"
+          [style.background]="card.colorFondo"
+          [style.color]="card.colorIcono"
+        >
+
           @switch (card.icono) {
+
             @case ('agregar') {
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7-4.35-9.5-8.5C.7 9 2 5 6 5c2 0 3.5 1.5 4 2.5C10.5 6.5 12 5 14 5c4 0 5.3 4 3.5 7.5C15 16.65 12 21 12 21Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 21s-7-4.35-9.5-8.5C.7 9 2 5 6 5c2 0 3.5 1.5 4 2.5C10.5 6.5 12 5 14 5c4 0 5.3 4 3.5 7.5C15 16.65 12 21 12 21Z"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linejoin="round"
+                />
+              </svg>
+
             }
+
             @case ('admin') {
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 20c1.2-3.4 4-5.2 7.5-5.2s6.3 1.8 7.5 5.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle
+                  cx="12"
+                  cy="8"
+                  r="3.2"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                />
+
+                <path
+                  d="M4.5 20c1.2-3.4 4-5.2 7.5-5.2s6.3 1.8 7.5 5.2"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                />
+              </svg>
+
             }
+
             @case ('suscripcion') {
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="8" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 8V6a4 4 0 0 1 8 0v2" stroke="currentColor" stroke-width="1.6"/></svg>
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect
+                  x="5"
+                  y="8"
+                  width="14"
+                  height="11"
+                  rx="1.5"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                />
+
+                <path
+                  d="M8 8V6a4 4 0 0 1 8 0v2"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                />
+              </svg>
+
             }
+
             @case ('empresas') {
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="16" height="16" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 9h2M8 13h2M14 9h2M14 13h2M10 20v-4h4v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect
+                  x="4"
+                  y="4"
+                  width="16"
+                  height="16"
+                  rx="1.5"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                />
+
+                <path
+                  d="M8 9h2M8 13h2M14 9h2M14 13h2M10 20v-4h4v4"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                />
+              </svg>
+
             }
+
           }
+
         </span>
+
         <div class="kpi-card__text">
-          <strong>{{ card.valor }}</strong>
-          <span>{{ card.etiqueta }}</span>
+
+          <strong>
+            {{ card.valor }}
+          </strong>
+
+          <span>
+            {{ card.etiqueta }}
+          </span>
+
         </div>
 
-        <span class="kpi-card__arrow" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <span
+          class="kpi-card__arrow"
+          aria-hidden="true"
+        >
+
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M9 18l6-6-6-6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
+
         </span>
+
       </a>
+
     }
+
   </div>
 
-  <!-- Grid: stats + estadísticas + reportes -->
+
+  <!-- ================================================= -->
+  <!-- ESTADÍSTICAS + REPORTES -->
+  <!-- ================================================= -->
+
   <div class="dashboard-content__grid">
 
-    <!-- Stat cards -->
+    <!-- =============================================== -->
+    <!-- ESTADÍSTICAS -->
+    <!-- =============================================== -->
+
     <div class="dashboard-content__stats">
-      @for (stat of statCards(); track stat.titulo) {
+
+      @for (
+        stat of statCards();
+        track stat.titulo
+      ) {
+
         <div class="stat-card">
-          <span class="stat-card__title">{{ stat.titulo }}</span>
-          <strong class="stat-card__value">{{ stat.valor }}</strong>
+
+          <span class="stat-card__title">
+            {{ stat.titulo }}
+          </span>
+
+          <strong class="stat-card__value">
+            {{ stat.valor }}
+          </strong>
+
           @if (stat.conSparkline) {
-            <svg class="stat-card__sparkline" viewBox="0 0 100 24" preserveAspectRatio="none">
-              <polyline points="0,22 100,22" fill="none" stroke="#c7d2d9" stroke-width="2" />
+
+            <svg
+              class="stat-card__sparkline"
+              viewBox="0 0 100 24"
+              preserveAspectRatio="none"
+            >
+
+              <polyline
+                points="0,22 20,18 40,20 60,12 80,15 100,8"
+                fill="none"
+                stroke="#c7d2d9"
+                stroke-width="2"
+              />
+
             </svg>
+
           }
+
         </div>
+
       }
+
     </div>
 
-    <!-- Estadísticas (donut) -->
-    <div class="dashboard-content__estadisticas">
-      <div class="panel-card">
-        <div class="panel-card__header">
-          <h3>Estadisticas</h3>
-          <button type="button" aria-label="Más opciones">⋯</button>
-        </div>
 
-        <div class="donut">
-          <svg viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="48" fill="none" stroke="#e7ebee" stroke-width="16" />
-          </svg>
-          <div class="donut__label">
-            <strong>{{ transaccionesPorcentaje() }}%</strong>
-            <span>Transactions</span>
-          </div>
-        </div>
+    <!-- =============================================== -->
+    <!-- REPORTES -->
+    <!-- =============================================== -->
 
-        <ul class="panel-card__legend">
-          @for (item of estadisticasLegend(); track item.nombre) {
-            <li>
-              <span class="legend-dot" [style.background]="item.color"></span>
-              {{ item.nombre }}
-            </li>
-          }
-        </ul>
-      </div>
-    </div>
-
-    <!-- Reportes (line chart) -->
     <div class="dashboard-content__reportes">
+
       <div class="panel-card">
+
         <div class="panel-card__header">
-          <h3>Reportes</h3>
-          <button type="button" aria-label="Más opciones">⋯</button>
+
+          <h3>
+            Reportes
+          </h3>
+
+          <button
+            type="button"
+            aria-label="Más opciones"
+          >
+            ⋯
+          </button>
+
         </div>
+
 
         <div class="line-chart">
+
           <div class="line-chart__grid">
-            @for (linea of [100, 80, 60, 40, 20, 0]; track linea) {
+
+            @for (
+              linea of [100, 80, 60, 40, 20, 0];
+              track linea
+            ) {
+
               <div class="line-chart__gridline">
-                <span>{{ linea }}</span>
+
+                <span>
+                  {{ linea }}
+                </span>
+
               </div>
+
             }
+
           </div>
 
-          <svg class="line-chart__svg" viewBox="0 0 500 160" preserveAspectRatio="none">
+
+          <svg
+            class="line-chart__svg"
+            viewBox="0 0 500 160"
+            preserveAspectRatio="none"
+          >
+
             <polyline
               [attr.points]="puntosLinea(500, 160)"
               fill="none"
               stroke="#3b82f6"
               stroke-width="2.5"
             />
+
           </svg>
 
+
           @if (!hayDatosReporte()) {
-            <div class="line-chart__empty">Aún no hay datos de reportes</div>
+
+            <div class="line-chart__empty">
+              Aún no hay datos de reportes
+            </div>
+
           }
+
         </div>
 
+
         <div class="line-chart__labels">
-          @for (label of reporteLabels(); track label.hora) {
-            <span>{{ label.hora }}</span>
+
+          @for (
+            label of reporteLabels();
+            track label.hora
+          ) {
+
+            <span>
+              {{ label.hora }}
+            </span>
+
           }
+
         </div>
+
       </div>
+
     </div>
 
   </div>
+
+
+  <!-- ================================================= -->
+  <!-- PLANES DE SUSCRIPCIÓN -->
+  <!-- ================================================= -->
+
+  <section class="planes-section">
+
+    <div class="section-header">
+
+      <div
+        class="section-header__icon section-header__icon--planes"
+      >
+
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+
+          <path
+            d="M12 3l2.2 4.5L19 8.2l-3.5 3.4.8 4.8-4.3-2.3-4.3 2.3.8-4.8L5 8.2l4.8-.7L12 3Z"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linejoin="round"
+          />
+
+        </svg>
+
+      </div>
+
+
+      <div>
+
+        <h2>
+          Planes de suscripción
+        </h2>
+
+        <p>
+          Planes disponibles que VetNova ofrece a las veterinarias.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="planes-grid">
+
+      @for (
+        plan of planes();
+        track plan.id;
+        let i = $index
+      ) {
+
+        <article
+          class="plan-card"
+
+          [class.plan-card--azul]="
+            obtenerColorPlan(i) === 'azul'
+          "
+
+          [class.plan-card--morado]="
+            obtenerColorPlan(i) === 'morado'
+          "
+
+          [class.plan-card--verde]="
+            obtenerColorPlan(i) === 'verde'
+          "
+
+          [class.plan-card--naranja]="
+            obtenerColorPlan(i) === 'naranja'
+          "
+
+          [class.plan-card--rojo]="
+            obtenerColorPlan(i) === 'rojo'
+          "
+        >
+
+          <!-- ========================================= -->
+          <!-- CABECERA -->
+          <!-- ========================================= -->
+
+          <div class="plan-card__top">
+
+            <div class="plan-card__icon">
+
+              @switch (obtenerColorPlan(i)) {
+
+                @case ('azul') {
+
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+
+                    <path
+                      d="M5 15.5 14.5 6a3.5 3.5 0 0 1 5 5L10 20.5H5v-5Z"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linejoin="round"
+                    />
+
+                    <path
+                      d="m13 7.5 3.5 3.5M5 20.5l3-3"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                    />
+
+                  </svg>
+
+                }
+
+                @case ('morado') {
+
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+
+                    <path
+                      d="m12 3 2.2 4.5L19 8.2l-3.5 3.4.8 4.8-4.3-2.3-4.3 2.3.8-4.8L5 8.2l4.8-.7L12 3Z"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linejoin="round"
+                    />
+
+                  </svg>
+
+                }
+
+                @case ('verde') {
+
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+
+                    <rect
+                      x="5"
+                      y="4"
+                      width="14"
+                      height="16"
+                      rx="2"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                    />
+
+                    <path
+                      d="M9 9h6M9 13h6M9 17h3"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                    />
+
+                  </svg>
+
+                }
+
+                @default {
+
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="8"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                    />
+
+                    <path
+                      d="M12 8v8M9 12h6"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                    />
+
+                  </svg>
+
+                }
+
+              }
+
+            </div>
+
+
+            <span
+              class="plan-card__estado"
+
+              [class.plan-card__estado--activo]="
+                plan.activo
+              "
+
+              [class.plan-card__estado--inactivo]="
+                !plan.activo
+              "
+            >
+              {{ plan.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+
+          </div>
+
+
+          <!-- ========================================= -->
+          <!-- INFORMACIÓN -->
+          <!-- ========================================= -->
+
+          <h3>
+            {{ plan.nombre }}
+          </h3>
+
+
+          <p class="plan-card__descripcion">
+            {{
+              plan.descripcion ||
+              'Plan de suscripción VetNova.'
+            }}
+          </p>
+
+
+          <!-- ========================================= -->
+          <!-- PRECIOS -->
+          <!-- ========================================= -->
+
+          <div class="plan-card__precios">
+
+            <div>
+
+              <span>
+                Mensual
+              </span>
+
+              <strong>
+                {{ formatearMoneda(plan.precio_mensual) }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Anual
+              </span>
+
+              <strong>
+                {{ formatearMoneda(plan.precio_anual) }}
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <!-- ========================================= -->
+          <!-- USUARIOS -->
+          <!-- ========================================= -->
+
+          <div class="plan-card__usuarios">
+
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+
+              <circle
+                cx="9"
+                cy="8"
+                r="3"
+                stroke="currentColor"
+                stroke-width="1.6"
+              />
+
+              <path
+                d="M3.5 19c.8-3.1 2.6-4.7 5.5-4.7s4.7 1.6 5.5 4.7"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+              />
+
+              <path
+                d="M16 11c2.2.2 3.7 1.5 4.5 3.7"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+              />
+
+            </svg>
+
+
+            <span>
+
+              @if (
+                plan.maximo_usuarios === null
+              ) {
+
+                Usuarios ilimitados
+
+              } @else {
+
+                Hasta
+                {{ plan.maximo_usuarios }}
+                usuarios
+
+              }
+
+            </span>
+
+          </div>
+
+
+          <!-- ========================================= -->
+          <!-- BOTÓN -->
+          <!-- ========================================= -->
+
+          <button
+            type="button"
+            class="plan-card__button"
+            (click)="abrirDetallePlan(plan)"
+          >
+
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+
+              <path
+                d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
+                stroke="currentColor"
+                stroke-width="1.7"
+              />
+
+              <circle
+                cx="12"
+                cy="12"
+                r="2.5"
+                stroke="currentColor"
+                stroke-width="1.7"
+              />
+
+            </svg>
+
+            Ver detalles
+
+          </button>
+
+        </article>
+
+      }
+
+
+      @if (planes().length === 0) {
+
+        <div class="planes-empty">
+
+          No hay planes registrados actualmente.
+
+        </div>
+
+      }
+
+    </div>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- SUSCRIPCIONES -->
+  <!-- ================================================= -->
+
+  <section class="suscripciones-section">
+
+    <div class="section-header">
+
+      <div
+        class="section-header__icon section-header__icon--suscripciones"
+      >
+
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+
+          <rect
+            x="4"
+            y="5"
+            width="16"
+            height="15"
+            rx="2"
+            stroke="currentColor"
+            stroke-width="1.7"
+          />
+
+          <path
+            d="M8 3v4M16 3v4M4 10h16"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+          />
+
+        </svg>
+
+      </div>
+
+
+      <div>
+
+        <h2>
+          Suscripciones
+        </h2>
+
+        <p>
+          Empresas suscritas a los planes de VetNova.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="suscripciones-grid">
+
+      @for (
+        plan of planes();
+        track plan.id;
+        let i = $index
+      ) {
+
+        <article
+          class="suscripcion-card"
+
+          [class.suscripcion-card--azul]="
+            obtenerColorPlan(i) === 'azul'
+          "
+
+          [class.suscripcion-card--morado]="
+            obtenerColorPlan(i) === 'morado'
+          "
+
+          [class.suscripcion-card--verde]="
+            obtenerColorPlan(i) === 'verde'
+          "
+
+          [class.suscripcion-card--naranja]="
+            obtenerColorPlan(i) === 'naranja'
+          "
+        >
+
+          <!-- ========================================= -->
+          <!-- HEADER -->
+          <!-- ========================================= -->
+
+          <div class="suscripcion-card__header">
+
+            <div
+              class="suscripcion-card__plan-icon"
+            >
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+
+                <path
+                  d="m12 3 2.2 4.5L19 8.2l-3.5 3.4.8 4.8-4.3-2.3-4.3 2.3.8-4.8L5 8.2l4.8-.7L12 3Z"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linejoin="round"
+                />
+
+              </svg>
+
+            </div>
+
+
+            <div>
+
+              <h3>
+                {{ plan.nombre }}
+              </h3>
+
+              <span>
+                {{ plan.codigo }}
+              </span>
+
+            </div>
+
+
+            <span
+              class="suscripcion-card__estado"
+
+              [class.suscripcion-card__estado--activo]="
+                plan.activo
+              "
+
+              [class.suscripcion-card__estado--inactivo]="
+                !plan.activo
+              "
+            >
+
+              {{
+                plan.activo
+                  ? 'Activo'
+                  : 'Inactivo'
+              }}
+
+            </span>
+
+          </div>
+
+
+          <!-- ========================================= -->
+          <!-- EMPRESAS -->
+          <!-- ========================================= -->
+
+          <div
+            class="suscripcion-card__cantidad"
+          >
+
+            <strong>
+              {{ plan.empresas_suscritas }}
+            </strong>
+
+            <span>
+
+              empresa{{
+                plan.empresas_suscritas === 1
+                  ? ''
+                  : 's'
+              }}
+
+            </span>
+
+          </div>
+
+
+          <!-- ========================================= -->
+          <!-- DATOS -->
+          <!-- ========================================= -->
+
+          <div
+            class="suscripcion-card__datos"
+          >
+
+            <div>
+
+              <span>
+                Valor mensual
+              </span>
+
+              <strong>
+                {{
+                  formatearMoneda(
+                    plan.precio_mensual
+                  )
+                }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Valor anual
+              </span>
+
+              <strong>
+                {{
+                  formatearMoneda(
+                    plan.precio_anual
+                  )
+                }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Suscripciones activas
+              </span>
+
+              <strong>
+                {{ plan.suscripciones_activas }}
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <!-- ========================================= -->
+          <!-- VER PLAN -->
+          <!-- ========================================= -->
+
+          <button
+            type="button"
+            class="suscripcion-card__link"
+            (click)="abrirDetallePlan(plan)"
+          >
+
+            Ver plan
+
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+
+              <path
+                d="m9 18 6-6-6-6"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+
+            </svg>
+
+          </button>
+
+        </article>
+
+      }
+
+    </div>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- MODAL DETALLE DEL PLAN -->
+  <!-- ================================================= -->
+
+  @if (
+    modalPlanAbierto() &&
+    planSeleccionado();
+    as plan
+  ) {
+
+    <div
+      class="plan-modal-backdrop"
+      (click)="cerrarDetallePlan()"
+    >
+
+      <div
+        class="plan-modal"
+        (click)="$event.stopPropagation()"
+      >
+
+        <!-- =========================================== -->
+        <!-- HEADER MODAL -->
+        <!-- =========================================== -->
+
+        <div
+          class="plan-modal__header"
+        >
+
+          <div
+            class="plan-modal__titulo"
+          >
+
+            <div
+              class="plan-modal__icon"
+            >
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+
+                <path
+                  d="m12 3 2.2 4.5L19 8.2l-3.5 3.4.8 4.8-4.3-2.3-4.3 2.3.8-4.8L5 8.2l4.8-.7L12 3Z"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linejoin="round"
+                />
+
+              </svg>
+
+            </div>
+
+
+            <div>
+
+              <h2>
+                {{ plan.nombre }}
+              </h2>
+
+              <span>
+                {{ plan.codigo }}
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <button
+            type="button"
+            class="plan-modal__cerrar"
+            aria-label="Cerrar"
+            (click)="cerrarDetallePlan()"
+          >
+            ×
+          </button>
+
+        </div>
+
+
+        <!-- =========================================== -->
+        <!-- ESTADO -->
+        <!-- =========================================== -->
+
+        <div
+          class="plan-modal__estado"
+        >
+
+          <span
+            [class.activo]="plan.activo"
+            [class.inactivo]="!plan.activo"
+          >
+
+            {{
+              plan.activo
+                ? 'Plan activo'
+                : 'Plan inactivo'
+            }}
+
+          </span>
+
+        </div>
+
+
+        <!-- =========================================== -->
+        <!-- CONTENIDO -->
+        <!-- =========================================== -->
+
+        <div
+          class="plan-modal__contenido"
+        >
+
+          <div
+            class="plan-modal__fila"
+          >
+
+            <span>
+              Nombre
+            </span>
+
+            <strong>
+              {{ plan.nombre }}
+            </strong>
+
+          </div>
+
+
+          <div
+            class="plan-modal__fila"
+          >
+
+            <span>
+              Código
+            </span>
+
+            <strong>
+              {{ plan.codigo }}
+            </strong>
+
+          </div>
+
+
+          <div
+            class="plan-modal__fila plan-modal__fila--vertical"
+          >
+
+            <span>
+              Descripción
+            </span>
+
+            <p>
+
+              {{
+                plan.descripcion ||
+                'Sin descripción registrada.'
+              }}
+
+            </p>
+
+          </div>
+
+
+          <div
+            class="plan-modal__fila"
+          >
+
+            <span>
+              Precio mensual
+            </span>
+
+            <strong>
+
+              {{
+                formatearMoneda(
+                  plan.precio_mensual
+                )
+              }}
+
+              {{ plan.moneda }}
+
+            </strong>
+
+          </div>
+
+
+          <div
+            class="plan-modal__fila"
+          >
+
+            <span>
+              Precio anual
+            </span>
+
+            <strong>
+
+              {{
+                formatearMoneda(
+                  plan.precio_anual
+                )
+              }}
+
+              {{ plan.moneda }}
+
+            </strong>
+
+          </div>
+
+
+          <div
+            class="plan-modal__fila"
+          >
+
+            <span>
+              Máximo de usuarios
+            </span>
+
+            <strong>
+
+              @if (
+                plan.maximo_usuarios === null
+              ) {
+
+                Ilimitados
+
+              } @else {
+
+                {{ plan.maximo_usuarios }}
+
+              }
+
+            </strong>
+
+          </div>
+
+
+          <div
+            class="plan-modal__fila"
+          >
+
+            <span>
+              Empresas suscritas
+            </span>
+
+            <strong>
+              {{ plan.empresas_suscritas }}
+            </strong>
+
+          </div>
+
+
+          <!-- ========================================= -->
+          <!-- MÓDULOS -->
+          <!-- ========================================= -->
+
+          <div
+            class="plan-modal__modulos"
+          >
+
+            <h3>
+              Módulos incluidos
+            </h3>
+
+
+            @if (
+              plan.modulos &&
+              plan.modulos.length > 0
+            ) {
+
+              <div
+                class="plan-modal__modulos-lista"
+              >
+
+                @for (
+                  modulo of plan.modulos;
+                  track modulo.id
+                ) {
+
+                  <span>
+
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+
+                      <path
+                        d="m5 12 4 4L19 6"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+
+                    </svg>
+
+                    {{ modulo.nombre }}
+
+                  </span>
+
+                }
+
+              </div>
+
+            } @else {
+
+              <p
+                class="plan-modal__sin-modulos"
+              >
+                Este plan no tiene módulos asignados.
+              </p>
+
+            }
+
+          </div>
+
+        </div>
+
+
+        <!-- =========================================== -->
+        <!-- FOOTER -->
+        <!-- =========================================== -->
+
+        <div
+          class="plan-modal__footer"
+        >
+
+          <button
+            type="button"
+            (click)="cerrarDetallePlan()"
+          >
+            Cerrar
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  }
+
 </div>

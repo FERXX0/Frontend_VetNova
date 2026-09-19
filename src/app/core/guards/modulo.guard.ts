@@ -3,15 +3,6 @@ import { ActivatedRouteSnapshot, CanActivateChildFn, CanActivateFn, Router } fro
 import { SessionService } from '../services/session.service';
 import { EsquemaVDComponent } from '../../panel/esquema-v-d/esquema-v-d.component';
 
-/**
- * Mapa de redirección de códigos de catálogo a rutas del panel de la empresa.
- */
-const MODULO_RUTAS: Record<string, string> = {
-  citas: '/panel/agenda',
-  clientes_pacientes: '/panel/pacientes',
-  usuarios: '/panel/usuarios',
-  reportes: '/panel/reportes',
-};
 
 /**
  * Valida que el usuario autenticado tenga asignado en `usuario.modulos`

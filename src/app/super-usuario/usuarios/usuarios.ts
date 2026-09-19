@@ -21,9 +21,18 @@ export class UsuariosAdminComponent implements OnInit {
   private readonly catalogoService = inject(CatalogoService);
   private readonly fb = inject(FormBuilder);
 
+  private esEmpresaSistema(empresaId: string): boolean {
+    const empresa = this.empresas().find(
+      e => e.id === empresaId
+    );
+
+    return empresa?.es_empresa_sistema === true;
+  }
+
   usuarios = signal<Usuario[]>([]);
   empresas = signal<Empresa[]>([]);
   roles = signal<Rol[]>([]);
+  rolesDisponibles = signal<Rol[]>([]);
 
   cargando = signal(false);
   error = signal<string | null>(null);
@@ -125,8 +134,11 @@ export class UsuariosAdminComponent implements OnInit {
   abrirModalCrear(): void {
     this.usuarioEnEdicion.set(null);
     this.errorFormulario.set(null);
+
+    const empresaId = this.empresas()[0]?.id || '';
+
     this.form.reset({
-      empresa_id: this.empresas()[0]?.id || '',
+      empresa_id: empresaId,
       rol_id: '',
       nombre: '',
       tipo_identificacion: 'CC',
@@ -136,9 +148,22 @@ export class UsuariosAdminComponent implements OnInit {
       contrasena: '',
       activo: true,
     });
-    this.form.get('contrasena')?.setValidators([Validators.required, Validators.minLength(8)]);
-    this.form.get('contrasena')?.updateValueAndValidity();
+
+    this.actualizarRolesDisponibles(empresaId);
+
+    this.form
+      .get('contrasena')
+      ?.setValidators([
+        Validators.required,
+        Validators.minLength(8)
+      ]);
+
+    this.form
+      .get('contrasena')
+      ?.updateValueAndValidity();
+
     this.form.get('empresa_id')?.enable();
+
     this.modalAbierto.set(true);
   }
 
@@ -156,6 +181,9 @@ export class UsuariosAdminComponent implements OnInit {
       contrasena: '',
       activo: usuario.activo,
     });
+
+    this.actualizarRolesDisponibles(usuario.empresa_id);
+    
     // La contraseña es opcional al editar; y la empresa no se puede reasignar
     // desde aquí (el backend la resuelve por la ruta /empresas/{empresa}/usuarios/{usuario}).
     this.form.get('contrasena')?.setValidators([Validators.minLength(8)]);
@@ -222,5 +250,49 @@ export class UsuariosAdminComponent implements OnInit {
       next: () => this.cargarUsuarios(this.paginaActual()),
       error: () => this.error.set('No se pudo eliminar el usuario.'),
     });
+  }
+
+  cambioEmpresa(): void {
+    const empresaId = this.form.get('empresa_id')?.value;
+
+    if (!empresaId) {
+      this.rolesDisponibles.set([]);
+      this.form.get('rol_id')?.setValue('');
+      return;
+    }
+
+    this.actualizarRolesDisponibles(empresaId);
+
+    const rolActual = this.form.get('rol_id')?.value;
+
+    const rolValido = this.rolesDisponibles().some(
+      rol => rol.id === rolActual
+    );
+
+    if (!rolValido) {
+      this.form.get('rol_id')?.setValue('');
+    }
+  }
+
+  private actualizarRolesDisponibles(empresaId: string): void {
+    const empresaSistema = this.esEmpresaSistema(empresaId);
+
+    if (empresaSistema) {
+      this.rolesDisponibles.set(
+        this.roles().filter(
+          rol =>
+            rol.codigo === 'soporte' ||
+            rol.codigo === 'super_admin'
+        )
+      );
+
+      return;
+    }
+
+    this.rolesDisponibles.set(
+      this.roles().filter(
+        rol => rol.codigo !== 'super_admin'
+      )
+    );
   }
 }

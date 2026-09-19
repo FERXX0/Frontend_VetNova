@@ -8,53 +8,124 @@
   --vn-white: #ffffff;
 
   display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+
+  /*
+   * El scroll pertenece al contenido del dashboard,
+   * no al host.
+   */
+  overflow: hidden;
+
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 .dashboard-content {
-  padding: 1.75rem 2rem;
+  width: 100%;
+  height: 100%;
   min-width: 0;
+  min-height: 0;
+
+  padding: 1.75rem 2rem;
+  box-sizing: border-box;
+
+  /*
+   * El dashboard tiene su propio scroll vertical.
+   */
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  scrollbar-gutter: stable;
+
+  /*
+   * Evita que los hijos hagan crecer horizontalmente
+   * el contenedor.
+   */
+  max-width: 100%;
 
   @media (max-width: 640px) {
     padding: 1.25rem 1rem;
   }
 
+  // =========================================================
+  // FILA KPI PRINCIPAL
+  // =========================================================
+
   &__kpi-row {
+    width: 100%;
+
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+
+    /*
+     * Las 4 tarjetas permanecen en UNA SOLA FILA
+     * mientras haya espacio suficiente.
+     */
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
     gap: 1.25rem;
-    margin-bottom: 1.75rem;
 
-    @media (max-width: 1100px) {
-      grid-template-columns: repeat(2, 1fr);
-    }
+    min-width: 0;
 
-    @media (max-width: 640px) {
-      grid-template-columns: 1fr;
-    }
+    margin-bottom: 1.25rem;
   }
+
+  // =========================================================
+  // GRID ESTADÍSTICAS + REPORTES
+  // =========================================================
 
   &__grid {
     display: grid;
+
     grid-template-columns: 2fr 1fr;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto;
+
     gap: 1.25rem;
+
     grid-template-areas:
-      'stats estadisticas'
-      'reportes estadisticas';
+      'stats reportes';
+
+    min-width: 0;
 
     @media (max-width: 1000px) {
       grid-template-columns: 1fr;
+
       grid-template-areas:
         'stats'
-        'estadisticas'
         'reportes';
     }
   }
 
-  &__stats { grid-area: stats; }
-  &__estadisticas { grid-area: estadisticas; }
-  &__reportes { grid-area: reportes; }
+  &__stats {
+    grid-area: stats;
+    min-width: 0;
+  }
+
+  &__reportes {
+    grid-area: reportes;
+    min-width: 0;
+  }
+}
+
+/*
+ * ============================================================
+ * RESPONSIVE KPI
+ * ============================================================
+ *
+ * No se cambia la fila de 4 tarjetas en pantallas normales.
+ * Solo se reducen cuando realmente ya no caben.
+ */
+
+@media (max-width: 900px) {
+  .dashboard-content__kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard-content__kpi-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 // ---------- KPI card ----------
@@ -154,8 +225,17 @@
   background: var(--vn-white);
   border: 1px solid var(--vn-border);
   border-radius: 0.75rem;
+
   padding: 1.25rem;
+
+  width: 100%;
+  min-width: 0;
   height: 100%;
+
+  box-sizing: border-box;
+
+  overflow: hidden;
+
   box-shadow: 0 1px 3px rgba(16, 38, 58, 0.03);
 
   &__header {
@@ -164,7 +244,13 @@
     justify-content: space-between;
     margin-bottom: 1rem;
 
-    h3 { margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--vn-text-dark); }
+    h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--vn-text-dark);
+    }
+
     button {
       background: none;
       border: none;
@@ -174,94 +260,748 @@
       line-height: 1;
     }
   }
-
-  &__legend {
-    list-style: none;
-    display: flex;
-    justify-content: center;
-    gap: 1.25rem;
-    margin: 1.25rem 0 0;
-    padding: 0;
-    font-size: 0.78rem;
-    color: var(--vn-text-muted);
-
-    li { display: flex; align-items: center; gap: 0.4rem; }
-  }
-}
-
-.legend-dot {
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-// ---------- Donut ----------
-.donut {
-  position: relative;
-  width: 9rem;
-  height: 9rem;
-  margin: 0.5rem auto 0;
-
-  svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-
-  &__label {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    strong { font-size: 1.35rem; color: var(--vn-text-dark); }
-    span { font-size: 0.7rem; color: var(--vn-text-muted); }
-  }
 }
 
 // ---------- Line chart ----------
+
 .line-chart {
+
   position: relative;
+
   display: flex;
+  align-items: stretch;
+
+  width: 100%;
+  min-width: 0;
+
   height: 11rem;
 
+  box-sizing: border-box;
+
   &__grid {
+
+    flex: 0 0 1.75rem;
+
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+
+    min-width: 1.75rem;
+
     padding-right: 0.5rem;
 
-    span { font-size: 0.68rem; color: var(--vn-text-muted); }
+    box-sizing: border-box;
+
+    span {
+      font-size: 0.68rem;
+      line-height: 1;
+      color: var(--vn-text-muted);
+      white-space: nowrap;
+    }
   }
 
   &__gridline {
+
     display: flex;
     align-items: flex-end;
+
     height: 1px;
+
+    flex-shrink: 0;
   }
 
   &__svg {
-    flex: 1;
-    width: 100%;
+
+    flex: 1 1 auto;
+
+    width: 0;
+    min-width: 0;
     height: 100%;
+
+    display: block;
   }
 
   &__empty {
+
     position: absolute;
     inset: 0;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
     font-size: 0.8rem;
     color: var(--vn-text-muted);
+
     background: rgba(255, 255, 255, 0.6);
   }
 
   &__labels {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 0.5rem;
-    padding-left: 1.75rem;
+
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+      1.75rem repeat(10, minmax(0, 1fr));
+
+    box-sizing: border-box;
+
+    margin-top: 0.75rem;
+
+    padding: 0;
+
     font-size: 0.68rem;
+    line-height: 1;
+
     color: var(--vn-text-muted);
+
+    overflow: hidden;
+
+    span {
+
+      min-width: 0;
+
+      text-align: center;
+
+      white-space: nowrap;
+    }
+  }
+}
+
+/* =====================================================
+   SECCIONES DE PLANES Y SUSCRIPCIONES
+   ===================================================== */
+
+.planes-section,
+.suscripciones-section {
+  margin-top: 28px;
+  background: #ffffff;
+  border: 1px solid #e5e9ed;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.section-header__icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section-header__icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.section-header__icon--planes {
+  background: #e8f1ff;
+  color: #3b82f6;
+}
+
+.section-header__icon--suscripciones {
+  background: #eaf8f0;
+  color: #16a56b;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #172033;
+}
+
+.section-header p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #78909c;
+}
+
+/* =====================================================
+   PLANES
+   ===================================================== */
+
+.planes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.plan-card {
+  position: relative;
+  border: 1px solid #dfe6ec;
+  border-radius: 13px;
+  padding: 20px;
+  background: #fff;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.plan-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.plan-card--azul {
+  border-color: #cfe1ff;
+  background: linear-gradient(180deg, #fafdff 0%, #f3f8ff 100%);
+}
+
+.plan-card--morado {
+  border-color: #ddcffd;
+  background: linear-gradient(180deg, #fff 0%, #faf7ff 100%);
+}
+
+.plan-card--verde {
+  border-color: #c7eadb;
+  background: linear-gradient(180deg, #fff 0%, #f3fcf8 100%);
+}
+
+.plan-card--naranja {
+  border-color: #f5dcc0;
+  background: linear-gradient(180deg, #fff 0%, #fff9f2 100%);
+}
+
+.plan-card--rojo {
+  border-color: #f1cccc;
+  background: linear-gradient(180deg, #fff 0%, #fff6f6 100%);
+}
+
+.plan-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.plan-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8f1ff;
+  color: #3b82f6;
+}
+
+.plan-card--morado .plan-card__icon {
+  background: #eee7ff;
+  color: #805ad5;
+}
+
+.plan-card--verde .plan-card__icon {
+  background: #e0f8ed;
+  color: #16a56b;
+}
+
+.plan-card--naranja .plan-card__icon {
+  background: #fff0df;
+  color: #e88722;
+}
+
+.plan-card--rojo .plan-card__icon {
+  background: #ffe6e6;
+  color: #e05a5a;
+}
+
+.plan-card__icon svg {
+  width: 25px;
+  height: 25px;
+}
+
+.plan-card__estado,
+.suscripcion-card__estado {
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.plan-card__estado--activo,
+.suscripcion-card__estado--activo {
+  background: #dcf8ea;
+  color: #11965d;
+}
+
+.plan-card__estado--inactivo,
+.suscripcion-card__estado--inactivo {
+  background: #edf1f3;
+  color: #6c7b87;
+}
+
+.plan-card h3 {
+  margin: 18px 0 8px;
+  font-size: 18px;
+  color: #172033;
+}
+
+.plan-card__descripcion {
+  min-height: 40px;
+  margin: 0;
+  color: #78909c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.plan-card__precios {
+  margin-top: 18px;
+  padding: 15px 0;
+  border-top: 1px solid #e5ebf0;
+  border-bottom: 1px solid #e5ebf0;
+  display: grid;
+  gap: 10px;
+}
+
+.plan-card__precios div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.plan-card__precios span {
+  color: #78909c;
+  font-size: 12px;
+}
+
+.plan-card__precios strong {
+  color: #172033;
+  font-size: 16px;
+}
+
+.plan-card__usuarios {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 15px 0;
+  color: #607d8b;
+  font-size: 12px;
+}
+
+.plan-card__usuarios svg {
+  width: 18px;
+  height: 18px;
+}
+
+.plan-card__button {
+  width: 100%;
+  height: 38px;
+  border: 1px solid #9fc4ff;
+  border-radius: 8px;
+  background: #fff;
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.plan-card__button:hover {
+  background: #edf5ff;
+}
+
+.plan-card__button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.planes-empty {
+  grid-column: 1 / -1;
+  padding: 40px;
+  text-align: center;
+  color: #78909c;
+}
+
+/* =====================================================
+   SUSCRIPCIONES
+   ===================================================== */
+
+.suscripciones-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.suscripcion-card {
+  border: 1px solid #dfe6ec;
+  border-radius: 13px;
+  padding: 18px;
+  background: #fff;
+}
+
+.suscripcion-card--azul {
+  border-color: #cfe1ff;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+}
+
+.suscripcion-card--morado {
+  border-color: #dfd2fc;
+  background: linear-gradient(180deg, #ffffff 0%, #fbf9ff 100%);
+}
+
+.suscripcion-card--verde {
+  border-color: #ccebdd;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fdf9 100%);
+}
+
+.suscripcion-card--naranja {
+  border-color: #f5dfc5;
+  background: linear-gradient(180deg, #ffffff 0%, #fffbf6 100%);
+}
+
+.suscripcion-card__header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.suscripcion-card__plan-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8f1ff;
+  color: #3b82f6;
+}
+
+.suscripcion-card--morado .suscripcion-card__plan-icon {
+  background: #eee7ff;
+  color: #805ad5;
+}
+
+.suscripcion-card--verde .suscripcion-card__plan-icon {
+  background: #e0f8ed;
+  color: #16a56b;
+}
+
+.suscripcion-card__plan-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.suscripcion-card__header h3 {
+  margin: 0;
+  color: #172033;
+  font-size: 15px;
+}
+
+.suscripcion-card__header span:not(.suscripcion-card__estado) {
+  display: block;
+  margin-top: 3px;
+  color: #90a4ae;
+  font-size: 11px;
+}
+
+.suscripcion-card__estado {
+  margin-left: auto;
+}
+
+.suscripcion-card__cantidad {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 20px 0 16px;
+}
+
+.suscripcion-card__cantidad strong {
+  color: #172033;
+  font-size: 30px;
+}
+
+.suscripcion-card__cantidad span {
+  color: #78909c;
+  font-size: 12px;
+}
+
+.suscripcion-card__datos {
+  padding: 13px;
+  border: 1px solid #e5ebf0;
+  border-radius: 9px;
+  display: grid;
+  gap: 10px;
+}
+
+.suscripcion-card__datos div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.suscripcion-card__datos span {
+  color: #78909c;
+  font-size: 11px;
+}
+
+.suscripcion-card__datos strong {
+  color: #344454;
+  font-size: 12px;
+}
+
+.suscripcion-card__link {
+  margin-top: 15px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #2675e8;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.suscripcion-card__link svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* =====================================================
+   MODAL
+   ===================================================== */
+
+.plan-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.plan-modal {
+  width: min(620px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 25px 70px rgba(15, 23, 42, 0.2);
+}
+
+.plan-modal__header {
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #edf1f4;
+}
+
+.plan-modal__titulo {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.plan-modal__icon {
+  width: 45px;
+  height: 45px;
+  border-radius: 13px;
+  background: #e8f1ff;
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plan-modal__icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.plan-modal__titulo h2 {
+  margin: 0;
+  font-size: 19px;
+  color: #172033;
+}
+
+.plan-modal__titulo span {
+  display: block;
+  margin-top: 3px;
+  color: #90a4ae;
+  font-size: 11px;
+}
+
+.plan-modal__cerrar {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  color: #90a4ae;
+  font-size: 25px;
+  cursor: pointer;
+}
+
+.plan-modal__estado {
+  padding: 15px 22px 0;
+}
+
+.plan-modal__estado span {
+  display: inline-block;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.plan-modal__estado .activo {
+  background: #dcf8ea;
+  color: #11965d;
+}
+
+.plan-modal__estado .inactivo {
+  background: #edf1f3;
+  color: #6c7b87;
+}
+
+.plan-modal__contenido {
+  padding: 20px 22px;
+}
+
+.plan-modal__fila {
+  min-height: 44px;
+  padding: 9px 0;
+  border-bottom: 1px solid #f0f3f5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.plan-modal__fila span {
+  color: #78909c;
+  font-size: 12px;
+}
+
+.plan-modal__fila strong {
+  color: #344454;
+  font-size: 13px;
+  text-align: right;
+}
+
+.plan-modal__fila--vertical {
+  display: block;
+}
+
+.plan-modal__fila--vertical p {
+  margin: 8px 0 0;
+  color: #607d8b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.plan-modal__modulos {
+  margin-top: 22px;
+}
+
+.plan-modal__modulos h3 {
+  margin: 0 0 13px;
+  color: #172033;
+  font-size: 14px;
+}
+
+.plan-modal__modulos-lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.plan-modal__modulos-lista span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: #f6f9fb;
+  color: #536875;
+  font-size: 11px;
+}
+
+.plan-modal__modulos-lista svg {
+  width: 15px;
+  height: 15px;
+  color: #16a56b;
+}
+
+.plan-modal__sin-modulos {
+  color: #90a4ae;
+  font-size: 12px;
+}
+
+.plan-modal__footer {
+  padding: 15px 22px;
+  border-top: 1px solid #edf1f4;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.plan-modal__footer button {
+  border: 1px solid #d8e0e6;
+  border-radius: 8px;
+  background: #fff;
+  padding: 9px 18px;
+  color: #536875;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.plan-modal__footer button:hover {
+  background: #f6f9fb;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 1100px) {
+  .planes-grid,
+  .suscripciones-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .planes-section,
+  .suscripciones-section {
+    padding: 17px;
+  }
+
+  .planes-grid,
+  .suscripciones-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-modal__modulos-lista {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-modal__fila {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .plan-modal__fila strong {
+    text-align: left;
   }
 }

@@ -1,6 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, NavigationEnd, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  Router,
+  NavigationEnd,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet
+} from '@angular/router';
 import { filter } from 'rxjs';
 import { SessionService } from '../../core/services/session.service';
 import { UserMenuComponent } from '../../shared/components/user-menu/user-menu';
@@ -16,7 +22,13 @@ interface MenuItem {
 @Component({
   selector: 'app-panel-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, UserMenuComponent],
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    UserMenuComponent
+  ],
   templateUrl: './panel-layout.html',
   styleUrl: './panel-layout.scss',
 })
@@ -27,14 +39,21 @@ export class PanelLayoutComponent {
   sidebarAbierto = signal(false);
 
   readonly usuario = this.session.usuario;
-  readonly empresaNombre = computed(() => this.usuario()?.empresa?.nombre || 'Mi Veterinaria');
+
+  readonly empresaNombre = computed(
+    () => this.usuario()?.empresa?.nombre || 'Mi Veterinaria'
+  );
 
   constructor() {
-    this.router.events.pipe(
-      filter((e): e is NavigationEnd => e instanceof NavigationEnd)
-    ).subscribe(() => {
-      this.sidebarAbierto.set(false);
-    });
+    this.router.events
+      .pipe(
+        filter(
+          (e): e is NavigationEnd => e instanceof NavigationEnd
+        )
+      )
+      .subscribe(() => {
+        this.sidebarAbierto.set(false);
+      });
   }
 
   toggleSidebar(): void {
@@ -45,42 +64,123 @@ export class PanelLayoutComponent {
     this.sidebarAbierto.set(false);
   }
 
-  // Catálogo completo con sus rutas e iconos
+  // ==========================================================
+  // CATÁLOGO DE MÓDULOS DEL PANEL DE LA VETERINARIA
+  // ==========================================================
+
   readonly catalogoModulos: MenuItem[] = [
-    { codigo: 'citas', nombre: 'Agenda Médica', ruta: '/panel/agenda', icono: 'agenda' },
-    { codigo: 'clientes_pacientes', nombre: 'Pacientes', ruta: '/panel/pacientes', icono: 'pacientes' },
-    { codigo: 'usuarios', nombre: 'Usuarios', ruta: '/panel/usuarios', icono: 'usuarios' },
-    { codigo: 'reportes', nombre: 'Reportes', ruta: '/panel/reportes', icono: 'reportes' },
-    { codigo: 'historias_clinicas', nombre: 'Historias Clínicas', icono: 'historia', proximamente: true },
-    { codigo: 'esquema_v_d', nombre: 'Vacunación y Desp.', icono: 'vacuna', proximamente: true },
-    { codigo: 'hospitalizacion', nombre: 'Hospitalización', icono: 'hospital', proximamente: true },
-    { codigo: 'procedimientos', nombre: 'Procedimientos', icono: 'procedimiento', proximamente: true },
-    { codigo: 'laboratorio', nombre: 'Laboratorio', icono: 'laboratorio', proximamente: true },
-    { codigo: 'formulaciones', nombre: 'Formulaciones', icono: 'receta', proximamente: true },
-    { codigo: 'farmacia', nombre: 'Farmacia', icono: 'farmacia', proximamente: true },
-    { codigo: 'servicios', nombre: 'Servicios', icono: 'servicios', proximamente: true },
-    { codigo: 'facturacion', nombre: 'Facturación', icono: 'facturacion', proximamente: true },
-    { codigo: 'configuracion', nombre: 'Configuración', ruta: '/panel/perfil', icono: 'configuracion' },
+    {
+      codigo: 'citas',
+      nombre: 'Agenda Médica',
+      ruta: '/panel/agenda',
+      icono: 'agenda'
+    },
+    {
+      codigo: 'clientes_pacientes',
+      nombre: 'Pacientes',
+      ruta: '/panel/pacientes',
+      icono: 'pacientes'
+    },
+    {
+      codigo: 'usuarios',
+      nombre: 'Usuarios',
+      ruta: '/panel/usuarios',
+      icono: 'usuarios'
+    },
+    {
+      codigo: 'reportes',
+      nombre: 'Reportes',
+      ruta: '/panel/reportes',
+      icono: 'reportes'
+    },
+    {
+      codigo: 'historias_clinicas',
+      nombre: 'Historias Clínicas',
+      icono: 'historia',
+      proximamente: true
+    },
+    {
+      codigo: 'esquema_v_d',
+      nombre: 'Vacunación y Desp.',
+      icono: 'vacuna',
+      proximamente: true
+    },
+    {
+      codigo: 'hospitalizacion',
+      nombre: 'Hospitalización',
+      icono: 'hospital',
+      proximamente: true
+    },
+    {
+      codigo: 'procedimientos',
+      nombre: 'Procedimientos',
+      icono: 'procedimiento',
+      proximamente: true
+    },
+    {
+      codigo: 'laboratorio',
+      nombre: 'Laboratorio',
+      icono: 'laboratorio',
+      proximamente: true
+    },
+    {
+      codigo: 'formulaciones',
+      nombre: 'Formulaciones',
+      icono: 'receta',
+      proximamente: true
+    },
+    {
+      codigo: 'farmacia',
+      nombre: 'Farmacia',
+      icono: 'farmacia',
+      proximamente: true
+    },
+    {
+      codigo: 'servicios',
+      nombre: 'Servicios',
+      icono: 'servicios',
+      proximamente: true
+    },
+    {
+      codigo: 'facturacion',
+      nombre: 'Facturación',
+      icono: 'facturacion',
+      proximamente: true
+    }
   ];
 
-  /** Códigos asignados al usuario actual */
+  // ==========================================================
+  // CÓDIGOS DE MÓDULOS ASIGNADOS AL USUARIO
+  // ==========================================================
+
   readonly modulosAsignadosCodigos = computed(() => {
     const user = this.usuario();
-    if (!user) return new Set<string>();
-    if (user.es_super_administrador) {
-      return new Set(this.catalogoModulos.map((m) => m.codigo));
+
+    if (!user) {
+      return new Set<string>();
     }
-    return new Set((user.modulos || []).map((m) => m.codigo));
+
+    return new Set(
+      (user.modulos || [])
+        .filter((modulo) => modulo.activo !== false)
+        .map((modulo) => modulo.codigo)
+    );
   });
 
-  /** Lista de ítems a renderizar en el sidebar */
+  // ==========================================================
+  // MENÚ DEL USUARIO
+  // SOLO APARECEN MÓDULOS ASIGNADOS
+  // ==========================================================
+
   readonly menuItems = computed(() => {
     const asignados = this.modulosAsignadosCodigos();
-    return this.catalogoModulos.map((item) => ({
-      ...item,
-      // Si el código está en modulos asignados o es superadmin, se habilita (a menos que sea 'proximamente')
-      habilitado: (asignados.has(item.codigo) || item.codigo === 'usuarios' || item.codigo === 'reportes') && !item.proximamente,
-      asignado: asignados.has(item.codigo) || item.codigo === 'usuarios' || item.codigo === 'reportes',
-    }));
+
+    return this.catalogoModulos
+      .filter((item) => asignados.has(item.codigo))
+      .map((item) => ({
+        ...item,
+        habilitado: !item.proximamente,
+        asignado: true
+      }));
   });
 }

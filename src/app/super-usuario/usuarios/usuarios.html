@@ -161,9 +161,11 @@
         <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
           <div class="form-group">
             <label for="empresa_id">Empresa *</label>
-            <select id="empresa_id" formControlName="empresa_id">
+            <select id="empresa_id" formControlName="empresa_id" (change)="cambioEmpresa()">
               @for (empresa of empresas(); track empresa.id) {
-                <option [value]="empresa.id">{{ empresa.nombre }}</option>
+                <option [value]="empresa.id">
+                  {{ empresa.nombre }}
+                </option>
               }
             </select>
             @if (usuarioEnEdicion()) {
@@ -203,9 +205,11 @@
               <label for="rol_id">Rol *</label>
               <select id="rol_id" formControlName="rol_id">
                 <option value="" disabled>Selecciona un rol</option>
-                @for (rol of roles(); track rol.id) {
-                  <option [value]="rol.id">{{ rol.nombre }}</option>
-                }
+                  @for (rol of rolesDisponibles(); track rol.id) {
+                    <option [value]="rol.id">
+                      {{ rol.nombre }}
+                    </option>
+                  }
               </select>
             </div>
           </div>

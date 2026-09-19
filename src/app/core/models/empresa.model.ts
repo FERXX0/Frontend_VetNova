@@ -7,9 +7,10 @@ export interface Empresa {
   nit: string | null;
   correo: string | null;
   zona_horaria: string;
-  estado: EstadoEmpresa;
-  creado_en: string;
-  actualizado_en: string;
+  estado: 'activa' | 'inactiva' | 'suspendida';
+  es_empresa_sistema: boolean;
+  creado_en?: string;
+  actualizado_en?: string;
 }
 
 // Lo que exige EmpresaRequest al crear/editar

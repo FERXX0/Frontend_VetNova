@@ -185,6 +185,7 @@ export class EmpresaDetalleComponent implements OnInit {
             correo: 'contacto@empresa.com',
             zona_horaria: 'America/Bogota',
             estado: 'activa',
+            es_empresa_sistema: false,
             creado_en: new Date().toISOString(),
             actualizado_en: new Date().toISOString(),
           });
@@ -205,6 +206,7 @@ export class EmpresaDetalleComponent implements OnInit {
           correo: 'contacto@empresa.com',
           zona_horaria: 'America/Bogota',
           estado: 'activa',
+          es_empresa_sistema: false,
           creado_en: new Date().toISOString(),
           actualizado_en: new Date().toISOString(),
         });
