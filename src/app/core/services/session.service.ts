@@ -1,6 +1,7 @@
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { UsuarioAutenticado } from '../models/auth.model';
+import { InactivityService } from './inactivity.service';
 
 const TOKEN_KEY = 'vn_token';
 const USUARIO_KEY = 'vn_usuario';
@@ -15,6 +16,7 @@ const USUARIO_KEY = 'vn_usuario';
 export class SessionService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly esNavegador = isPlatformBrowser(this.platformId);
+  private readonly inactividad = inject(InactivityService);
 
   readonly usuario = signal<UsuarioAutenticado | null>(this.leerUsuario());
 
@@ -24,6 +26,8 @@ export class SessionService {
       localStorage.setItem(USUARIO_KEY, JSON.stringify(usuario));
     }
     this.usuario.set(usuario);
+    // Login exitoso (o perfil actualizado): reinicia el contador de inactividad.
+    this.inactividad.markActive();
   }
 
   limpiar(): void {
@@ -32,6 +36,7 @@ export class SessionService {
       localStorage.removeItem(USUARIO_KEY);
     }
     this.usuario.set(null);
+    this.inactividad.clear();
   }
 
   obtenerToken(): string | null {

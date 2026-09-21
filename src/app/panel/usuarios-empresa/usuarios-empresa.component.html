@@ -353,27 +353,18 @@
 
   <section class="card">
 
-    <div class="table-header">
-
-      <div>
-
-        <h2>
-          Usuarios registrados
-        </h2>
-
-        <span>
-          {{ usuariosFiltrados().length }}
-          resultado(s)
-        </span>
-
-      </div>
-
-    </div>
-
-
     <div class="table-responsive">
 
       <table class="vn-table">
+
+        <colgroup>
+          <col class="col-usuario" />
+          <col class="col-telefono" />
+          <col class="col-rol" />
+          <col class="col-modulos" />
+          <col class="col-estado" />
+          <col class="col-acciones" />
+        </colgroup>
 
         <thead>
 
@@ -399,7 +390,7 @@
               Estado
             </th>
 
-            <th class="text-right">
+            <th>
               Acciones
             </th>
 
@@ -433,7 +424,7 @@
                       {{ usuario.nombre }}
                     </strong>
 
-                    <span>
+                    <span [attr.title]="usuario.correo">
                       {{ usuario.correo }}
                     </span>
 
@@ -506,7 +497,7 @@
 
               <!-- ACCIONES -->
 
-              <td class="text-right">
+              <td>
 
                 <div class="actions">
 

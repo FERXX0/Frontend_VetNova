@@ -296,7 +296,7 @@ export class UsuariosEmpresaComponent {
       telefono: '',
       rol: 'Veterinario',
       estado: 'Activo',
-      modulos: ['citas', 'clientes_pacientes']
+      modulos: [] // el plan define los módulos: todos empiezan desactivados
     });
 
     this.modalAbierto.set(true);

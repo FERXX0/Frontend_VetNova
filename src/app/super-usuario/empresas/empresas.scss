@@ -2,6 +2,13 @@
   display: block;
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   color: #1e293b;
+
+  // El contenedor del layout tiene overflow: hidden, así que esta pantalla
+  // scrollea por sí misma. Altura fija = pantalla (100vh) menos la barra
+  // superior del layout (4.25rem), para no depender de porcentajes.
+  height: calc(100vh - 4.25rem);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .empresas-page {
@@ -108,26 +115,31 @@
 
 .empresas-table {
   width: 100%;
+  min-width: 1000px;
+  table-layout: fixed;
   border-collapse: collapse;
 
   th {
     background: #f8fafc;
     color: #64748b;
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 1.2rem 1.5rem;
-    text-align: left;
+    letter-spacing: 0.06em;
+    line-height: 1.35;
+    padding: 1rem 0.75rem;
+    text-align: center;
+    vertical-align: middle;
     border-bottom: 1px solid #e2e8f0;
   }
 
   td {
-    padding: 1.25rem 1.5rem;
+    padding: 1rem 0.75rem;
     font-size: 0.9rem;
     color: #334155;
     border-bottom: 1px solid #f1f5f9;
     vertical-align: middle;
+    text-align: center;
   }
 
   .empresa-row {
@@ -143,10 +155,21 @@
   }
 }
 
+// Anchos de columna (suman 100 %)
+.col-empresa  { width: 16%; }
+.col-razon    { width: 21%; }
+.col-nit      { width: 16%; }
+.col-contacto { width: 21%; }
+.col-estado   { width: 12%; }
+.col-config   { width: 14%; }
+
+// Avatar arriba y nombre debajo: todas las filas quedan alineadas
 .empresa-cell {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
+  gap: 0.55rem;
 }
 
 .empresa-avatar {
@@ -161,46 +184,68 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.22);
 }
 
 .empresa-name {
   display: block;
-  font-size: 0.98rem;
+  font-size: 0.95rem;
   font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
   color: #0f172a;
 }
 
-.empresa-razon {
+.razon-text {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.86rem;
+  line-height: 1.4;
   color: #64748b;
-  margin-top: 0.15rem;
+  overflow-wrap: anywhere;
 }
 
 .nit-tag {
-  font-size: 0.85rem;
-  color: #475569;
-  font-weight: 500;
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  color: #334155;
+  white-space: nowrap;
 }
 
+// Correo en una sola línea; si no cabe se corta con "…" (el title muestra el completo)
 .email-text {
-  font-size: 0.86rem;
-  color: #64748b;
-}
-
-.tz-text {
-  font-size: 0.85rem;
-  color: #64748b;
+  display: block;
+  font-size: 0.84rem;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status-pill {
-  display: inline-block;
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 0.25rem 0.7rem;
+  padding: 0.28rem 0.75rem;
   border-radius: 999px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+
+  &::before {
+    content: '';
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: currentColor;
+  }
 
   &--activa {
     background: #ecfdf5;
@@ -221,35 +266,32 @@
   }
 }
 
-.text-right {
-  text-align: right;
-}
-
 .action-buttons {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  justify-content: flex-end;
+  gap: 0.4rem;
+  justify-content: center;
+  flex-wrap: nowrap;
 }
 
-// Botón Gestionar Empresa
+// Botón Ver empresa (solo ícono de ojo)
 .btn-manage {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: center;
   background: #f0f9ff;
   color: #0284c7;
   border: 1px solid #bae6fd;
-  padding: 0.45rem 0.9rem;
-  border-radius: 0.5rem;
-  font-size: 0.82rem;
-  font-weight: 700;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  border-radius: 0.55rem;
   text-decoration: none;
   transition: all 0.15s ease;
 
   svg {
-    width: 1rem;
-    height: 1rem;
+    width: 1.1rem;
+    height: 1.1rem;
   }
 
   &:hover {
@@ -263,8 +305,10 @@
 .btn-icon {
   background: none;
   border: 1px solid #e2e8f0;
-  padding: 0.45rem;
-  border-radius: 0.5rem;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  border-radius: 0.55rem;
   color: #64748b;
   cursor: pointer;
   display: inline-flex;

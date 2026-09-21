@@ -2,6 +2,13 @@
   display: block;
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   color: #1e293b;
+
+  // El contenedor del layout tiene overflow: hidden, así que esta pantalla
+  // scrollea por sí misma. Altura fija = pantalla (100vh) menos la barra
+  // superior del layout (4.25rem), para no depender de porcentajes.
+  height: calc(100vh - 4.25rem);
+  overflow-x: auto;
+  overflow-y: auto;
 }
 
 .tenant-page {
