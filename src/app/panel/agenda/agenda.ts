@@ -152,9 +152,19 @@ export class AgendaComponent implements OnInit {
         error: () => {},
       });
 
+      // Solo roles que atienden pacientes directamente (no Administrador,
+      // Contabilidad, Recepción, etc.). Ajusta esta lista si agregan roles nuevos.
+      const rolesQueAtienden = ['veterinario', 'auxiliar_veterinara'];
+
       this.usuarioService.listarGlobal().subscribe({
         next: (respuesta) => {
-          const nombres = [...new Set(respuesta.data.map((u) => u.nombre))];
+          const nombres = [
+            ...new Set(
+              respuesta.data
+                .filter((u) => rolesQueAtienden.includes(u.rol?.codigo ?? ''))
+                .map((u) => u.nombre)
+            ),
+          ];
           this.profesionalesDisponibles.set(nombres);
         },
         error: () => {},
@@ -214,36 +224,7 @@ export class AgendaComponent implements OnInit {
         this.pacientes.set(res.data || []);
       },
       error: () => {
-        // Mock fallback de pacientes para el selector
-        this.pacientes.set([
-          {
-            id: 'p-001',
-            nombre: 'Max',
-            especie: 'Canino',
-            raza: 'Golden Retriever',
-            sexo: 'macho',
-            estado: 'activo',
-            propietario: { nombre: 'Carlos Mendoza', celular: '+57 312 456 7890' },
-          },
-          {
-            id: 'p-002',
-            nombre: 'Luna',
-            especie: 'Felino',
-            raza: 'Siamés',
-            sexo: 'hembra',
-            estado: 'activo',
-            propietario: { nombre: 'Andrea Gómez', celular: '+57 301 987 6543' },
-          },
-          {
-            id: 'p-003',
-            nombre: 'Rocky',
-            especie: 'Canino',
-            raza: 'Bulldog Francés',
-            sexo: 'macho',
-            estado: 'activo',
-            propietario: { nombre: 'Javier Rodríguez', celular: '+57 315 654 3210' },
-          },
-        ]);
+        this.pacientes.set([]);
       },
     });
   }
@@ -257,63 +238,16 @@ export class AgendaComponent implements OnInit {
         this.citas.set(data || []);
         this.cargando.set(false);
       },
-      error: () => {
-        // Fallback demostrativo ante backend 404
+      error: (err) => {
         this.cargando.set(false);
-        if (this.citas().length === 0) {
-          const hoy = this.formatoFechaIso(new Date());
-          this.citas.set([
-            {
-              id: 'c-101',
-              paciente_id: 'p-001',
-              paciente_nombre: 'Max',
-              paciente_especie: 'Canino',
-              propietario_nombre: 'Carlos Mendoza',
-              propietario_celular: '+57 312 456 7890',
-              veterinario_nombre: 'Dr. Alejandro Gómez',
-              fecha: hoy,
-              hora_inicio: '09:00',
-              hora_fin: '09:30',
-              motivo: 'Vacunación Séxtuple y desparasitación anual',
-              tipo_consulta: 'vacunacion',
-              estado: 'confirmada',
-              observaciones: 'Traer carné de vacunación anterior.',
-            },
-            {
-              id: 'c-102',
-              paciente_id: 'p-002',
-              paciente_nombre: 'Luna',
-              paciente_especie: 'Felino',
-              propietario_nombre: 'Andrea Gómez',
-              propietario_celular: '+57 301 987 6543',
-              veterinario_nombre: 'Dra. Valentina Restrepo',
-              fecha: hoy,
-              hora_inicio: '11:00',
-              hora_fin: '11:30',
-              motivo: 'Revisión por decaimiento y falta de apetito',
-              tipo_consulta: 'general',
-              estado: 'pendiente',
-            },
-            {
-              id: 'c-103',
-              paciente_id: 'p-003',
-              paciente_nombre: 'Rocky',
-              paciente_especie: 'Canino',
-              propietario_nombre: 'Javier Rodríguez',
-              propietario_celular: '+57 315 654 3210',
-              veterinario_nombre: 'Dr. Alejandro Gómez',
-              fecha: hoy,
-              hora_inicio: '14:00',
-              hora_fin: '14:45',
-              motivo: 'Control dermatológico y toma de muestra raspado',
-              tipo_consulta: 'control',
-              estado: 'atendida',
-            },
-          ]);
-        }
+        this.citas.set([]);
+        this.error.set(
+          err?.error?.message || 'No se pudieron cargar las citas desde el servidor.'
+        );
       },
     });
   }
+
 
   // Navegación de Fechas
   irAHoy(): void {
@@ -422,37 +356,11 @@ export class AgendaComponent implements OnInit {
         this.modalAbierto.set(false);
         this.cargarCitas();
       },
-      error: () => {
-        // Fallback local ante 404 de backend
+      error: (err) => {
         this.guardando.set(false);
-        const servicioSeleccionado = this.servicios().find((s) => s.id === payload.servicio_id);
-        const nuevaCita: Cita = {
-          id: enEdicion ? enEdicion.id : 'c-' + Date.now(),
-          empresa_id: payload.empresa_id || enEdicion?.empresa_id,
-          paciente_id: payload.paciente_id,
-          paciente_nombre: payload.paciente_nombre,
-          paciente_especie: pacienteSeleccionado?.especie || 'Mascota',
-          propietario_nombre: payload.propietario_nombre || 'Propietario',
-          servicio_id: payload.servicio_id,
-          servicio_nombre: servicioSeleccionado?.nombre || null,
-          propietario_celular: payload.propietario_celular,
-          veterinario_nombre: payload.veterinario_nombre,
-          fecha: payload.fecha,
-          hora_inicio: payload.hora_inicio,
-          hora_fin: payload.hora_fin,
-          motivo: payload.motivo,
-          tipo_consulta: payload.tipo_consulta,
-          estado: payload.estado,
-          observaciones: payload.observaciones,
-        };
-
-        if (enEdicion) {
-          this.citas.update((lista) => lista.map((c) => (c.id === enEdicion.id ? nuevaCita : c)));
-        } else {
-          this.citas.update((lista) => [...lista, nuevaCita]);
-        }
-
-        this.modalAbierto.set(false);
+        this.errorFormulario.set(
+          err?.error?.message || 'No se pudo guardar la cita en el servidor.'
+        );
       },
     });
   }
@@ -460,12 +368,7 @@ export class AgendaComponent implements OnInit {
   cambiarEstadoCita(cita: Cita, nuevoEstado: EstadoCita): void {
     this.citaService.cambiarEstado(cita.id, nuevoEstado).subscribe({
       next: () => this.cargarCitas(),
-      error: () => {
-        // Fallback local
-        this.citas.update((lista) =>
-          lista.map((c) => (c.id === cita.id ? { ...c, estado: nuevoEstado } : c))
-        );
-      },
+      error: () => this.error.set('No se pudo actualizar el estado de la cita.'),
     });
   }
 
@@ -475,9 +378,7 @@ export class AgendaComponent implements OnInit {
 
     this.citaService.eliminar(cita.id).subscribe({
       next: () => this.cargarCitas(),
-      error: () => {
-        this.citas.update((lista) => lista.filter((c) => c.id !== cita.id));
-      },
+      error: () => this.error.set('No se pudo eliminar la cita en el servidor.'),
     });
   }
 
