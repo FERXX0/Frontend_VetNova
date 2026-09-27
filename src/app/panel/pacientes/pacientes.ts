@@ -134,82 +134,11 @@ export class PacientesComponent implements OnInit {
         this.pacientes.set(res.data || []);
         this.cargando.set(false);
       },
-      error: () => {
-        // Fallback demostrativo con datos iniciales si el backend aún no implementa el endpoint (404)
+      error: (err) => {
         this.cargando.set(false);
-        if (this.pacientes().length === 0) {
-          this.pacientes.set([
-            {
-              id: 'p-001',
-              nombre: 'Max',
-              especie: 'Canino',
-              raza: 'Golden Retriever',
-              sexo: 'macho',
-              fecha_nacimiento: '2022-04-10',
-              edad_estimada: '2 años',
-              peso_kg: 28.5,
-              color: 'Dorado',
-              microchip: '985141001245896',
-              estado: 'activo',
-              notas: 'Vacunación al día. Alérgico al pollo.',
-              propietario: {
-                nombre: 'Carlos Mendoza',
-                tipo_identificacion: 'CC',
-                numero_identificacion: '1098765432',
-                celular: '+57 312 456 7890',
-                correo: 'carlos.mendoza@email.com',
-                direccion: 'Calle 45 # 12-34',
-              },
-              creado_en: '2026-01-15T09:00:00Z',
-            },
-            {
-              id: 'p-002',
-              nombre: 'Luna',
-              especie: 'Felino',
-              raza: 'Siamés',
-              sexo: 'hembra',
-              fecha_nacimiento: '2023-01-20',
-              edad_estimada: '1 año',
-              peso_kg: 3.8,
-              color: 'Crema y marrón',
-              microchip: '',
-              estado: 'activo',
-              notas: 'Esterilizada. Próxima desparasitación en septiembre.',
-              propietario: {
-                nombre: 'Andrea Gómez',
-                tipo_identificacion: 'CC',
-                numero_identificacion: '1023456789',
-                celular: '+57 301 987 6543',
-                correo: 'andrea.gomez@email.com',
-                direccion: 'Carrera 78 # 45-21',
-              },
-              creado_en: '2026-02-10T14:30:00Z',
-            },
-            {
-              id: 'p-003',
-              nombre: 'Rocky',
-              especie: 'Canino',
-              raza: 'Bulldog Francés',
-              sexo: 'macho',
-              fecha_nacimiento: '2021-08-05',
-              edad_estimada: '3 años',
-              peso_kg: 12.0,
-              color: 'Atigrado',
-              microchip: '985141009874123',
-              estado: 'activo',
-              notas: 'Tratamiento dermatológico en curso.',
-              propietario: {
-                nombre: 'Javier Rodríguez',
-                tipo_identificacion: 'CC',
-                numero_identificacion: '1034567890',
-                celular: '+57 315 654 3210',
-                correo: 'javier.rod@email.com',
-                direccion: 'Avenida 19 # 104-50',
-              },
-              creado_en: '2026-03-01T11:20:00Z',
-            },
-          ]);
-        }
+        this.error.set(
+          err?.error?.message || 'No se pudo cargar el listado de pacientes. Verifica tu conexión con el servidor.'
+        );
       },
     });
   }
@@ -297,51 +226,9 @@ export class PacientesComponent implements OnInit {
       },
       error: (err) => {
         this.guardando.set(false);
-        // Manejo graceful ante backend 404 (pendiente)
-        if (err?.status === 404 || err?.status === 0) {
-          const empresaSeleccionada = this.empresasDisponibles().find(
-            (e) => e.id === payload.empresa_id
-          );
-
-          const nuevoPaciente: Paciente = {
-            id: enEdicion ? enEdicion.id : 'p-' + Date.now(),
-            empresa_id: payload.empresa_id || enEdicion?.empresa_id,
-            empresa_nombre: empresaSeleccionada?.nombre ?? enEdicion?.empresa_nombre,
-            nombre: payload.nombre,
-            especie: payload.especie,
-            raza: payload.raza,
-            sexo: payload.sexo,
-            fecha_nacimiento: payload.fecha_nacimiento,
-            peso_kg: payload.peso_kg,
-            color: payload.color,
-            microchip: payload.microchip,
-            estado: payload.estado,
-            notas: payload.notas,
-            propietario: {
-              nombre: payload.propietario_nombre,
-              tipo_identificacion: payload.propietario_tipo_identificacion,
-              numero_identificacion: payload.propietario_numero_identificacion,
-              celular: payload.propietario_celular,
-              correo: payload.propietario_correo,
-              direccion: payload.propietario_direccion,
-            },
-            creado_en: enEdicion?.creado_en || new Date().toISOString(),
-          };
-
-          if (enEdicion) {
-            this.pacientes.update((lista) =>
-              lista.map((p) => (p.id === enEdicion.id ? nuevoPaciente : p))
-            );
-          } else {
-            this.pacientes.update((lista) => [nuevoPaciente, ...lista]);
-          }
-
-          this.modalAbierto.set(false);
-        } else {
-          this.errorFormulario.set(
-            err?.error?.message || 'No se pudo guardar la información del paciente.'
-          );
-        }
+        this.errorFormulario.set(
+          err?.error?.message || 'No se pudo guardar la información del paciente. Intenta de nuevo.'
+        );
       },
     });
   }
@@ -354,9 +241,10 @@ export class PacientesComponent implements OnInit {
 
     this.pacienteService.eliminar(paciente.id).subscribe({
       next: () => this.cargarPacientes(),
-      error: () => {
-        // Fallback local
-        this.pacientes.update((lista) => lista.filter((p) => p.id !== paciente.id));
+      error: (err) => {
+        this.error.set(
+          err?.error?.message || 'No se pudo eliminar el paciente. Intenta de nuevo.'
+        );
       },
     });
   }

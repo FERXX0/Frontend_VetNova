@@ -298,7 +298,7 @@
                     <input
                       type="checkbox"
                       [checked]="moduloEstaHabilitado(mod.codigo)"
-                      (change)="toggleModulo(mod.codigo)"
+                      (change)="toggleModulo(mod)"
                     />
                     <span class="slider round"></span>
                   </label>
@@ -381,7 +381,7 @@
             </div>
             <h3>Módulo de Agenda Médica no contratado</h3>
             <p>Esta empresa no tiene activado el módulo de <strong>Agenda y Citas</strong>. Si esta empresa es una veterinaria o consultorio, puedes habilitar este módulo en cualquier momento.</p>
-            <button type="button" class="btn-primary" (click)="toggleModulo('citas')">
+            <button type="button" class="btn-primary" (click)="habilitarModuloPorCodigo('citas')">
               Habilitar Agenda para {{ empresa()!.nombre }}
             </button>
           </div>
@@ -458,7 +458,7 @@
             </div>
             <h3>Módulo de Clientes no contratado</h3>
             <p>Esta empresa no tiene activado el módulo de <strong>Clientes</strong> en su configuración de tenant.</p>
-            <button type="button" class="btn-primary" (click)="toggleModulo('clientes_pacientes')">
+            <button type="button" class="btn-primary" (click)="habilitarModuloPorCodigo('clientes_pacientes')">
               Habilitar Clientes para {{ empresa()!.nombre }}
             </button>
           </div>

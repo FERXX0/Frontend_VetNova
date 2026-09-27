@@ -7,6 +7,8 @@ import { SuscripcionService } from '../../../core/services/suscripcion.service';
 import { CatalogoService } from '../../../core/services/catalogo.service';
 import { CitaService } from '../../../core/services/cita.service';
 import { PacienteService } from '../../../core/services/paciente.service';
+import { ModuloEmpresaService, ModuloEmpresaRegistro } from '../../../core/services/modulo-empresa.service';
+import { UsuarioService } from '../../../core/services/usuario.service';
 import { Empresa, EmpresaPayload, EstadoEmpresa } from '../../../core/models/empresa.model';
 import { Suscripcion, SuscripcionPayload, Plan, EstadoSuscripcion, PeriodoSuscripcion } from '../../../core/models/suscripcion.model';
 import { Cita, CitaPayload, EstadoCita, TipoConsulta } from '../../../core/models/cita.model';
@@ -38,6 +40,8 @@ export class EmpresaDetalleComponent implements OnInit {
   private readonly catalogoService = inject(CatalogoService);
   private readonly citaService = inject(CitaService);
   private readonly pacienteService = inject(PacienteService);
+  private readonly moduloEmpresaService = inject(ModuloEmpresaService);
+  private readonly usuarioService = inject(UsuarioService);
   private readonly fb = inject(FormBuilder);
 
   empresaId = signal('');
@@ -58,8 +62,17 @@ export class EmpresaDetalleComponent implements OnInit {
     { id: '7', codigo: 'reportes', nombre: 'Reportes y Métricas', orden: 7, activo: true },
   ]);
 
-  // Módulos aprovisionados específicamente para esta empresa
-  modulosHabilitados = signal<string[]>(['citas', 'clientes_pacientes', 'usuarios', 'reportes']);
+  // Módulos realmente aprovisionados para esta empresa (cargados del backend).
+  modulosEmpresaRegistros = signal<ModuloEmpresaRegistro[]>([]);
+  cargandoModulos = signal(false);
+  guardandoModuloCodigo = signal<string | null>(null);
+
+  modulosHabilitados = computed(() =>
+    this.modulosEmpresaRegistros()
+      .filter((r) => r.activo)
+      .map((r) => r.modulo?.codigo)
+      .filter((c): c is string => !!c)
+  );
 
   tieneModuloCitas = computed(() => this.modulosHabilitados().includes('citas'));
   tieneModuloPacientes = computed(() => this.modulosHabilitados().includes('clientes_pacientes'));
@@ -195,56 +208,45 @@ export class EmpresaDetalleComponent implements OnInit {
         this.cargarUsuariosTenant();
         this.cargarCitas();
         this.cargarPacientes();
+        this.cargarModulosEmpresa();
       },
       error: () => {
         this.cargando.set(false);
-        this.empresa.set({
-          id: this.empresaId(),
-          nombre: 'Veterinaria / Empresa Registrada',
-          razon_social: 'Empresa Multitenant S.A.S.',
-          nit: '900.123.456-7',
-          correo: 'contacto@empresa.com',
-          zona_horaria: 'America/Bogota',
-          estado: 'activa',
-          es_empresa_sistema: false,
-          creado_en: new Date().toISOString(),
-          actualizado_en: new Date().toISOString(),
-        });
-        this.cargarUsuariosTenant();
+        this.error.set('No se pudo cargar la información de la empresa.');
+      },
+    });
+  }
+
+  cargarModulosEmpresa(): void {
+    this.cargandoModulos.set(true);
+    this.moduloEmpresaService.listar(this.empresaId()).subscribe({
+      next: (registros) => {
+        this.modulosEmpresaRegistros.set(registros || []);
+        this.cargandoModulos.set(false);
+      },
+      error: () => {
+        this.modulosEmpresaRegistros.set([]);
+        this.cargandoModulos.set(false);
       },
     });
   }
 
   cargarUsuariosTenant(): void {
-    const emp = this.empresa();
-    const dominio = emp?.correo ? emp.correo.split('@')[1] : 'veterinaria.com';
-    // Usuarios iniciales del tenant
-    this.usuariosTenant.set([
-      {
-        id: 'u-1',
-        nombre: 'Dra. Camila Morales',
-        correo: `cmorales@${dominio}`,
-        rol: 'Administrador',
-        activo: true,
-        creado_en: '2026-01-15',
+    this.usuarioService.listarGlobal({ empresa_id: this.empresaId() }).subscribe({
+      next: (respuesta) => {
+        this.usuariosTenant.set(
+          (respuesta.data || []).map((u) => ({
+            id: u.id,
+            nombre: u.nombre,
+            correo: u.correo,
+            rol: u.rol?.nombre || '—',
+            activo: u.activo,
+            creado_en: u.creado_en,
+          }))
+        );
       },
-      {
-        id: 'u-2',
-        nombre: 'Dr. Alejandro Ruiz',
-        correo: `aruiz@${dominio}`,
-        rol: 'Veterinario',
-        activo: true,
-        creado_en: '2026-02-01',
-      },
-      {
-        id: 'u-3',
-        nombre: 'Valeria Castro',
-        correo: `recepcion@${dominio}`,
-        rol: 'Recepcionista',
-        activo: true,
-        creado_en: '2026-02-10',
-      },
-    ]);
+      error: () => this.usuariosTenant.set([]),
+    });
   }
 
   cargarCatalogos(): void {
@@ -294,18 +296,54 @@ export class EmpresaDetalleComponent implements OnInit {
   }
 
   // ---------- Aprovisionamiento de módulos ----------
-  toggleModulo(codigo: string): void {
-    this.modulosHabilitados.update((actuales) => {
-      if (actuales.includes(codigo)) {
-        return actuales.filter((c) => c !== codigo);
-      } else {
-        return [...actuales, codigo];
-      }
-    });
+  /** Busca el registro de aprovisionamiento existente para un módulo del catálogo, si lo hay. */
+  private registroDeModulo(moduloId: string): ModuloEmpresaRegistro | undefined {
+    return this.modulosEmpresaRegistros().find((r) => r.modulo_id === moduloId);
   }
 
   moduloEstaHabilitado(codigo: string): boolean {
     return this.modulosHabilitados().includes(codigo);
+  }
+
+  /** Para los botones que solo conocen el código (no el objeto Modulo completo). */
+  habilitarModuloPorCodigo(codigo: string): void {
+    const modulo = this.todosModulos().find((m) => m.codigo === codigo);
+    if (modulo) {
+      this.toggleModulo(modulo);
+    }
+  }
+
+  toggleModulo(modulo: Modulo): void {
+    if (this.guardandoModuloCodigo()) return; // evita doble click mientras persiste
+
+    const registroActual = this.registroDeModulo(modulo.id);
+    const nuevoActivo = !(registroActual?.activo ?? false);
+
+    this.guardandoModuloCodigo.set(modulo.codigo);
+
+    this.moduloEmpresaService
+      .guardar(this.empresaId(), {
+        modulo_id: modulo.id,
+        activo: nuevoActivo,
+        monto_mensual: Number(registroActual?.monto_mensual ?? 0),
+        moneda: registroActual?.moneda || 'COP',
+        vence_en: registroActual?.vence_en ?? null,
+      })
+      .subscribe({
+        next: (registroGuardado) => {
+          this.modulosEmpresaRegistros.update((lista) => {
+            const existe = lista.some((r) => r.modulo_id === modulo.id);
+            return existe
+              ? lista.map((r) => (r.modulo_id === modulo.id ? registroGuardado : r))
+              : [...lista, registroGuardado];
+          });
+          this.guardandoModuloCodigo.set(null);
+        },
+        error: () => {
+          this.error.set(`No se pudo actualizar el módulo "${modulo.nombre}". Intenta de nuevo.`);
+          this.guardandoModuloCodigo.set(null);
+        },
+      });
   }
 
   // ---------- Gestión de Usuarios del Tenant ----------
