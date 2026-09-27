@@ -157,6 +157,24 @@
     }
   }
 
+  &__filtro-select {
+    padding: 0.5rem 2rem 0.5rem 0.9rem;
+    border-radius: 999px;
+    border: 1.5px solid var(--vn-border, #e5e9ec);
+    background: var(--vn-white, #ffffff);
+    color: var(--vn-text, #2c3a42);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    appearance: auto;
+
+    &:hover,
+    &:focus {
+      border-color: var(--vn-teal, #1aa7a0);
+      outline: none;
+    }
+  }
+
   &__alerta {
     display: flex;
     align-items: center;

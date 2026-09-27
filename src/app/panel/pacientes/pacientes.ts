@@ -1,6 +1,8 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { EmpresaService } from '../../core/services/empresa.service';
+import { Empresa } from '../../core/models/empresa.model';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PacienteService } from '../../core/services/paciente.service';
 import { EstadoPaciente, Paciente, PacientePayload, SexoPaciente } from '../../core/models/paciente.model';
@@ -15,6 +17,15 @@ import { EstadoPaciente, Paciente, PacientePayload, SexoPaciente } from '../../c
 export class PacientesComponent implements OnInit {
   private readonly pacienteService = inject(PacienteService);
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
+  private readonly empresaService = inject(EmpresaService);
+
+  // Esta misma pantalla se usa en /super-usuario/pacientes y en /panel/pacientes.
+  // El selector de Empresa SOLO aplica en la vista de Super Usuario.
+  readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
+
+  empresasDisponibles = signal<Empresa[]>([]);
+  filtroEmpresa = signal<string>('todas');
 
   pacientes = signal<Paciente[]>([]);
   cargando = signal(false);
@@ -62,8 +73,10 @@ export class PacientesComponent implements OnInit {
 
       const coincideEspecie = especie === 'todas' || p.especie.toLowerCase() === especie.toLowerCase();
       const coincideEstado = estado === 'todos' || p.estado === estado;
+      const empresa = this.filtroEmpresa();
+      const coincideEmpresa = empresa === 'todas' || p.empresa_id === empresa;
 
-      return coincideTexto && coincideEspecie && coincideEstado;
+      return coincideTexto && coincideEspecie && coincideEstado && coincideEmpresa;
     });
   });
 
@@ -77,6 +90,9 @@ export class PacientesComponent implements OnInit {
 
   constructor() {
     this.form = this.fb.group({
+      // Empresa (solo se valida/envía en la vista de Super Usuario)
+      empresa_id: [''],
+
       // Mascota
       nombre: ['', [Validators.required, Validators.maxLength(100)]],
       especie: ['Canino', [Validators.required]],
@@ -101,6 +117,12 @@ export class PacientesComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarPacientes();
+    if (this.esVistaSuperUsuario()) {
+      this.empresaService.listar().subscribe({
+        next: (respuesta) => this.empresasDisponibles.set(respuesta.data),
+        error: () => {},
+      });
+    }
   }
 
   cargarPacientes(): void {
@@ -196,6 +218,7 @@ export class PacientesComponent implements OnInit {
     this.pacienteEnEdicion.set(null);
     this.errorFormulario.set(null);
     this.form.reset({
+      empresa_id: '',
       nombre: '',
       especie: 'Canino',
       raza: '',
@@ -220,6 +243,7 @@ export class PacientesComponent implements OnInit {
     this.pacienteEnEdicion.set(paciente);
     this.errorFormulario.set(null);
     this.form.reset({
+      empresa_id: paciente.empresa_id ?? '',
       nombre: paciente.nombre,
       especie: paciente.especie,
       raza: paciente.raza ?? '',
@@ -252,6 +276,11 @@ export class PacientesComponent implements OnInit {
       return;
     }
 
+    if (this.esVistaSuperUsuario() && !this.form.value.empresa_id) {
+      this.errorFormulario.set('Selecciona la empresa a la que pertenece el paciente.');
+      return;
+    }
+
     this.guardando.set(true);
     const payload: PacientePayload = this.form.value;
     const enEdicion = this.pacienteEnEdicion();
@@ -270,8 +299,14 @@ export class PacientesComponent implements OnInit {
         this.guardando.set(false);
         // Manejo graceful ante backend 404 (pendiente)
         if (err?.status === 404 || err?.status === 0) {
+          const empresaSeleccionada = this.empresasDisponibles().find(
+            (e) => e.id === payload.empresa_id
+          );
+
           const nuevoPaciente: Paciente = {
             id: enEdicion ? enEdicion.id : 'p-' + Date.now(),
+            empresa_id: payload.empresa_id || enEdicion?.empresa_id,
+            empresa_nombre: empresaSeleccionada?.nombre ?? enEdicion?.empresa_nombre,
             nombre: payload.nombre,
             especie: payload.especie,
             raza: payload.raza,

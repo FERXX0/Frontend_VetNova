@@ -119,35 +119,6 @@
         <span class="tenant-tabs__badge">{{ suscripciones().length }}</span>
       </button>
 
-      <!-- Pestaña condicional de Citas -->
-      <button
-        type="button"
-        class="tenant-tabs__item"
-        [class.tenant-tabs__item--active]="tabActiva() === 'citas'"
-        [class.tenant-tabs__item--disabled]="!tieneModuloCitas()"
-        (click)="tabActiva.set('citas')"
-      >
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M3 9h18M8 2v4M16 2v4M7 13h2M11 13h2M15 13h2M7 17h2M11 17h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-        <span>Agenda & Citas</span>
-        @if (!tieneModuloCitas()) {
-          <span class="tenant-tabs__tag-off">Inactivo</span>
-        }
-      </button>
-
-      <!-- Pestaña condicional de Clientes -->
-      <button
-        type="button"
-        class="tenant-tabs__item"
-        [class.tenant-tabs__item--active]="tabActiva() === 'pacientes'"
-        [class.tenant-tabs__item--disabled]="!tieneModuloPacientes()"
-        (click)="tabActiva.set('pacientes')"
-      >
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c-2 0-4-1.5-4-4s1-4.5 4-4.5 4 2 4 4.5-2 4-4 4Z" stroke="currentColor" stroke-width="1.7"/><path d="M5 21c0-3.5 3-6 7-6s7 2.5 7 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="18" cy="8" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M18 6.5v3M16.5 8h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-        <span>Clientes</span>
-        @if (!tieneModuloPacientes()) {
-          <span class="tenant-tabs__tag-off">Inactivo</span>
-        }
-      </button>
     </nav>
 
     <!-- Contenido de las Pestañas -->
@@ -226,10 +197,6 @@
               <h3>Usuarios y Colaboradores de {{ empresa()!.nombre }}</h3>
               <p>Gestiona los usuarios con credenciales y roles con acceso exclusivo a esta sede/empresa.</p>
             </div>
-            <button type="button" class="btn-primary" (click)="abrirModalCrearUsuarioTenant()">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-              Nuevo Usuario de Empresa
-            </button>
           </div>
 
           @if (usuariosTenant().length === 0) {
@@ -248,7 +215,6 @@
                     <th>Rol en la Empresa</th>
                     <th>Estado</th>
                     <th>Fecha Alta</th>
-                    <th class="text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -278,31 +244,6 @@
                         </span>
                       </td>
                       <td>{{ user.creado_en || '2026-01-01' }}</td>
-                      <td class="text-right">
-                        <div class="action-buttons">
-                          <button
-                            type="button"
-                            class="btn-icon"
-                            title="Editar usuario"
-                            (click)="abrirModalEditarUsuarioTenant(user)"
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-                          </button>
-                          <button
-                            type="button"
-                            class="btn-icon"
-                            [class.btn-icon--danger]="user.activo"
-                            [title]="user.activo ? 'Desactivar usuario' : 'Activar usuario'"
-                            (click)="toggleEstadoUsuarioTenant(user)"
-                          >
-                            @if (user.activo) {
-                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M4.93 4.93l14.14 14.14" stroke="currentColor" stroke-width="1.6"/></svg>
-                            } @else {
-                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            }
-                          </button>
-                        </div>
-                      </td>
                     </tr>
                   }
                 </tbody>
@@ -388,10 +329,6 @@
               <h3>Planes y Suscripciones de la Empresa</h3>
               <p>Historial de contratos, estados de pago y fechas de renovación.</p>
             </div>
-            <button type="button" class="btn-primary" (click)="abrirModalSuscripcion()">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-              Nueva Suscripción
-            </button>
           </div>
 
           @if (suscripciones().length === 0) {

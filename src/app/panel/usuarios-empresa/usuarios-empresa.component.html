@@ -763,6 +763,28 @@
             </div>
 
 
+            @if (esVistaSuperUsuario()) {
+              <div class="form-field form-field--full">
+
+                <label>
+                  Empresa
+                  <span>*</span>
+                </label>
+
+                <select
+                  [value]="formulario().empresaId"
+                  (change)="actualizarCampo('empresaId', $any($event.target).value)"
+                >
+                  <option value="" disabled>Selecciona una empresa</option>
+                  @for (empresa of empresasDisponibles(); track empresa.id) {
+                    <option [value]="empresa.id">{{ empresa.nombre }}</option>
+                  }
+                </select>
+
+              </div>
+            }
+
+
             <div class="form-field">
 
               <label>

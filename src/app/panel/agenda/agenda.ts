@@ -1,7 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CitaService } from '../../core/services/cita.service';
+import { EmpresaService } from '../../core/services/empresa.service';
+import { Empresa } from '../../core/models/empresa.model';
+import { UsuarioService } from '../../core/services/usuario.service';
 import { PacienteService } from '../../core/services/paciente.service';
 import { ServicioService } from '../../core/services/servicio.service';
 import { Cita, CitaPayload, EstadoCita, TipoConsulta } from '../../core/models/cita.model';
@@ -19,7 +23,19 @@ export class AgendaComponent implements OnInit {
   private readonly citaService = inject(CitaService);
   private readonly pacienteService = inject(PacienteService);
   private readonly servicioService = inject(ServicioService);
+  private readonly empresaService = inject(EmpresaService);
+  private readonly usuarioService = inject(UsuarioService);
+  private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+
+  // Esta misma pantalla se usa en /super-usuario/agenda y en /panel/agenda.
+  // Los filtros de Empresa y Usuario Profesional SOLO aplican en Super Usuario.
+  readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
+
+  empresasDisponibles = signal<Empresa[]>([]);
+  profesionalesDisponibles = signal<string[]>([]);
+  filtroEmpresa = signal<string>('todas');
+  filtroProfesional = signal<string>('todos');
 
   // Fecha seleccionada en formato YYYY-MM-DD
   fechaSeleccionada = signal(this.formatoFechaIso(new Date()));
@@ -66,10 +82,14 @@ export class AgendaComponent implements OnInit {
   citasDelDia = computed(() => {
     const fecha = this.fechaSeleccionada();
     const estado = this.filtroEstado();
+    const empresa = this.filtroEmpresa();
+    const profesional = this.filtroProfesional();
     return this.citas().filter((c) => {
       const coincideFecha = c.fecha === fecha;
       const coincideEstado = estado === 'todos' || c.estado === estado;
-      return coincideFecha && coincideEstado;
+      const coincideEmpresa = empresa === 'todas' || c.empresa_id === empresa;
+      const coincideProfesional = profesional === 'todos' || c.veterinario_nombre === profesional;
+      return coincideFecha && coincideEstado && coincideEmpresa && coincideProfesional;
     });
   });
 
@@ -107,6 +127,7 @@ export class AgendaComponent implements OnInit {
 
   constructor() {
     this.form = this.fb.group({
+      empresa_id: [''],
       paciente_id: ['', [Validators.required]],
       servicio_id: [''],
       veterinario_nombre: ['Dr. Alejandro Gómez', [Validators.required]],
@@ -124,6 +145,21 @@ export class AgendaComponent implements OnInit {
     this.cargarPacientes();
     this.cargarServicios();
     this.cargarCitas();
+
+    if (this.esVistaSuperUsuario()) {
+      this.empresaService.listar().subscribe({
+        next: (respuesta) => this.empresasDisponibles.set(respuesta.data),
+        error: () => {},
+      });
+
+      this.usuarioService.listarGlobal().subscribe({
+        next: (respuesta) => {
+          const nombres = [...new Set(respuesta.data.map((u) => u.nombre))];
+          this.profesionalesDisponibles.set(nombres);
+        },
+        error: () => {},
+      });
+    }
   }
 
   cargarServicios(): void {
@@ -312,6 +348,7 @@ export class AgendaComponent implements OnInit {
     this.citaEnEdicion.set(null);
     this.errorFormulario.set(null);
     this.form.reset({
+      empresa_id: '',
       paciente_id: this.pacientes()[0]?.id || '',
       servicio_id: '',
       veterinario_nombre: 'Dr. Alejandro Gómez',
@@ -330,6 +367,7 @@ export class AgendaComponent implements OnInit {
     this.citaEnEdicion.set(cita);
     this.errorFormulario.set(null);
     this.form.reset({
+      empresa_id: cita.empresa_id || '',
       paciente_id: cita.paciente_id,
       servicio_id: cita.servicio_id || '',
       veterinario_nombre: cita.veterinario_nombre,
@@ -353,6 +391,11 @@ export class AgendaComponent implements OnInit {
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      return;
+    }
+
+    if (this.esVistaSuperUsuario() && !this.form.value.empresa_id) {
+      this.errorFormulario.set('Selecciona la empresa a la que pertenece la cita.');
       return;
     }
 
@@ -385,6 +428,7 @@ export class AgendaComponent implements OnInit {
         const servicioSeleccionado = this.servicios().find((s) => s.id === payload.servicio_id);
         const nuevaCita: Cita = {
           id: enEdicion ? enEdicion.id : 'c-' + Date.now(),
+          empresa_id: payload.empresa_id || enEdicion?.empresa_id,
           paciente_id: payload.paciente_id,
           paciente_nombre: payload.paciente_nombre,
           paciente_especie: pacienteSeleccionado?.especie || 'Mascota',

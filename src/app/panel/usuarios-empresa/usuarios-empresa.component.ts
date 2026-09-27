@@ -1,15 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { EmpresaService } from '../../core/services/empresa.service';
+import { Empresa } from '../../core/models/empresa.model';
+import { UsuarioService } from '../../core/services/usuario.service';
+import { Usuario } from '../../core/models/usuario.model';
 
 interface UsuarioVeterinaria {
-  id: number;
+  id: string;
   nombre: string;
   correo: string;
   telefono: string;
   rol: string;
   estado: 'Activo' | 'Inactivo';
   modulos: string[];
+  empresaId?: string; // solo aplica en la vista de Super Usuario
 }
 
 interface FormularioUsuario {
@@ -19,6 +25,7 @@ interface FormularioUsuario {
   rol: string;
   estado: 'Activo' | 'Inactivo';
   modulos: string[];
+  empresaId: string; // solo se usa/valida en la vista de Super Usuario
 }
 
 interface ModuloDisponible {
@@ -34,7 +41,22 @@ interface ModuloDisponible {
   templateUrl: './usuarios-empresa.component.html',
   styleUrls: ['./usuarios-empresa.component.scss']
 })
-export class UsuariosEmpresaComponent {
+export class UsuariosEmpresaComponent implements OnInit {
+
+  private readonly router = inject(Router);
+  private readonly empresaService = inject(EmpresaService);
+  private readonly usuarioService = inject(UsuarioService);
+
+  // =========================================================
+  // CONTEXTO: esta misma pantalla se usa en /super-usuario/usuarios
+  // y en /panel/usuarios. El selector de Empresa SOLO tiene sentido
+  // cuando un Super Administrador está creando/editando el usuario,
+  // porque en /panel el usuario ya pertenece a la empresa actual.
+  // =========================================================
+  readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
+
+  empresasDisponibles = signal<Empresa[]>([]);
+  cargandoEmpresas = signal(false);
 
   // =========================================================
   // ESTADO
@@ -43,7 +65,7 @@ export class UsuariosEmpresaComponent {
   modalAbierto = signal(false);
   modoEdicion = signal(false);
 
-  usuarioEditandoId = signal<number | null>(null);
+  usuarioEditandoId = signal<string | null>(null);
 
   busqueda = signal('');
   filtroRol = signal('Todos');
@@ -51,6 +73,53 @@ export class UsuariosEmpresaComponent {
 
   mensaje = signal('');
   tipoMensaje = signal<'success' | 'error'>('success');
+
+  cargandoUsuarios = signal(false);
+
+  ngOnInit(): void {
+    if (this.esVistaSuperUsuario()) {
+      this.cargarEmpresas();
+      this.cargarUsuarios();
+    }
+  }
+
+  cargarUsuarios(): void {
+    this.cargandoUsuarios.set(true);
+    this.usuarioService.listarGlobal().subscribe({
+      next: (respuesta) => {
+        this.usuarios.set(respuesta.data.map((u) => this.mapearUsuario(u)));
+        this.cargandoUsuarios.set(false);
+      },
+      error: () => {
+        this.mostrarMensaje('No se pudieron cargar los usuarios.', 'error');
+        this.cargandoUsuarios.set(false);
+      },
+    });
+  }
+
+  private mapearUsuario(u: Usuario): UsuarioVeterinaria {
+    return {
+      id: u.id,
+      nombre: u.nombre,
+      correo: u.correo,
+      telefono: u.celular || '',
+      rol: u.rol?.nombre || '—',
+      estado: u.activo ? 'Activo' : 'Inactivo',
+      modulos: [], // el backend aún no expone módulos por usuario
+      empresaId: u.empresa_id,
+    };
+  }
+
+  cargarEmpresas(): void {
+    this.cargandoEmpresas.set(true);
+    this.empresaService.listar().subscribe({
+      next: (respuesta) => {
+        this.empresasDisponibles.set(respuesta.data);
+        this.cargandoEmpresas.set(false);
+      },
+      error: () => this.cargandoEmpresas.set(false),
+    });
+  }
 
   // =========================================================
   // ROLES
@@ -146,95 +215,17 @@ export class UsuariosEmpresaComponent {
     telefono: '',
     rol: 'Veterinario',
     estado: 'Activo',
-    modulos: []
+    modulos: [],
+    empresaId: ''
   });
 
   // =========================================================
   // DATOS MOCK
   // =========================================================
 
-  usuarios = signal<UsuarioVeterinaria[]>([
-    {
-      id: 1,
-      nombre: 'Laura Martínez',
-      correo: 'laura.martinez@vetnova.com',
-      telefono: '300 456 7890',
-      rol: 'Administrador',
-      estado: 'Activo',
-      modulos: [
-        'citas',
-        'clientes_pacientes',
-        'usuarios',
-        'reportes',
-        'historias_clinicas',
-        'esquema_v_d',
-        'hospitalizacion',
-        'procedimientos',
-        'laboratorio',
-        'formulaciones',
-        'farmacia',
-        'servicios',
-        'facturacion'
-      ]
-    },
-    {
-      id: 2,
-      nombre: 'Carlos Rodríguez',
-      correo: 'carlos.rodriguez@vetnova.com',
-      telefono: '311 234 5678',
-      rol: 'Veterinario',
-      estado: 'Activo',
-      modulos: [
-        'citas',
-        'clientes_pacientes',
-        'historias_clinicas',
-        'esquema_v_d',
-        'hospitalizacion',
-        'procedimientos',
-        'laboratorio',
-        'formulaciones'
-      ]
-    },
-    {
-      id: 3,
-      nombre: 'Mariana López',
-      correo: 'mariana.lopez@vetnova.com',
-      telefono: '320 987 6543',
-      rol: 'Recepción',
-      estado: 'Activo',
-      modulos: [
-        'citas',
-        'clientes_pacientes'
-      ]
-    },
-    {
-      id: 4,
-      nombre: 'Andrés Gómez',
-      correo: 'andres.gomez@vetnova.com',
-      telefono: '315 654 3210',
-      rol: 'Auxiliar Veterinario',
-      estado: 'Activo',
-      modulos: [
-        'citas',
-        'clientes_pacientes',
-        'esquema_v_d',
-        'hospitalizacion',
-        'procedimientos'
-      ]
-    },
-    {
-      id: 5,
-      nombre: 'Sofía Torres',
-      correo: 'sofia.torres@vetnova.com',
-      telefono: '301 222 3344',
-      rol: 'Contabilidad',
-      estado: 'Inactivo',
-      modulos: [
-        'reportes',
-        'facturacion'
-      ]
-    }
-  ]);
+  // Se carga desde UsuarioService.listarGlobal() en ngOnInit (solo Super Usuario).
+  // En /panel/usuarios queda vacío hasta que exista un endpoint por empresa propio.
+  usuarios = signal<UsuarioVeterinaria[]>([]);
 
   // =========================================================
   // FILTRADO
@@ -296,7 +287,8 @@ export class UsuariosEmpresaComponent {
       telefono: '',
       rol: 'Veterinario',
       estado: 'Activo',
-      modulos: [] // el plan define los módulos: todos empiezan desactivados
+      modulos: [], // el plan define los módulos: todos empiezan desactivados
+      empresaId: ''
     });
 
     this.modalAbierto.set(true);
@@ -312,7 +304,8 @@ export class UsuariosEmpresaComponent {
       telefono: usuario.telefono,
       rol: usuario.rol,
       estado: usuario.estado,
-      modulos: [...usuario.modulos]
+      modulos: [...usuario.modulos],
+      empresaId: usuario.empresaId ?? ''
     });
 
     this.modalAbierto.set(true);
@@ -398,6 +391,11 @@ export class UsuariosEmpresaComponent {
 
     if (!formulario.rol) {
       this.mostrarMensaje('Selecciona un rol.', 'error');
+      return;
+    }
+
+    if (this.esVistaSuperUsuario() && !formulario.empresaId) {
+      this.mostrarMensaje('Selecciona la empresa a la que pertenece el usuario.', 'error');
       return;
     }
 
@@ -495,6 +493,17 @@ export class UsuariosEmpresaComponent {
       return;
     }
 
+    if (this.esVistaSuperUsuario() && usuario.empresaId) {
+      this.usuarioService.eliminar(usuario.empresaId, usuario.id).subscribe({
+        next: () => {
+          this.usuarios.update(usuarios => usuarios.filter(item => item.id !== usuario.id));
+          this.mostrarMensaje('Usuario eliminado correctamente.', 'success');
+        },
+        error: () => this.mostrarMensaje('No se pudo eliminar el usuario.', 'error'),
+      });
+      return;
+    }
+
     this.usuarios.update(usuarios =>
       usuarios.filter(item => item.id !== usuario.id)
     );
@@ -544,14 +553,8 @@ export class UsuariosEmpresaComponent {
     return usuario.modulos.length;
   }
 
-  private generarId(): number {
-    const usuarios = this.usuarios();
-
-    if (usuarios.length === 0) {
-      return 1;
-    }
-
-    return Math.max(...usuarios.map(usuario => usuario.id)) + 1;
+  private generarId(): string {
+    return 'local-' + Date.now().toString();
   }
 
   private validarCorreo(correo: string): boolean {

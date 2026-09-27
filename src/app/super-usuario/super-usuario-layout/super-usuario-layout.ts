@@ -79,72 +79,77 @@ export class SuperUsuarioLayoutComponent {
    *
    * `inicio` sí está aquí porque representa el módulo Inicio
    * del sistema.
+   *
+   * Todas las rutas quedan bajo /super-usuario/... (y no /panel/...)
+   * para que el super administrador nunca salga de su propio árbol
+   * de rutas al navegar por estos módulos. Los mismos componentes
+   * siguen usándose también en /panel/... para el resto de usuarios.
    */
   readonly catalogoModulos = [
     {
       codigo: 'inicio',
       nombre: 'Inicio',
-      ruta: '/panel/dashboard',
+      ruta: '/super-usuario/dashboard',
       icono: 'dashboard'
     },
     {
       codigo: 'citas',
       nombre: 'Agenda Médica',
-      ruta: '/panel/agenda',
+      ruta: '/super-usuario/agenda',
       icono: 'agenda'
     },
     {
       codigo: 'clientes_pacientes',
       nombre: 'Pacientes',
-      ruta: '/panel/pacientes',
+      ruta: '/super-usuario/pacientes',
       icono: 'pacientes'
     },
     {
       codigo: 'reportes',
       nombre: 'Reportes',
-      ruta: '/panel/reportes',
+      ruta: '/super-usuario/reportes',
       icono: 'reportes'
     },
     {
       codigo: 'historias_clinicas',
       nombre: 'Historias Clínicas',
-      ruta: '/panel/historias-clinicas',
+      ruta: '/super-usuario/historias-clinicas',
       icono: 'historia'
     },
     {
       codigo: 'esquema_v_d',
       nombre: 'Vacunación y Desparasitación',
-      ruta: '/panel/esquema-v-d',
+      ruta: '/super-usuario/esquema-v-d',
       icono: 'vacuna'
     },
     {
       codigo: 'hospitalizacion',
       nombre: 'Hospitalización',
-      ruta: '/panel/hospitalizacion',
+      ruta: '/super-usuario/hospitalizacion',
       icono: 'hospital'
     },
     {
       codigo: 'procedimientos',
       nombre: 'Procedimientos',
-      ruta: '/panel/procedimientos',
+      ruta: '/super-usuario/procedimientos',
       icono: 'procedimiento'
     },
     {
       codigo: 'laboratorio',
       nombre: 'Laboratorio',
-      ruta: '/panel/laboratorio',
+      ruta: '/super-usuario/laboratorio',
       icono: 'laboratorio'
     },
     {
       codigo: 'formulaciones',
       nombre: 'Formulaciones',
-      ruta: '/panel/formulaciones',
+      ruta: '/super-usuario/formulaciones',
       icono: 'receta'
     },
     {
       codigo: 'farmacia',
       nombre: 'Farmacia',
-      ruta: '/panel/farmacia',
+      ruta: '/super-usuario/farmacia',
       icono: 'farmacia'
     },
     {
@@ -162,7 +167,7 @@ export class SuperUsuarioLayoutComponent {
     {
       codigo: 'configuracion',
       nombre: 'Configuración',
-      ruta: '/panel/perfil',
+      ruta: '/super-usuario/perfil',
       icono: 'configuracion'
     },
   ];
@@ -217,6 +222,19 @@ export class SuperUsuarioLayoutComponent {
     '/super-usuario/empresas': 'Gestión de Empresas',
     '/super-usuario/usuarios': 'Usuarios de Plataforma',
     '/super-usuario/configuracion': 'Configuración Global',
+    '/super-usuario/agenda': 'Agenda Médica',
+    '/super-usuario/pacientes': 'Pacientes',
+    '/super-usuario/reportes': 'Reportes',
+    '/super-usuario/historias-clinicas': 'Historias Clínicas',
+    '/super-usuario/esquema-v-d': 'Vacunación y Desparasitación',
+    '/super-usuario/hospitalizacion': 'Hospitalización',
+    '/super-usuario/procedimientos': 'Procedimientos',
+    '/super-usuario/laboratorio': 'Laboratorio',
+    '/super-usuario/formulaciones': 'Formulaciones',
+    '/super-usuario/farmacia': 'Farmacia',
+    '/super-usuario/perfil': 'Mi Perfil',
+    '/super-usuario/monitoreo': 'Monitoreo',
+    '/super-usuario/soporte': 'Soporte',
 
     '/panel/dashboard': 'Inicio',
     '/panel/agenda': 'Agenda Médica',

@@ -32,10 +32,11 @@ export class PacienteService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/pacientes`;
 
-  listar(params?: { buscar?: string; especie?: string; page?: number }): Observable<PaginacionLaravel<Paciente>> {
+  listar(params?: { buscar?: string; especie?: string; empresa_id?: string; page?: number }): Observable<PaginacionLaravel<Paciente>> {
     let httpParams = new HttpParams();
     if (params?.buscar) httpParams = httpParams.set('buscar', params.buscar);
     if (params?.especie) httpParams = httpParams.set('especie', params.especie);
+    if (params?.empresa_id) httpParams = httpParams.set('empresa_id', params.empresa_id);
     if (params?.page) httpParams = httpParams.set('page', params.page.toString());
 
     return this.http.get<PaginacionLaravel<Paciente>>(this.baseUrl, { params: httpParams });

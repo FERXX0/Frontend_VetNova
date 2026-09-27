@@ -129,6 +129,66 @@ export const routes: Routes = [
 
       },
 
+      // ----------------------------------------------------
+      // MÓDULOS OPERATIVOS DE LA VETERINARIA
+      //
+      // Mismos componentes que usa /panel/..., anidados aquí
+      // para que el super administrador navegue sin salir de
+      // /super-usuario/... . No llevan `data: { modulo }` porque
+      // moduloChildGuard NO está aplicado a este árbol de rutas
+      // (aquí solo corren authGuard + superAdminGuard).
+      // ----------------------------------------------------
+
+      {
+        path: 'agenda',
+        component: AgendaComponent
+      },
+
+      {
+        path: 'pacientes',
+        component: PacientesComponent
+      },
+
+      {
+        path: 'pacientes/:id',
+        component: PacienteDetalleComponent
+      },
+
+      {
+        path: 'historias-clinicas',
+        component: HistoriasClinicasComponent
+      },
+
+      {
+        path: 'hospitalizacion',
+        component: HospitalizacionComponent
+      },
+
+      {
+        path: 'procedimientos',
+        component: ProcedimientosComponent
+      },
+
+      {
+        path: 'laboratorio',
+        component: LaboratorioComponent
+      },
+
+      {
+        path: 'formulaciones',
+        component: FormulacionesComponent
+      },
+
+      {
+        path: 'esquema-v-d',
+        component: EsquemaVDComponent
+      },
+
+      {
+        path: 'farmacia',
+        component: FarmaciaComponent
+      },
+
       {
         path: 'monitoreo',
         component: MonitoreoComponent

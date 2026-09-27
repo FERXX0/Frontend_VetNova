@@ -24,8 +24,9 @@ export class CitaService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/citas`;
 
-  listarPorFecha(fecha: string): Observable<Cita[]> {
-    const params = new HttpParams().set('fecha', fecha);
+  listarPorFecha(fecha: string, empresaId?: string): Observable<Cita[]> {
+    let params = new HttpParams().set('fecha', fecha);
+    if (empresaId) params = params.set('empresa_id', empresaId);
     return this.http.get<Cita[]>(this.baseUrl, { params });
   }
 

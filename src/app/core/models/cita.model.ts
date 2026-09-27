@@ -3,6 +3,7 @@ export type TipoConsulta = 'general' | 'vacunacion' | 'desparasitacion' | 'cirug
 
 export interface Cita {
   id: string;
+  empresa_id?: string;
   paciente_id: string;
   paciente_nombre: string;
   paciente_especie?: string;
@@ -24,6 +25,7 @@ export interface Cita {
 }
 
 export interface CitaPayload {
+  empresa_id?: string;
   paciente_id: string;
   paciente_nombre: string;
   propietario_nombre?: string;

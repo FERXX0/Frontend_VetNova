@@ -13,6 +13,8 @@ export interface Propietario {
 
 export interface Paciente {
   id: string;
+  empresa_id?: string;
+  empresa_nombre?: string;
   nombre: string;
   especie: string;
   raza?: string;
@@ -30,6 +32,7 @@ export interface Paciente {
 }
 
 export interface PacientePayload {
+  empresa_id?: string;
   nombre: string;
   especie: string;
   raza?: string;

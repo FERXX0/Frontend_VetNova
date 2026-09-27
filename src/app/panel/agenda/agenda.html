@@ -34,6 +34,33 @@
     </div>
   </div>
 
+  <!-- Filtros exclusivos de Super Usuario: Empresa y Profesional -->
+  @if (esVistaSuperUsuario()) {
+    <div class="agenda-page__filtros-admin">
+      <select
+        class="agenda-page__filtro-select"
+        [value]="filtroEmpresa()"
+        (change)="filtroEmpresa.set($any($event.target).value)"
+      >
+        <option value="todas">Todas las empresas</option>
+        @for (empresa of empresasDisponibles(); track empresa.id) {
+          <option [value]="empresa.id">{{ empresa.nombre }}</option>
+        }
+      </select>
+
+      <select
+        class="agenda-page__filtro-select"
+        [value]="filtroProfesional()"
+        (change)="filtroProfesional.set($any($event.target).value)"
+      >
+        <option value="todos">Todos los profesionales</option>
+        @for (nombre of profesionalesDisponibles(); track nombre) {
+          <option [value]="nombre">{{ nombre }}</option>
+        }
+      </select>
+    </div>
+  }
+
   <!-- Barra de Navegación de Fechas y Filtros -->
   <div class="agenda-page__nav-bar">
     <div class="fecha-selector">
@@ -208,6 +235,18 @@
         </div>
 
         <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-form" novalidate>
+          @if (esVistaSuperUsuario()) {
+            <div class="form-campo">
+              <label for="empresa_id">Empresa *</label>
+              <select id="empresa_id" formControlName="empresa_id">
+                <option value="" disabled>Selecciona una empresa</option>
+                @for (empresa of empresasDisponibles(); track empresa.id) {
+                  <option [value]="empresa.id">{{ empresa.nombre }}</option>
+                }
+              </select>
+            </div>
+          }
+
           <div class="form-campo">
             <label for="paciente_id">Paciente / Mascota *</label>
             <select id="paciente_id" formControlName="paciente_id">
