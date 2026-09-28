@@ -333,14 +333,38 @@
 
               <div class="form-campo">
                 <label for="propietario_celular">Celular / WhatsApp</label>
-                <input id="propietario_celular" type="tel" formControlName="propietario_celular" placeholder="+57 300 000 0000" />
+                <input
+                  id="propietario_celular"
+                  type="text"
+                  formControlName="propietario_celular"
+                  inputmode="numeric"
+                  maxlength="10"
+                  placeholder="3001234567"
+                  [class.input--invalido]="form.get('propietario_celular')?.invalid && form.get('propietario_celular')?.touched"
+                  (input)="soloNumeros($event, 'propietario_celular')"
+                />
+                @if (form.get('propietario_celular')?.invalid && form.get('propietario_celular')?.touched) {
+                  <span class="error-texto">Solo se permiten números.</span>
+                }
               </div>
             </div>
 
             <div class="form-fila">
               <div class="form-campo">
                 <label for="propietario_numero_identificacion">N° Documento / Cédula</label>
-                <input id="propietario_numero_identificacion" type="text" formControlName="propietario_numero_identificacion" placeholder="1020304050" />
+                <input
+                  id="propietario_numero_identificacion"
+                  type="text"
+                  formControlName="propietario_numero_identificacion"
+                  inputmode="numeric"
+                  maxlength="10"
+                  placeholder="1020304050"
+                  [class.input--invalido]="form.get('propietario_numero_identificacion')?.invalid && form.get('propietario_numero_identificacion')?.touched"
+                  (input)="soloNumeros($event, 'propietario_numero_identificacion')"
+                />
+                @if (form.get('propietario_numero_identificacion')?.invalid && form.get('propietario_numero_identificacion')?.touched) {
+                  <span class="error-texto">Solo se permiten números.</span>
+                }
               </div>
 
               <div class="form-campo">

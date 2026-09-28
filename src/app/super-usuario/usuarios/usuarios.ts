@@ -63,7 +63,7 @@ export class UsuariosAdminComponent implements OnInit {
       nombre: ['', [Validators.required, Validators.maxLength(150)]],
       tipo_identificacion: ['CC', [Validators.required]],
       numero_identificacion: ['', [Validators.required, Validators.maxLength(30)]],
-      celular: ['', [Validators.maxLength(10)]],
+      celular: ['', [Validators.pattern(/^\d+$/), Validators.maxLength(10)]],
       correo: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
       contrasena: ['', [Validators.minLength(8)]],
       activo: [true],
@@ -129,6 +129,15 @@ export class UsuariosAdminComponent implements OnInit {
   irAPagina(pagina: number): void {
     if (pagina < 1 || pagina > this.totalPaginas()) return;
     this.cargarUsuarios(pagina);
+  }
+
+  /** Deja solo dígitos en el campo indicado y limita su longitud mientras se escribe. */
+  soloNumeros(event: Event, campo: string, max = 10): void {
+    const input = event.target as HTMLInputElement;
+    const valor = input.value.replace(/\D/g, '').slice(0, max);
+
+    input.value = valor;
+    this.form.get(campo)?.setValue(valor, { emitEvent: false });
   }
 
   abrirModalCrear(): void {

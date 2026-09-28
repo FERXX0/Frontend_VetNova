@@ -330,6 +330,15 @@ export class UsuariosEmpresaComponent implements OnInit {
     }));
   }
 
+  /** Deja solo dígitos en el campo de texto indicado y limita su longitud mientras se escribe. */
+  soloNumeros(event: Event, campo: keyof FormularioUsuario, max = 10): void {
+    const input = event.target as HTMLInputElement;
+    const valor = input.value.replace(/\D/g, '').slice(0, max);
+
+    input.value = valor;
+    this.actualizarCampo(campo, valor);
+  }
+
   // =========================================================
   // MÓDULOS
   // =========================================================

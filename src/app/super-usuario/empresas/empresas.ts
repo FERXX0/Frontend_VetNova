@@ -48,7 +48,7 @@ export class EmpresasComponent implements OnInit {
     this.form = this.fb.group({
       nombre: ['', [Validators.required, Validators.maxLength(150)]],
       razon_social: ['', [Validators.maxLength(150)]],
-      nit: ['', [Validators.maxLength(50)]],
+      nit: ['', [Validators.pattern(/^\d{9}-\d$/)]],
       correo: ['', [Validators.email, Validators.maxLength(50)]],
       zona_horaria: ['America/Bogota', [Validators.required]],
       estado: ['activa', [Validators.required]],
@@ -105,6 +105,18 @@ export class EmpresasComponent implements OnInit {
 
   cerrarModal(): void {
     this.modalAbierto.set(false);
+  }
+
+  /** Solo dígitos; inserta el guion automáticamente tras el noveno (formato 400349123-5). */
+  formatearNit(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digitos = input.value.replace(/\D/g, '').slice(0, 10);
+    const valor = digitos.length > 9
+      ? `${digitos.slice(0, 9)}-${digitos.slice(9)}`
+      : digitos;
+
+    input.value = valor;
+    this.form.get('nit')?.setValue(valor, { emitEvent: false });
   }
 
   guardar(): void {

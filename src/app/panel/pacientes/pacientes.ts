@@ -108,8 +108,8 @@ export class PacientesComponent implements OnInit {
       // Propietario
       propietario_nombre: ['', [Validators.required, Validators.maxLength(150)]],
       propietario_tipo_identificacion: ['CC'],
-      propietario_numero_identificacion: ['', [Validators.maxLength(50)]],
-      propietario_celular: ['', [Validators.maxLength(30)]],
+      propietario_numero_identificacion: ['', [Validators.pattern(/^\d+$/)]],
+      propietario_celular: ['', [Validators.pattern(/^\d+$/)]],
       propietario_correo: ['', [Validators.email, Validators.maxLength(100)]],
       propietario_direccion: ['', [Validators.maxLength(200)]],
     });
@@ -141,6 +141,15 @@ export class PacientesComponent implements OnInit {
         );
       },
     });
+  }
+
+  /** Deja solo dígitos en el campo indicado y limita su longitud mientras se escribe. */
+  soloNumeros(event: Event, campo: string, max = 10): void {
+    const input = event.target as HTMLInputElement;
+    const valor = input.value.replace(/\D/g, '').slice(0, max);
+
+    input.value = valor;
+    this.form.get(campo)?.setValue(valor, { emitEvent: false });
   }
 
   abrirModalCrear(): void {

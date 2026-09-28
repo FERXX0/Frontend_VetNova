@@ -810,9 +810,11 @@
 
               <input
                 type="tel"
-                placeholder="300 000 0000"
+                inputmode="numeric"
+                maxlength="10"
+                placeholder="3001234567"
                 [value]="formulario().telefono"
-                (input)="actualizarCampo('telefono', $any($event.target).value)"
+                (input)="soloNumeros($event, 'telefono')"
               />
 
             </div>
