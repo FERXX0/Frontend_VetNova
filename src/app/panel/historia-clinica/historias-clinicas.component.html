@@ -5,23 +5,17 @@
   ====================================================== -->
 
   <header class="page-header">
-
     <div class="page-header__content">
-
       <div class="page-header__eyebrow">
         Atención médica
       </div>
-
       <h1 class="page-header__title">
         Historias Clínicas
       </h1>
-
       <p class="page-header__desc">
         Consulta y administra el historial médico de los pacientes.
       </p>
-
     </div>
-
   </header>
 
 
@@ -30,15 +24,12 @@
   ====================================================== -->
 
   @if (mensaje()) {
-
     <div
       class="toast"
       [class.toast--success]="tipoMensaje() === 'success'"
       [class.toast--error]="tipoMensaje() === 'error'"
     >
-
       @if (tipoMensaje() === 'success') {
-
         <svg
           width="20"
           height="20"
@@ -51,9 +42,7 @@
         >
           <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
-
       } @else {
-
         <svg
           width="20"
           height="20"
@@ -66,15 +55,9 @@
           <line x1="15" y1="9" x2="9" y2="15"></line>
           <line x1="9" y1="9" x2="15" y2="15"></line>
         </svg>
-
       }
-
-      <span>
-        {{ mensaje() }}
-      </span>
-
+      <span>{{ mensaje() }}</span>
     </div>
-
   }
 
 
@@ -83,11 +66,8 @@
   ====================================================== -->
 
   <section class="stats-grid">
-
     <div class="stat-card">
-
       <div class="stat-card__icon stat-card__icon--blue">
-
         <svg
           width="22"
           height="22"
@@ -99,28 +79,15 @@
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
           <circle cx="12" cy="7" r="4"></circle>
         </svg>
-
       </div>
-
       <div>
-
-        <span class="stat-card__label">
-          Historias clínicas
-        </span>
-
-        <strong class="stat-card__value">
-          {{ totalHistorias() }}
-        </strong>
-
+        <span class="stat-card__label">Historias clínicas</span>
+        <strong class="stat-card__value">{{ totalHistorias() }}</strong>
       </div>
-
     </div>
 
-
     <div class="stat-card">
-
       <div class="stat-card__icon stat-card__icon--green">
-
         <svg
           width="22"
           height="22"
@@ -131,28 +98,15 @@
         >
           <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
-
       </div>
-
       <div>
-
-        <span class="stat-card__label">
-          Pacientes activos
-        </span>
-
-        <strong class="stat-card__value">
-          {{ pacientesActivos() }}
-        </strong>
-
+        <span class="stat-card__label">Pacientes activos</span>
+        <strong class="stat-card__value">{{ pacientesActivos() }}</strong>
       </div>
-
     </div>
 
-
     <div class="stat-card">
-
       <div class="stat-card__icon stat-card__icon--orange">
-
         <svg
           width="22"
           height="22"
@@ -165,28 +119,15 @@
           <line x1="12" y1="8" x2="12" y2="12"></line>
           <line x1="12" y1="16" x2="12.01" y2="16"></line>
         </svg>
-
       </div>
-
       <div>
-
-        <span class="stat-card__label">
-          Pacientes inactivos
-        </span>
-
-        <strong class="stat-card__value">
-          {{ pacientesInactivos() }}
-        </strong>
-
+        <span class="stat-card__label">Pacientes inactivos</span>
+        <strong class="stat-card__value">{{ pacientesInactivos() }}</strong>
       </div>
-
     </div>
 
-
     <div class="stat-card">
-
       <div class="stat-card__icon stat-card__icon--purple">
-
         <svg
           width="22"
           height="22"
@@ -198,23 +139,12 @@
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"></path>
         </svg>
-
       </div>
-
       <div>
-
-        <span class="stat-card__label">
-          Consultas registradas
-        </span>
-
-        <strong class="stat-card__value">
-          {{ totalConsultas() }}
-        </strong>
-
+        <span class="stat-card__label">Consultas registradas</span>
+        <strong class="stat-card__value">{{ totalConsultas() }}</strong>
       </div>
-
     </div>
-
   </section>
 
 
@@ -223,9 +153,7 @@
   ====================================================== -->
 
   <section class="filters-card">
-
     <div class="search-box">
-
       <svg
         width="19"
         height="19"
@@ -237,79 +165,61 @@
         <circle cx="11" cy="11" r="8"></circle>
         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
       </svg>
-
       <input
         type="text"
         placeholder="Buscar paciente, propietario o identificación..."
         [value]="busqueda()"
         (input)="cambiarBusqueda($any($event.target).value)"
       />
-
     </div>
 
+    @if (esVistaSuperUsuario()) {
+      <div class="filter-group">
+        <label>Empresa</label>
+        <select
+          [value]="filtroEmpresa()"
+          (change)="onEmpresaChange($any($event.target).value)"
+        >
+          <option value="">Todas las empresas</option>
+          @for (empresa of empresasDisponibles(); track empresa.id) {
+            <option [value]="empresa.id">{{ empresa.nombre }}</option>
+          }
+        </select>
+      </div>
+    }
 
     <div class="filter-group">
-
-      <label>
-        Especie
-      </label>
-
+      <label>Especie</label>
       <select
         [value]="filtroEspecie()"
         (change)="cambiarFiltroEspecie($any($event.target).value)"
       >
-
-        <option value="Todos">
-          Todas
-        </option>
-
+        <option value="Todos">Todas</option>
         @for (especie of especies; track especie) {
-
-          <option [value]="especie">
-            {{ especie }}
-          </option>
-
+          <option [value]="especie">{{ especie }}</option>
         }
-
       </select>
-
     </div>
 
-
     <div class="filter-group">
-
-      <label>
-        Estado
-      </label>
-
+      <label>Estado</label>
       <select
         [value]="filtroEstado()"
         (change)="cambiarFiltroEstado($any($event.target).value)"
       >
-
-        <option value="Todos">
-          Todos
-        </option>
-
-        <option value="Activo">
-          Activos
-        </option>
-
-        <option value="Inactivo">
-          Inactivos
-        </option>
-
+        <option value="Todos">Todos</option>
+        <option value="activo">Activos</option>
+        <option value="inactivo">Inactivos</option>
+        <option value="fallecido">Fallecidos</option>
       </select>
-
     </div>
-
 
     @if (
       busqueda() ||
       filtroEspecie() !== 'Todos' ||
-      filtroEstado() !== 'Todos'
+      filtroEstado() !== 'Todos' ||
+      filtroEmpresa() !== ''
     ) {
-
       <button
         type="button"
         class="btn-clear"
@@ -317,9 +227,7 @@
       >
         Limpiar
       </button>
-
     }
-
   </section>
 
 
@@ -328,284 +236,199 @@
   ====================================================== -->
 
   <section class="card">
-
     <div class="table-header">
-
       <div>
-
-        <h2>
-          Historias clínicas
-        </h2>
-
-        <span>
-          {{ historiasFiltradas().length }}
-          paciente(s)
-        </span>
-
+        <h2>Historias clínicas</h2>
+        <span>{{ total() }} paciente(s)</span>
       </div>
-
     </div>
 
+    @if (error()) {
+      <div class="alert-error">
+        <span>{{ error() }}</span>
+        <button type="button" (click)="cargarHistorias(paginaActual())">Reintentar</button>
+      </div>
+    }
 
     <div class="table-responsive">
-
       <table class="vn-table">
-
         <thead>
-
           <tr>
-
-            <th>
-              Paciente
-            </th>
-
-            <th>
-              Propietario
-            </th>
-
-            <th>
-              Especie
-            </th>
-
-            <th>
-              Última consulta
-            </th>
-
-            <th>
-              Consultas
-            </th>
-
-            <th>
-              Estado
-            </th>
-
-            <th class="text-right">
-              Acciones
-            </th>
-
+            <th>Paciente</th>
+            <th>Propietario</th>
+            <th>Especie</th>
+            <th>Última consulta</th>
+            <th>Consultas</th>
+            <th>Estado</th>
+            <th class="text-right">Acciones</th>
           </tr>
-
         </thead>
 
-
         <tbody>
-
-          @for (
-            historia of historiasFiltradas();
-            track historia.id
-          ) {
-
+          @if (cargando()) {
             <tr>
-
-              <!-- PACIENTE -->
-
-              <td>
-
-                <div class="patient-cell">
-
-                  <div class="patient-avatar">
-                    {{ obtenerIniciales(historia.paciente) }}
+              <td colspan="7" class="empty-state">
+                <strong>Cargando historias clínicas...</strong>
+              </td>
+            </tr>
+          } @else {
+            @for (historia of historiasFiltradas(); track historia.id) {
+              <tr>
+                <!-- PACIENTE -->
+                <td>
+                  <div class="patient-cell">
+                    <div class="patient-avatar">
+                      {{ obtenerIniciales(historia.nombre) }}
+                    </div>
+                    <div class="patient-info">
+                      <strong>{{ historia.nombre }}</strong>
+                      <span>{{ textoIdentificacion(historia) }}</span>
+                    </div>
                   </div>
+                </td>
 
-                  <div class="patient-info">
-
-                    <strong>
-                      {{ historia.paciente }}
-                    </strong>
-
-                    <span>
-                      {{ historia.identificacion }}
-                    </span>
-
+                <!-- PROPIETARIO -->
+                <td>
+                  <div class="owner-cell">
+                    <strong>{{ historia.propietario.nombre || 'Sin propietario' }}</strong>
+                    <span>{{ historia.propietario.celular || 'Sin celular' }}</span>
                   </div>
+                </td>
 
-                </div>
+                <!-- ESPECIE -->
+                <td>
+                  <div class="species-cell">
+                    <strong>{{ historia.especie }}</strong>
+                    <span>{{ historia.raza || 'Mestizo' }}</span>
+                    @if (esVistaSuperUsuario() && historia.empresa_nombre) {
+                      <span class="empresa-tag">{{ historia.empresa_nombre }}</span>
+                    }
+                  </div>
+                </td>
 
-              </td>
-
-
-              <!-- PROPIETARIO -->
-
-              <td>
-
-                <div class="owner-cell">
-
-                  <strong>
-                    {{ historia.propietario }}
-                  </strong>
-
-                  <span>
-                    {{ historia.telefono }}
+                <!-- ÚLTIMA CONSULTA -->
+                <td>
+                  <span class="date">
+                    {{ formatearFecha(historia.ultima_consulta) }}
                   </span>
+                </td>
 
-                </div>
-
-              </td>
-
-
-              <!-- ESPECIE -->
-
-              <td>
-
-                <div class="species-cell">
-
-                  <strong>
-                    {{ historia.especie }}
-                  </strong>
-
-                  <span>
-                    {{ historia.raza }}
+                <!-- CONSULTAS -->
+                <td>
+                  <span class="consultation-count">
+                    {{ historia.total_consultas }}
                   </span>
+                </td>
 
-                </div>
-
-              </td>
-
-
-              <!-- ÚLTIMA CONSULTA -->
-
-              <td>
-
-                <span class="date">
-                  {{ formatearFecha(historia.ultimaConsulta) }}
-                </span>
-
-              </td>
-
-
-              <!-- CONSULTAS -->
-
-              <td>
-
-                <span class="consultation-count">
-                  {{ historia.consultas.length }}
-                </span>
-
-              </td>
-
-
-              <!-- ESTADO -->
-
-              <td>
-
-                <span
-                  class="status-badge"
-                  [class.status-badge--active]="historia.estado === 'Activo'"
-                  [class.status-badge--inactive]="historia.estado === 'Inactivo'"
-                >
-
-                  <span class="status-dot"></span>
-
-                  {{ historia.estado }}
-
-                </span>
-
-              </td>
-
-
-              <!-- ACCIONES -->
-
-              <td class="text-right">
-
-                <div class="actions">
-
-                  <button
-                    type="button"
-                    class="action-btn"
-                    title="Ver historia clínica"
-                    (click)="verHistoria(historia)"
+                <!-- ESTADO -->
+                <td>
+                  <span
+                    class="status-badge"
+                    [class.status-badge--active]="historia.estado === 'activo'"
+                    [class.status-badge--inactive]="historia.estado === 'inactivo'"
+                    [class.status-badge--deceased]="historia.estado === 'fallecido'"
                   >
+                    <span class="status-dot"></span>
+                    {{ etiquetaEstado(historia.estado) }}
+                  </span>
+                </td>
 
+                <!-- ACCIONES -->
+                <td class="text-right">
+                  <div class="actions">
+                    <button
+                      type="button"
+                      class="action-btn"
+                      title="Ver historia clínica"
+                      (click)="verHistoria(historia)"
+                    >
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="action-btn action-btn--primary"
+                      title="Nueva consulta"
+                      (click)="nuevaConsulta(historia)"
+                    >
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+
+            @if (historiasFiltradas().length === 0) {
+              <tr>
+                <td colspan="7" class="empty-state">
+                  <div class="empty-state__icon">
                     <svg
-                      width="17"
-                      height="17"
+                      width="30"
+                      height="30"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
-                      stroke-width="2"
+                      stroke-width="1.7"
                     >
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-
-                  </button>
-
-
-                  <button
-                    type="button"
-                    class="action-btn action-btn--primary"
-                    title="Nueva consulta"
-                    (click)="nuevaConsulta(historia)"
-                  >
-
-                    <svg
-                      width="17"
-                      height="17"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-
-                  </button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
+                  </div>
+                  <strong>No se encontraron historias clínicas</strong>
+                  <span>Intenta cambiar los filtros de búsqueda o registra pacientes desde el módulo de Pacientes.</span>
+                </td>
+              </tr>
+            }
           }
-
-
-          @if (historiasFiltradas().length === 0) {
-
-            <tr>
-
-              <td
-                colspan="7"
-                class="empty-state"
-              >
-
-                <div class="empty-state__icon">
-
-                  <svg
-                    width="30"
-                    height="30"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                  >
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
-
-                </div>
-
-                <strong>
-                  No se encontraron historias clínicas
-                </strong>
-
-                <span>
-                  Intenta cambiar los filtros de búsqueda.
-                </span>
-
-              </td>
-
-            </tr>
-
-          }
-
         </tbody>
-
       </table>
-
     </div>
 
+    @if (totalPaginas() > 1) {
+      <div class="paginacion">
+        <button
+          type="button"
+          class="btn-paginacion"
+          [disabled]="paginaActual() <= 1"
+          (click)="irAPagina(paginaActual() - 1)"
+        >
+          ‹ Anterior
+        </button>
+
+        <span class="paginacion-info">
+          Página {{ paginaActual() }} de {{ totalPaginas() }} ({{ total() }} paciente(s))
+        </span>
+
+        <button
+          type="button"
+          class="btn-paginacion"
+          [disabled]="paginaActual() >= totalPaginas()"
+          (click)="irAPagina(paginaActual() + 1)"
+        >
+          Siguiente ›
+        </button>
+      </div>
+    }
   </section>
 
 </div>
@@ -634,7 +457,7 @@
         <div class="history-title">
 
           <div class="patient-avatar patient-avatar--large">
-            {{ obtenerIniciales(historiaSeleccionada()!.paciente) }}
+            {{ obtenerIniciales(historiaSeleccionada()!.nombre) }}
           </div>
 
           <div>
@@ -644,15 +467,15 @@
             </span>
 
             <h2>
-              {{ historiaSeleccionada()!.paciente }}
+              {{ historiaSeleccionada()!.nombre }}
             </h2>
 
             <p>
-              {{ historiaSeleccionada()!.identificacion }}
+              {{ textoIdentificacion(historiaSeleccionada()!) }}
               ·
               {{ historiaSeleccionada()!.especie }}
               ·
-              {{ historiaSeleccionada()!.raza }}
+              {{ historiaSeleccionada()!.raza || 'Mestizo' }}
             </p>
 
           </div>
@@ -712,7 +535,7 @@
 
             <div>
               <span>Paciente</span>
-              <strong>{{ historiaSeleccionada()!.paciente }}</strong>
+              <strong>{{ historiaSeleccionada()!.nombre }}</strong>
             </div>
 
             <div>
@@ -722,22 +545,22 @@
 
             <div>
               <span>Raza</span>
-              <strong>{{ historiaSeleccionada()!.raza }}</strong>
+              <strong>{{ historiaSeleccionada()!.raza || 'Mestizo' }}</strong>
             </div>
 
             <div>
               <span>Sexo</span>
-              <strong>{{ historiaSeleccionada()!.sexo }}</strong>
+              <strong>{{ etiquetaSexo(historiaSeleccionada()!.sexo) }}</strong>
             </div>
 
             <div>
               <span>Edad</span>
-              <strong>{{ historiaSeleccionada()!.edad }}</strong>
+              <strong>{{ historiaSeleccionada()!.edad_estimada || 'Sin dato' }}</strong>
             </div>
 
             <div>
               <span>Propietario</span>
-              <strong>{{ historiaSeleccionada()!.propietario }}</strong>
+              <strong>{{ historiaSeleccionada()!.propietario.nombre || 'Sin propietario' }}</strong>
             </div>
 
           </div>
@@ -748,6 +571,21 @@
         <!-- ANTECEDENTES -->
 
         <section class="history-section">
+
+          <div class="section-heading section-heading--actions">
+            <div>
+              <h3>Datos generales</h3>
+              <span>Antecedentes, alergias y observaciones</span>
+            </div>
+
+            <button
+              type="button"
+              class="btn-secondary btn-primary--small"
+              (click)="abrirDatosGenerales()"
+            >
+              Editar datos generales
+            </button>
+          </div>
 
           <div class="clinical-grid">
 
@@ -807,7 +645,7 @@
               </h3>
 
               <span>
-                {{ historiaSeleccionada()!.consultas.length }}
+                {{ historiaSeleccionada()!.total_consultas }}
                 consulta(s) registrada(s)
               </span>
 
@@ -877,7 +715,7 @@
                     </div>
 
                     <span class="veterinarian">
-                      {{ consulta.veterinario }}
+                      {{ consulta.veterinario_nombre }}
                     </span>
 
                   </div>
@@ -944,12 +782,12 @@
 
                   <div>
                     <span>Peso</span>
-                    <strong>{{ consulta.peso || '—' }}</strong>
+                    <strong>{{ formatearPeso(consulta.peso_kg) }}</strong>
                   </div>
 
                   <div>
                     <span>Temperatura</span>
-                    <strong>{{ consulta.temperatura || '—' }}</strong>
+                    <strong>{{ formatearTemperatura(consulta.temperatura_c) }}</strong>
                   </div>
 
                 </div>
@@ -1035,7 +873,7 @@
         <span>
           Última consulta:
           <strong>
-            {{ formatearFecha(historiaSeleccionada()!.ultimaConsulta) }}
+            {{ formatearFecha(historiaSeleccionada()!.ultima_consulta) }}
           </strong>
         </span>
 
@@ -1060,7 +898,7 @@
      MODAL NUEVA / EDITAR CONSULTA
 ========================================================== -->
 
-@if (modalConsultaAbierto() && historiaSeleccionada()) {
+@if (modalConsultaAbierto() && pacienteConsulta()) {
 
   <div
     class="modal-backdrop modal-backdrop--front"
@@ -1077,7 +915,7 @@
         <div>
 
           <span class="modal__eyebrow">
-            {{ historiaSeleccionada()!.paciente }}
+            {{ pacienteConsulta()!.nombre }}
           </span>
 
           <h2>
@@ -1118,6 +956,12 @@
 
 
       <div class="modal__body">
+
+        @if (errorFormulario()) {
+          <div class="alert-error">
+            <span>{{ errorFormulario() }}</span>
+          </div>
+        }
 
         <!-- DATOS DE CONSULTA -->
 
@@ -1161,12 +1005,19 @@
                 <span>*</span>
               </label>
 
-              <input
-                type="text"
-                placeholder="Ej. Dra. Laura Martínez"
-                [value]="formularioConsulta().veterinario"
-                (input)="actualizarCampo('veterinario', $any($event.target).value)"
-              />
+              <select
+                [value]="formularioConsulta().veterinario_id"
+                (change)="actualizarCampo('veterinario_id', $any($event.target).value)"
+              >
+                <option value="">Selecciona un profesional</option>
+                @for (p of profesionales(); track p.id) {
+                  <option [value]="p.id">{{ p.nombre }}</option>
+                }
+              </select>
+
+              @if (profesionales().length === 0) {
+                <span class="error-texto">No hay veterinarios habilitados para esta empresa.</span>
+              }
 
             </div>
 
@@ -1191,14 +1042,16 @@
             <div class="form-field">
 
               <label>
-                Peso
+                Peso (kg)
               </label>
 
               <input
-                type="text"
-                placeholder="Ej. 25 kg"
-                [value]="formularioConsulta().peso"
-                (input)="actualizarCampo('peso', $any($event.target).value)"
+                type="number"
+                step="0.1"
+                min="0"
+                placeholder="Ej. 25"
+                [value]="formularioConsulta().peso_kg"
+                (input)="actualizarCampo('peso_kg', $any($event.target).value)"
               />
 
             </div>
@@ -1207,14 +1060,17 @@
             <div class="form-field">
 
               <label>
-                Temperatura
+                Temperatura (°C)
               </label>
 
               <input
-                type="text"
-                placeholder="Ej. 38.5 °C"
-                [value]="formularioConsulta().temperatura"
-                (input)="actualizarCampo('temperatura', $any($event.target).value)"
+                type="number"
+                step="0.1"
+                min="25"
+                max="45"
+                placeholder="Ej. 38.5"
+                [value]="formularioConsulta().temperatura_c"
+                (input)="actualizarCampo('temperatura_c', $any($event.target).value)"
               />
 
             </div>
@@ -1344,6 +1200,7 @@
         <button
           type="button"
           class="btn-primary"
+          [disabled]="guardando()"
           (click)="guardarConsulta()"
         >
 
@@ -1365,6 +1222,131 @@
             : 'Registrar consulta'
           }}
 
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}
+
+
+<!-- =========================================================
+     MODAL EDITAR DATOS GENERALES
+========================================================== -->
+
+@if (modalDatosAbierto() && historiaSeleccionada()) {
+
+  <div
+    class="modal-backdrop modal-backdrop--front"
+    (click)="cerrarDatosGenerales()"
+  >
+
+    <div
+      class="modal modal--consultation"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="modal__header">
+
+        <div>
+          <span class="modal__eyebrow">
+            {{ historiaSeleccionada()!.nombre }}
+          </span>
+          <h2>Editar datos generales</h2>
+          <p>Antecedentes, alergias y observaciones clínicas del paciente.</p>
+        </div>
+
+        <button
+          type="button"
+          class="modal__close"
+          (click)="cerrarDatosGenerales()"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+      </div>
+
+      <div class="modal__body">
+
+        @if (errorDatos()) {
+          <div class="alert-error">
+            <span>{{ errorDatos() }}</span>
+          </div>
+        }
+
+        <section class="form-section">
+
+          <div class="form-grid">
+
+            <div class="form-field form-field--full">
+              <label>Antecedentes</label>
+              <textarea
+                rows="3"
+                maxlength="2000"
+                placeholder="Antecedentes médicos, quirúrgicos, tratamientos previos..."
+                [value]="formularioDatos().antecedentes || ''"
+                (input)="actualizarDato('antecedentes', $any($event.target).value)"
+              ></textarea>
+            </div>
+
+            <div class="form-field form-field--full">
+              <label>Alergias</label>
+              <textarea
+                rows="3"
+                maxlength="2000"
+                placeholder="Alergias a medicamentos, alimentos u otras sustancias..."
+                [value]="formularioDatos().alergias || ''"
+                (input)="actualizarDato('alergias', $any($event.target).value)"
+              ></textarea>
+            </div>
+
+            <div class="form-field form-field--full">
+              <label>Observaciones generales</label>
+              <textarea
+                rows="3"
+                maxlength="2000"
+                placeholder="Observaciones de comportamiento, notas permanentes..."
+                [value]="formularioDatos().observaciones || ''"
+                (input)="actualizarDato('observaciones', $any($event.target).value)"
+              ></textarea>
+            </div>
+
+          </div>
+
+        </section>
+
+      </div>
+
+      <div class="modal__footer">
+
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="cerrarDatosGenerales()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="guardandoDatos()"
+          (click)="guardarDatosGenerales()"
+        >
+          {{ guardandoDatos() ? 'Guardando...' : 'Guardar cambios' }}
         </button>
 
       </div>

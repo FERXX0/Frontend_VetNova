@@ -2,10 +2,19 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Observable, forkJoin, of } from 'rxjs';
 import { EmpresaService } from '../../core/services/empresa.service';
-import { Empresa } from '../../core/models/empresa.model';
+import { Empresa, EmpresaOpcion } from '../../core/models/empresa.model';
 import { UsuarioService } from '../../core/services/usuario.service';
-import { Usuario } from '../../core/models/usuario.model';
+import { Usuario, UsuarioPayload } from '../../core/models/usuario.model';
+import { CatalogoService } from '../../core/services/catalogo.service';
+import { SessionService } from '../../core/services/session.service';
+import { Rol, Modulo } from '../../core/models/auth.model';
+import { SuscripcionService } from '../../core/services/suscripcion.service';
+import { ModuloEmpresaService } from '../../core/services/modulo-empresa.service';
+import { ModuloUsuarioService } from '../../core/services/modulo-usuario.service';
+
+const ROLES_PLATAFORMA = ['super_admin', 'soporte'];
 
 interface UsuarioVeterinaria {
   id: string;
@@ -13,6 +22,9 @@ interface UsuarioVeterinaria {
   correo: string;
   telefono: string;
   rol: string;
+  rolId: string;
+  tipoIdentificacion: string;
+  numeroIdentificacion: string;
   estado: 'Activo' | 'Inactivo';
   modulos: string[];
   empresaId?: string; // solo aplica en la vista de Super Usuario
@@ -22,16 +34,13 @@ interface FormularioUsuario {
   nombre: string;
   correo: string;
   telefono: string;
-  rol: string;
+  rolId: string;
+  tipoIdentificacion: string;
+  numeroIdentificacion: string;
+  contrasena: string;
   estado: 'Activo' | 'Inactivo';
   modulos: string[];
   empresaId: string; // solo se usa/valida en la vista de Super Usuario
-}
-
-interface ModuloDisponible {
-  codigo: string;
-  nombre: string;
-  icono: string;
 }
 
 @Component({
@@ -46,6 +55,11 @@ export class UsuariosEmpresaComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly empresaService = inject(EmpresaService);
   private readonly usuarioService = inject(UsuarioService);
+  private readonly catalogoService = inject(CatalogoService);
+  private readonly session = inject(SessionService);
+  private readonly suscripcionService = inject(SuscripcionService);
+  private readonly moduloEmpresaService = inject(ModuloEmpresaService);
+  private readonly moduloUsuarioService = inject(ModuloUsuarioService);
 
   // =========================================================
   // CONTEXTO: esta misma pantalla se usa en /super-usuario/usuarios
@@ -55,7 +69,7 @@ export class UsuariosEmpresaComponent implements OnInit {
   // =========================================================
   readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
 
-  empresasDisponibles = signal<Empresa[]>([]);
+  empresasDisponibles = signal<EmpresaOpcion[]>([]);
   cargandoEmpresas = signal(false);
 
   // =========================================================
@@ -67,6 +81,10 @@ export class UsuariosEmpresaComponent implements OnInit {
 
   usuarioEditandoId = signal<string | null>(null);
 
+  // Módulos (códigos) que el usuario ya tenía al abrir el modal de edición.
+  // Se usa para calcular qué asignar y qué quitar al guardar. Vacío al crear.
+  private modulosOriginales: string[] = [];
+
   busqueda = signal('');
   filtroRol = signal('Todos');
   filtroEstado = signal('Todos');
@@ -77,9 +95,17 @@ export class UsuariosEmpresaComponent implements OnInit {
   cargandoUsuarios = signal(false);
 
   ngOnInit(): void {
+    this.cargarRoles();
+    this.cargarCatalogoModulos();
+
     if (this.esVistaSuperUsuario()) {
       this.cargarEmpresas();
       this.cargarUsuarios();
+    } else {
+      const empresaId = this.session.usuario()?.empresa?.id;
+      if (empresaId) {
+        this.cargarModulosPermitidos(empresaId);
+      }
     }
   }
 
@@ -104,17 +130,22 @@ export class UsuariosEmpresaComponent implements OnInit {
       correo: u.correo,
       telefono: u.celular || '',
       rol: u.rol?.nombre || '—',
+      rolId: u.rol_id,
+      tipoIdentificacion: u.tipo_identificacion,
+      numeroIdentificacion: u.numero_identificacion,
       estado: u.activo ? 'Activo' : 'Inactivo',
-      modulos: [], // el backend aún no expone módulos por usuario
+      modulos: (u.modulos || []).map((modulo) => modulo.codigo),
       empresaId: u.empresa_id,
     };
   }
 
   cargarEmpresas(): void {
+    if (!this.esVistaSuperUsuario()) return;
+
     this.cargandoEmpresas.set(true);
-    this.empresaService.listar().subscribe({
+    this.empresaService.listarOpciones().subscribe({
       next: (respuesta) => {
-        this.empresasDisponibles.set(respuesta.data);
+        this.empresasDisponibles.set(respuesta || []);
         this.cargandoEmpresas.set(false);
       },
       error: () => this.cargandoEmpresas.set(false),
@@ -125,85 +156,103 @@ export class UsuariosEmpresaComponent implements OnInit {
   // ROLES
   // =========================================================
 
-  readonly roles = [
-    'Administrador',
-    'Veterinario',
-    'Recepción',
-    'Auxiliar Veterinario',
-    'Contabilidad'
-  ];
+  rolesCatalogo = signal<Rol[]>([]);
+
+  // Para el filtro de la tabla (nombres)
+  roles = computed(() => this.rolesCatalogo().map(r => r.nombre));
+
+  // Para el select del formulario
+  rolesDisponibles = computed(() => {
+    const roles = this.rolesCatalogo();
+
+    // Vista de Super Usuario: todos los roles para cualquier empresa.
+    // Vista /panel (admin de una veterinaria): sin roles de plataforma.
+    return this.esVistaSuperUsuario()
+      ? roles
+      : roles.filter(r => !ROLES_PLATAFORMA.includes(r.codigo));
+  });
+
+  esRolPlataforma(rolId: string): boolean {
+    const rol = this.rolesCatalogo().find(r => r.id === rolId);
+    return !!rol && ROLES_PLATAFORMA.includes(rol.codigo);
+  }
+
+  cargarRoles(): void {
+    this.catalogoService.roles().subscribe({
+      next: (roles) => this.rolesCatalogo.set(roles),
+      error: () => this.mostrarMensaje('No se pudieron cargar los roles.', 'error'),
+    });
+  }
 
   // =========================================================
-  // MÓDULOS DISPONIBLES
+  // MÓDULOS: catálogo real + filtro por plan/adicionales de la empresa
   // =========================================================
 
-  readonly modulosDisponibles: ModuloDisponible[] = [
-    {
-      codigo: 'citas',
-      nombre: 'Agenda Médica',
-      icono: 'agenda'
-    },
-    {
-      codigo: 'clientes_pacientes',
-      nombre: 'Pacientes',
-      icono: 'pacientes'
-    },
-    {
-      codigo: 'usuarios',
-      nombre: 'Usuarios',
-      icono: 'usuarios'
-    },
-    {
-      codigo: 'reportes',
-      nombre: 'Reportes',
-      icono: 'reportes'
-    },
-    {
-      codigo: 'historias_clinicas',
-      nombre: 'Historias Clínicas',
-      icono: 'historia'
-    },
-    {
-      codigo: 'esquema_v_d',
-      nombre: 'Vacunación y Desparasitación',
-      icono: 'vacuna'
-    },
-    {
-      codigo: 'hospitalizacion',
-      nombre: 'Hospitalización',
-      icono: 'hospital'
-    },
-    {
-      codigo: 'procedimientos',
-      nombre: 'Procedimientos',
-      icono: 'procedimiento'
-    },
-    {
-      codigo: 'laboratorio',
-      nombre: 'Laboratorio',
-      icono: 'laboratorio'
-    },
-    {
-      codigo: 'formulaciones',
-      nombre: 'Formulaciones',
-      icono: 'receta'
-    },
-    {
-      codigo: 'farmacia',
-      nombre: 'Farmacia',
-      icono: 'farmacia'
-    },
-    {
-      codigo: 'servicios',
-      nombre: 'Servicios',
-      icono: 'servicios'
-    },
-    {
-      codigo: 'facturacion',
-      nombre: 'Facturación',
-      icono: 'facturacion'
-    }
-  ];
+  // Catálogo completo (GET /api/catalogos/modulos), fuente real de id+codigo.
+  private readonly catalogoModulos = signal<Modulo[]>([]);
+
+  // Códigos de módulo que el PLAN (o los módulos adicionales) de la
+  // empresa seleccionada realmente incluye. Se recalcula cada vez que
+  // cambia la empresa (en la vista de Super Usuario) o al iniciar
+  // (en /panel, con la empresa de la sesión).
+  private readonly modulosPermitidosEmpresa = signal<Set<string>>(new Set());
+  cargandoModulosPermitidos = signal(false);
+
+  // Lo que realmente se pinta en el checklist del modal: solo los
+  // módulos del catálogo que la empresa tiene incluidos en su plan
+  // o como módulo adicional activo.
+  readonly modulosDisponibles = computed(() => {
+    const permitidos = this.modulosPermitidosEmpresa();
+    return this.catalogoModulos().filter((modulo) => permitidos.has(modulo.codigo));
+  });
+
+  cargarCatalogoModulos(): void {
+    this.catalogoService.modulos().subscribe({
+      next: (modulos) => this.catalogoModulos.set(modulos),
+      error: () => this.mostrarMensaje('No se pudo cargar el catálogo de módulos.', 'error'),
+    });
+  }
+
+  /** Códigos de módulo incluidos en el plan activo/prueba de la empresa, más sus módulos adicionales vigentes. */
+  cargarModulosPermitidos(empresaId: string): void {
+    this.cargandoModulosPermitidos.set(true);
+
+    forkJoin({
+      suscripciones: this.suscripcionService.listarPorEmpresa(empresaId),
+      adicionales: this.moduloEmpresaService.listar(empresaId),
+    }).subscribe({
+      next: ({ suscripciones, adicionales }) => {
+        const codigos = new Set<string>();
+
+        const ahora = new Date();
+
+        suscripciones.data
+          .filter((suscripcion) =>
+            (suscripcion.estado === 'activa' || suscripcion.estado === 'prueba') &&
+            (!suscripcion.finaliza_en || new Date(suscripcion.finaliza_en) > ahora)
+          )
+          .forEach((suscripcion) =>
+            (suscripcion.plan.modulos || []).forEach((modulo) => codigos.add(modulo.codigo))
+          );
+
+        adicionales
+          .filter((registro) =>
+            registro.activo &&
+            (!registro.vence_en || new Date(registro.vence_en) > ahora)
+          )
+          .forEach((registro) => {
+            if (registro.modulo) codigos.add(registro.modulo.codigo);
+          });
+
+        this.modulosPermitidosEmpresa.set(codigos);
+        this.cargandoModulosPermitidos.set(false);
+      },
+      error: () => {
+        this.modulosPermitidosEmpresa.set(new Set());
+        this.cargandoModulosPermitidos.set(false);
+      },
+    });
+  }
 
   // =========================================================
   // FORMULARIO
@@ -213,7 +262,10 @@ export class UsuariosEmpresaComponent implements OnInit {
     nombre: '',
     correo: '',
     telefono: '',
-    rol: 'Veterinario',
+    rolId: '',
+    tipoIdentificacion: 'CC',
+    numeroIdentificacion: '',
+    contrasena: '',
     estado: 'Activo',
     modulos: [],
     empresaId: ''
@@ -280,16 +332,25 @@ export class UsuariosEmpresaComponent implements OnInit {
   abrirNuevoUsuario(): void {
     this.modoEdicion.set(false);
     this.usuarioEditandoId.set(null);
+    this.modulosOriginales = [];
 
     this.formulario.set({
       nombre: '',
       correo: '',
       telefono: '',
-      rol: 'Veterinario',
+      rolId: '',
+      tipoIdentificacion: 'CC',
+      numeroIdentificacion: '',
+      contrasena: '',
       estado: 'Activo',
-      modulos: [], // el plan define los módulos: todos empiezan desactivados
+      modulos: [],
       empresaId: ''
     });
+
+    if (this.esVistaSuperUsuario()) {
+      // Hasta que no se elija una empresa no sabemos qué módulos puede tener.
+      this.modulosPermitidosEmpresa.set(new Set());
+    }
 
     this.modalAbierto.set(true);
   }
@@ -297,16 +358,24 @@ export class UsuariosEmpresaComponent implements OnInit {
   editarUsuario(usuario: UsuarioVeterinaria): void {
     this.modoEdicion.set(true);
     this.usuarioEditandoId.set(usuario.id);
+    this.modulosOriginales = [...usuario.modulos];
 
     this.formulario.set({
       nombre: usuario.nombre,
       correo: usuario.correo,
       telefono: usuario.telefono,
-      rol: usuario.rol,
+      rolId: usuario.rolId,
+      tipoIdentificacion: usuario.tipoIdentificacion,
+      numeroIdentificacion: usuario.numeroIdentificacion,
+      contrasena: '',
       estado: usuario.estado,
       modulos: [...usuario.modulos],
       empresaId: usuario.empresaId ?? ''
     });
+
+    if (this.esVistaSuperUsuario() && usuario.empresaId) {
+      this.cargarModulosPermitidos(usuario.empresaId);
+    }
 
     this.modalAbierto.set(true);
   }
@@ -323,11 +392,21 @@ export class UsuariosEmpresaComponent implements OnInit {
     campo: keyof FormularioUsuario,
     valor: string
   ): void {
-
-    this.formulario.update(formulario => ({
-      ...formulario,
-      [campo]: valor
+    this.formulario.update(f => ({
+      ...f,
+      [campo]: valor,
+      // al cambiar de empresa se limpia el rol y los módulos, porque ambas
+      // listas dependen de la empresa elegida
+      ...(campo === 'empresaId' ? { rolId: '', modulos: [] } : {})
     }));
+
+    if (campo === 'empresaId') {
+      if (valor) {
+        this.cargarModulosPermitidos(valor);
+      } else {
+        this.modulosPermitidosEmpresa.set(new Set());
+      }
+    }
   }
 
   /** Deja solo dígitos en el campo de texto indicado y limita su longitud mientras se escribe. */
@@ -364,7 +443,7 @@ export class UsuariosEmpresaComponent implements OnInit {
   seleccionarTodosLosModulos(): void {
     this.formulario.update(formulario => ({
       ...formulario,
-      modulos: this.modulosDisponibles.map(modulo => modulo.codigo)
+      modulos: this.modulosDisponibles().map(modulo => modulo.codigo)
     }));
   }
 
@@ -378,86 +457,124 @@ export class UsuariosEmpresaComponent implements OnInit {
   // =========================================================
   // GUARDAR
   // =========================================================
-
+  // 
   guardarUsuario(): void {
-
-    const formulario = this.formulario();
-
-    if (!formulario.nombre.trim()) {
-      this.mostrarMensaje('Ingresa el nombre del usuario.', 'error');
+    const f = this.formulario();
+    
+    if (!f.nombre.trim()) { this.mostrarMensaje('Ingresa el nombre del usuario.', 'error'); return; }
+    if (!f.correo.trim()) { this.mostrarMensaje('Ingresa el correo electrónico.', 'error'); return; }
+    if (!this.validarCorreo(f.correo)) { this.mostrarMensaje('Ingresa un correo electrónico válido.', 'error'); return; }
+    if (this.esVistaSuperUsuario() && !f.empresaId) { this.mostrarMensaje('Selecciona la empresa a la que pertenece el usuario.', 'error'); return; }
+    if (!f.rolId) { this.mostrarMensaje('Selecciona un rol.', 'error'); return; }
+    if (!f.numeroIdentificacion.trim()) { this.mostrarMensaje('Ingresa el número de identificación.', 'error'); return; }
+    if (!this.modoEdicion() && f.contrasena.length < 8) { this.mostrarMensaje('La contraseña debe tener al menos 8 caracteres.', 'error'); return; }
+    if (!this.esRolPlataforma(f.rolId) && f.modulos.length === 0) {
+      this.mostrarMensaje('Debes asignar al menos un módulo al usuario.', 'error');
       return;
     }
 
-    if (!formulario.correo.trim()) {
-      this.mostrarMensaje('Ingresa el correo electrónico.', 'error');
-      return;
-    }
+    const empresaId = this.esVistaSuperUsuario()
+      ? f.empresaId
+      : this.session.usuario()?.empresa?.id ?? '';
 
-    if (!this.validarCorreo(formulario.correo)) {
-      this.mostrarMensaje('Ingresa un correo electrónico válido.', 'error');
-      return;
-    }
+    const payload: UsuarioPayload = {
+      rol_id: f.rolId,
+      nombre: f.nombre.trim(),
+      tipo_identificacion: f.tipoIdentificacion,
+      numero_identificacion: f.numeroIdentificacion.trim(),
+      celular: f.telefono.trim() || null,
+      correo: f.correo.trim().toLowerCase(),
+      activo: f.estado === 'Activo',
+    };
+    if (f.contrasena) payload.contrasena = f.contrasena;
 
-    if (!formulario.rol) {
-      this.mostrarMensaje('Selecciona un rol.', 'error');
-      return;
-    }
+    const peticion = this.modoEdicion()
+      ? this.usuarioService.actualizar(empresaId, this.usuarioEditandoId()!, payload)
+      : this.usuarioService.crear(empresaId, payload);
 
-    if (this.esVistaSuperUsuario() && !formulario.empresaId) {
-      this.mostrarMensaje('Selecciona la empresa a la que pertenece el usuario.', 'error');
-      return;
-    }
+    peticion.subscribe({
+      next: (usuario) => {
+        const finalizar = () => {
+          this.mostrarMensaje(
+            this.modoEdicion() ? 'Usuario actualizado correctamente.' : 'Usuario creado correctamente.',
+            'success'
+          );
+          this.cerrarModal();
+          if (this.esVistaSuperUsuario()) this.cargarUsuarios();
+        };
 
-    if (formulario.modulos.length === 0) {
-      this.mostrarMensaje(
-        'Debes asignar al menos un módulo al usuario.',
-        'error'
-      );
-      return;
-    }
+        if (this.esRolPlataforma(f.rolId)) {
+          // Los roles de plataforma (super_admin, soporte) no manejan
+          // módulos por usuario: no hay nada que sincronizar.
+          finalizar();
+          return;
+        }
 
-    // EDITAR
-    if (this.modoEdicion()) {
+        this.sincronizarModulos(
+          empresaId,
+          usuario.id,
+          this.modulosOriginales,
+          f.modulos
+        ).subscribe({
+          next: () => finalizar(),
+          error: () => {
+            this.mostrarMensaje(
+              'El usuario se guardó, pero algunos módulos no se pudieron sincronizar.',
+              'error'
+            );
+            this.cerrarModal();
+            if (this.esVistaSuperUsuario()) this.cargarUsuarios();
+          },
+        });
+      },
+      error: (err) => {
+        const detalle = err?.error?.errors
+          ? (Object.values(err.error.errors)[0] as string[])[0]
+          : err?.error?.message;
+        this.mostrarMensaje(detalle || 'No se pudo guardar el usuario.', 'error');
+      },
+    });
+  }
 
-      const id = this.usuarioEditandoId();
+  /**
+   * Compara los módulos que el usuario tenía antes de abrir el modal contra
+   * los que quedaron marcados en el formulario, y dispara un POST (asignar)
+   * o un DELETE (quitar) por cada módulo que cambió. El backend no acepta
+   * un arreglo, así que va uno por uno, en paralelo.
+   */
+  private sincronizarModulos(
+    empresaId: string,
+    usuarioId: string,
+    codigosOriginales: string[],
+    codigosNuevos: string[]
+  ): Observable<unknown> {
+    const catalogo = this.catalogoModulos();
+    const idPorCodigo = (codigo: string) =>
+      catalogo.find((modulo) => modulo.codigo === codigo)?.id;
 
-      this.usuarios.update(usuarios =>
-        usuarios.map(usuario =>
-          usuario.id === id
-            ? {
-                ...usuario,
-                ...formulario,
-                nombre: formulario.nombre.trim(),
-                correo: formulario.correo.trim().toLowerCase()
-              }
-            : usuario
-        )
-      );
+    const paraAsignar = codigosNuevos.filter(
+      (codigo) => !codigosOriginales.includes(codigo)
+    );
+    const paraQuitar = codigosOriginales.filter(
+      (codigo) => !codigosNuevos.includes(codigo)
+    );
 
-      this.mostrarMensaje('Usuario actualizado correctamente.', 'success');
+    const llamadas: Observable<unknown>[] = [
+      ...paraAsignar.map((codigo): Observable<unknown> => {
+        const moduloId = idPorCodigo(codigo);
+        return moduloId
+          ? this.moduloUsuarioService.asignar(empresaId, usuarioId, { modulo_id: moduloId })
+          : of(null);
+      }),
+      ...paraQuitar.map((codigo): Observable<unknown> => {
+        const moduloId = idPorCodigo(codigo);
+        return moduloId
+          ? this.moduloUsuarioService.quitar(empresaId, usuarioId, moduloId)
+          : of(null);
+      }),
+    ];
 
-    } else {
-
-      // CREAR
-      const nuevoUsuario: UsuarioVeterinaria = {
-        id: this.generarId(),
-        nombre: formulario.nombre.trim(),
-        correo: formulario.correo.trim().toLowerCase(),
-        telefono: formulario.telefono.trim(),
-        rol: formulario.rol,
-        estado: formulario.estado,
-        modulos: [...formulario.modulos]
-      };
-
-      this.usuarios.update(usuarios => [
-        ...usuarios,
-        nuevoUsuario
-      ]);
-
-      this.mostrarMensaje('Usuario creado correctamente.', 'success');
-    }
-
-    this.cerrarModal();
+    return llamadas.length ? forkJoin(llamadas) : of(null);
   }
 
   // =========================================================

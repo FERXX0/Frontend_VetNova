@@ -1,16 +1,18 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { distinctUntilChanged } from 'rxjs';
 import { CitaService } from '../../core/services/cita.service';
 import { EmpresaService } from '../../core/services/empresa.service';
-import { Empresa } from '../../core/models/empresa.model';
-import { UsuarioService } from '../../core/services/usuario.service';
+import { Empresa, EmpresaOpcion } from '../../core/models/empresa.model';
 import { PacienteService } from '../../core/services/paciente.service';
 import { ServicioService } from '../../core/services/servicio.service';
-import { Cita, CitaPayload, EstadoCita, TipoConsulta } from '../../core/models/cita.model';
+import { Cita, CitaPayload, EstadoCita, Profesional, TipoConsulta } from '../../core/models/cita.model';
 import { Paciente } from '../../core/models/paciente.model';
 import { Servicio } from '../../core/models/servicio.model';
+import { AlcanceApi } from '../../core/utils/alcance-api';
 
 @Component({
   selector: 'app-agenda',
@@ -24,16 +26,17 @@ export class AgendaComponent implements OnInit {
   private readonly pacienteService = inject(PacienteService);
   private readonly servicioService = inject(ServicioService);
   private readonly empresaService = inject(EmpresaService);
-  private readonly usuarioService = inject(UsuarioService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
 
   // Esta misma pantalla se usa en /super-usuario/agenda y en /panel/agenda.
-  // Los filtros de Empresa y Usuario Profesional SOLO aplican en Super Usuario.
   readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
 
-  empresasDisponibles = signal<Empresa[]>([]);
-  profesionalesDisponibles = signal<string[]>([]);
+  empresasDisponibles = signal<EmpresaOpcion[]>([]);
+  profesionales = signal<Profesional[]>([]);
+  profesionalesFormulario = signal<Profesional[]>([]);
+  opcionesProfesionales = computed(() => this.esVistaSuperUsuario() ? this.profesionalesFormulario() : this.profesionales());
   filtroEmpresa = signal<string>('todas');
   filtroProfesional = signal<string>('todos');
 
@@ -71,13 +74,6 @@ export class AgendaComponent implements OnInit {
     { valor: 'cancelada', etiqueta: 'Cancelada' },
   ];
 
-  readonly veterinarios = [
-    'Dr. Alejandro Gómez',
-    'Dra. Valentina Restrepo',
-    'Dr. Felipe Castro',
-    'Dra. Camila Torres',
-  ];
-
   // Citas filtradas por fecha seleccionada y estado
   citasDelDia = computed(() => {
     const fecha = this.fechaSeleccionada();
@@ -88,7 +84,7 @@ export class AgendaComponent implements OnInit {
       const coincideFecha = c.fecha === fecha;
       const coincideEstado = estado === 'todos' || c.estado === estado;
       const coincideEmpresa = empresa === 'todas' || c.empresa_id === empresa;
-      const coincideProfesional = profesional === 'todos' || c.veterinario_nombre === profesional;
+      const coincideProfesional = profesional === 'todos' || c.veterinario_id === profesional;
       return coincideFecha && coincideEstado && coincideEmpresa && coincideProfesional;
     });
   });
@@ -130,7 +126,7 @@ export class AgendaComponent implements OnInit {
       empresa_id: [''],
       paciente_id: ['', [Validators.required]],
       servicio_id: [''],
-      veterinario_nombre: ['Dr. Alejandro Gómez', [Validators.required]],
+      veterinario_id: ['', [Validators.required]],
       fecha: [this.fechaSeleccionada(), [Validators.required]],
       hora_inicio: ['09:00', [Validators.required]],
       hora_fin: ['09:30'],
@@ -142,34 +138,80 @@ export class AgendaComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.cargarPacientes();
-    this.cargarServicios();
+    if (!this.esVistaSuperUsuario()) {
+      this.cargarPacientes();
+      this.cargarServicios();
+    }
+
     this.cargarCitas();
+    this.cargarProfesionales();
 
     if (this.esVistaSuperUsuario()) {
-      this.empresaService.listar().subscribe({
-        next: (respuesta) => this.empresasDisponibles.set(respuesta.data),
+      this.empresaService.listarOpciones().subscribe({
+        next: (respuesta) => this.empresasDisponibles.set(respuesta || []),
         error: () => {},
       });
 
-      // Solo roles que atienden pacientes directamente (no Administrador,
-      // Contabilidad, Recepción, etc.). Ajusta esta lista si agregan roles nuevos.
-      const rolesQueAtienden = ['veterinario', 'auxiliar_veterinara'];
-
-      this.usuarioService.listarGlobal().subscribe({
-        next: (respuesta) => {
-          const nombres = [
-            ...new Set(
-              respuesta.data
-                .filter((u) => rolesQueAtienden.includes(u.rol?.codigo ?? ''))
-                .map((u) => u.nombre)
-            ),
-          ];
-          this.profesionalesDisponibles.set(nombres);
-        },
-        error: () => {},
+      this.form.get('empresa_id')!.valueChanges.pipe(
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe((empresaId) => {
+        this.cargarOpcionesFormulario(empresaId);
       });
     }
+  }
+
+  private alcanceListado(): AlcanceApi | undefined {
+    if (!this.esVistaSuperUsuario()) {
+      return undefined;
+    }
+
+    const empresa = this.filtroEmpresa();
+    return { plataforma: true, empresaId: empresa === 'todas' ? null : empresa };
+  }
+
+  private alcanceEscritura(empresaId?: string | null): AlcanceApi | undefined {
+    return this.esVistaSuperUsuario() ? { plataforma: true, empresaId } : undefined;
+  }
+
+  private cargarOpcionesFormulario(empresaId?: string | null): void {
+    if (!empresaId) {
+      this.pacientes.set([]);
+      this.servicios.set([]);
+      this.profesionalesFormulario.set([]);
+      return;
+    }
+
+    const alcance = this.alcanceEscritura(empresaId);
+
+    this.pacienteService.listar({ per_page: 100 }, alcance).subscribe({
+      next: (res) => this.pacientes.set(res.data || []),
+      error: () => this.pacientes.set([]),
+    });
+
+    this.servicioService.listar(true, alcance).subscribe({
+      next: (res) => this.servicios.set(res || []),
+      error: () => this.servicios.set([]),
+    });
+
+    this.citaService.listarProfesionales(alcance).subscribe({
+      next: (res) => this.profesionalesFormulario.set(res || []),
+      error: () => this.profesionalesFormulario.set([]),
+    });
+  }
+
+  cargarProfesionales(): void {
+    this.citaService.listarProfesionales(this.alcanceListado()).subscribe({
+      next: (res) => this.profesionales.set(res || []),
+      error: () => this.profesionales.set([]),
+    });
+  }
+
+  onFiltroEmpresaChange(empresaId: string): void {
+    this.filtroEmpresa.set(empresaId);
+    this.filtroProfesional.set('todos');
+    this.cargarCitas();
+    this.cargarProfesionales();
   }
 
   cargarServicios(): void {
@@ -178,26 +220,11 @@ export class AgendaComponent implements OnInit {
         this.servicios.set(res || []);
       },
       error: () => {
-        // Fallback demostrativo ante backend no disponible
-        this.servicios.set([
-          { id: 's-001', nombre: 'Consulta General', tipo_consulta: 'general', duracion_minutos: 30, precio: 0, activo: true },
-          { id: 's-002', nombre: 'Vacunación', tipo_consulta: 'vacunacion', duracion_minutos: 20, precio: 0, activo: true },
-          { id: 's-003', nombre: 'Desparasitación', tipo_consulta: 'desparasitacion', duracion_minutos: 20, precio: 0, activo: true },
-          { id: 's-004', nombre: 'Cirugía', tipo_consulta: 'cirugia', duracion_minutos: 90, precio: 0, activo: true },
-          { id: 's-005', nombre: 'Urgencia', tipo_consulta: 'urgencia', duracion_minutos: 30, precio: 0, activo: true },
-          { id: 's-006', nombre: 'Control / Seguimiento', tipo_consulta: 'control', duracion_minutos: 20, precio: 0, activo: true },
-          { id: 's-007', nombre: 'Peluquería / Estética', tipo_consulta: 'estetica', duracion_minutos: 45, precio: 0, activo: true },
-        ]);
+        this.servicios.set([]);
       },
     });
   }
 
-  /**
-   * Al elegir un servicio, se auto-completa el tipo de consulta y (si el
-   * usuario no ha tocado la hora fin) se sugiere la hora fin según la
-   * duración configurada en el servicio. El usuario puede seguir editando
-   * ambos campos manualmente después.
-   */
   onServicioSeleccionado(servicioId: string): void {
     const servicio = this.servicios().find((s) => s.id === servicioId);
     if (!servicio) return;
@@ -219,7 +246,7 @@ export class AgendaComponent implements OnInit {
   }
 
   cargarPacientes(): void {
-    this.pacienteService.listar().subscribe({
+    this.pacienteService.listar({ per_page: 100 }).subscribe({
       next: (res) => {
         this.pacientes.set(res.data || []);
       },
@@ -233,7 +260,7 @@ export class AgendaComponent implements OnInit {
     this.cargando.set(true);
     this.error.set(null);
 
-    this.citaService.listar().subscribe({
+    this.citaService.listarPorFecha(this.fechaSeleccionada(), this.alcanceListado()).subscribe({
       next: (data) => {
         this.citas.set(data || []);
         this.cargando.set(false);
@@ -248,10 +275,9 @@ export class AgendaComponent implements OnInit {
     });
   }
 
-
-  // Navegación de Fechas
   irAHoy(): void {
     this.fechaSeleccionada.set(this.formatoFechaIso(new Date()));
+    this.cargarCitas();
   }
 
   cambiarDia(delta: number): void {
@@ -259,16 +285,17 @@ export class AgendaComponent implements OnInit {
     const date = new Date(anio, mes - 1, dia);
     date.setDate(date.getDate() + delta);
     this.fechaSeleccionada.set(this.formatoFechaIso(date));
+    this.cargarCitas();
   }
 
   onFechaInput(event: Event): void {
     const valor = (event.target as HTMLInputElement).value;
     if (valor) {
       this.fechaSeleccionada.set(valor);
+      this.cargarCitas();
     }
   }
 
-  // Citas por franja horaria
   citasEnFranja(hora: string): Cita[] {
     const horaNum = parseInt(hora.split(':')[0], 10);
     return this.citasDelDia().filter((c) => {
@@ -277,34 +304,55 @@ export class AgendaComponent implements OnInit {
     });
   }
 
-  // Modal Crear / Editar
   abrirModalCrear(horaInicial?: string): void {
     this.citaEnEdicion.set(null);
     this.errorFormulario.set(null);
-    this.form.reset({
-      empresa_id: '',
-      paciente_id: this.pacientes()[0]?.id || '',
-      servicio_id: '',
-      veterinario_nombre: 'Dr. Alejandro Gómez',
-      fecha: this.fechaSeleccionada(),
-      hora_inicio: horaInicial || '09:00',
-      hora_fin: '09:30',
-      tipo_consulta: 'general',
-      motivo: '',
-      estado: 'confirmada',
-      observaciones: '',
-    });
+    if (this.esVistaSuperUsuario()) {
+      this.pacientes.set([]);
+      this.servicios.set([]);
+      this.profesionalesFormulario.set([]);
+      this.form.reset({
+        empresa_id: '',
+        paciente_id: '',
+        servicio_id: '',
+        veterinario_id: '',
+        fecha: this.fechaSeleccionada(),
+        hora_inicio: horaInicial || '09:00',
+        hora_fin: '09:30',
+        tipo_consulta: 'general',
+        motivo: '',
+        estado: 'confirmada',
+        observaciones: '',
+      });
+    } else {
+      this.form.reset({
+        empresa_id: '',
+        paciente_id: this.pacientes()[0]?.id || '',
+        servicio_id: '',
+        veterinario_id: this.profesionales()[0]?.id ?? '',
+        fecha: this.fechaSeleccionada(),
+        hora_inicio: horaInicial || '09:00',
+        hora_fin: '09:30',
+        tipo_consulta: 'general',
+        motivo: '',
+        estado: 'confirmada',
+        observaciones: '',
+      });
+    }
     this.modalAbierto.set(true);
   }
 
   abrirModalEditar(cita: Cita): void {
     this.citaEnEdicion.set(cita);
     this.errorFormulario.set(null);
+    if (this.esVistaSuperUsuario() && cita.empresa_id) {
+      this.cargarOpcionesFormulario(cita.empresa_id);
+    }
     this.form.reset({
       empresa_id: cita.empresa_id || '',
       paciente_id: cita.paciente_id,
       servicio_id: cita.servicio_id || '',
-      veterinario_nombre: cita.veterinario_nombre,
+      veterinario_id: cita.veterinario_id ?? '',
       fecha: cita.fecha,
       hora_inicio: cita.hora_inicio,
       hora_fin: cita.hora_fin || '',
@@ -335,20 +383,25 @@ export class AgendaComponent implements OnInit {
 
     this.guardando.set(true);
     const formVal = this.form.value;
-    const pacienteSeleccionado = this.pacientes().find((p) => p.id === formVal.paciente_id);
+    const { empresa_id, ...restoForm } = formVal;
+    const pacienteSeleccionado = this.pacientes().find((p) => p.id === restoForm.paciente_id);
 
     const payload: CitaPayload = {
-      ...formVal,
-      servicio_id: formVal.servicio_id || null,
+      ...restoForm,
+      servicio_id: restoForm.servicio_id || null,
       paciente_nombre: pacienteSeleccionado?.nombre || 'Paciente',
       propietario_nombre: pacienteSeleccionado?.propietario?.nombre || 'Propietario',
       propietario_celular: pacienteSeleccionado?.propietario?.celular || '',
     };
 
     const enEdicion = this.citaEnEdicion();
+    const alcance = enEdicion
+      ? this.alcanceEscritura(enEdicion.empresa_id)
+      : this.alcanceEscritura(empresa_id);
+
     const req$ = enEdicion
-      ? this.citaService.actualizar(enEdicion.id, payload)
-      : this.citaService.crear(payload);
+      ? this.citaService.actualizar(enEdicion.id, payload, alcance)
+      : this.citaService.crear(payload, alcance);
 
     req$.subscribe({
       next: () => {
@@ -366,7 +419,7 @@ export class AgendaComponent implements OnInit {
   }
 
   cambiarEstadoCita(cita: Cita, nuevoEstado: EstadoCita): void {
-    this.citaService.cambiarEstado(cita.id, nuevoEstado).subscribe({
+    this.citaService.cambiarEstado(cita.id, nuevoEstado, this.alcanceEscritura(cita.empresa_id)).subscribe({
       next: () => this.cargarCitas(),
       error: () => this.error.set('No se pudo actualizar el estado de la cita.'),
     });
@@ -376,7 +429,7 @@ export class AgendaComponent implements OnInit {
     const confirmado = confirm(`¿Cancelar y eliminar la cita de "${cita.paciente_nombre}"?`);
     if (!confirmado) return;
 
-    this.citaService.eliminar(cita.id).subscribe({
+    this.citaService.eliminar(cita.id, this.alcanceEscritura(cita.empresa_id)).subscribe({
       next: () => this.cargarCitas(),
       error: () => this.error.set('No se pudo eliminar la cita en el servidor.'),
     });

@@ -1,8 +1,8 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Empresa, EmpresaPayload, PaginacionLaravel } from '../models/empresa.model';
+import { Empresa, EmpresaOpcion, EmpresaPayload, EstadoEmpresa, PaginacionLaravel } from '../models/empresa.model';
 
 @Injectable({ providedIn: 'root' })
 export class EmpresaService {
@@ -10,8 +10,16 @@ export class EmpresaService {
 
   constructor(private http: HttpClient) {}
 
-  listar(): Observable<PaginacionLaravel<Empresa>> {
-    return this.http.get<PaginacionLaravel<Empresa>>(this.baseUrl);
+  listar(params?: { page?: number; estado?: EstadoEmpresa }): Observable<PaginacionLaravel<Empresa>> {
+    let httpParams = new HttpParams();
+    if (params?.page) httpParams = httpParams.set('page', params.page.toString());
+    if (params?.estado) httpParams = httpParams.set('estado', params.estado);
+
+    return this.http.get<PaginacionLaravel<Empresa>>(this.baseUrl, { params: httpParams });
+  }
+
+  listarOpciones(): Observable<EmpresaOpcion[]> {
+    return this.http.get<EmpresaOpcion[]>(`${this.baseUrl}/opciones`);
   }
 
   obtener(id: string): Observable<Empresa> {

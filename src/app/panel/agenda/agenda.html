@@ -40,7 +40,7 @@
       <select
         class="agenda-page__filtro-select"
         [value]="filtroEmpresa()"
-        (change)="filtroEmpresa.set($any($event.target).value)"
+        (change)="onFiltroEmpresaChange($any($event.target).value)"
       >
         <option value="todas">Todas las empresas</option>
         @for (empresa of empresasDisponibles(); track empresa.id) {
@@ -54,8 +54,8 @@
         (change)="filtroProfesional.set($any($event.target).value)"
       >
         <option value="todos">Todos los profesionales</option>
-        @for (nombre of profesionalesDisponibles(); track nombre) {
-          <option [value]="nombre">{{ nombre }}</option>
+        @for (p of profesionales(); track p.id) {
+          <option [value]="p.id">{{ p.nombre }}</option>
         }
       </select>
     </div>
@@ -276,10 +276,11 @@
 
           <div class="form-fila">
             <div class="form-campo">
-              <label for="veterinario_nombre">Veterinario Responsable *</label>
-              <select id="veterinario_nombre" formControlName="veterinario_nombre">
-                @for (vet of veterinarios; track vet) {
-                  <option [value]="vet">{{ vet }}</option>
+              <label for="veterinario_id">Profesional responsable *</label>
+              <select id="veterinario_id" formControlName="veterinario_id">
+                <option value="" disabled>Selecciona un profesional</option>
+                @for (vet of opcionesProfesionales(); track vet.id) {
+                  <option [value]="vet.id">{{ vet.nombre }}</option>
                 }
               </select>
             </div>

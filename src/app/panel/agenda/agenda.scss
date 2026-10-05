@@ -42,11 +42,9 @@
     padding: 0.7rem 1.25rem;
     border: none;
     border-radius: 0.65rem;
-    background: linear-gradient(
-      90deg,
-      var(--vn-teal, #1aa7a0) 0%,
-      var(--vn-teal-dark, #0e7c86) 100%
-    );
+    background: linear-gradient(90deg,
+        var(--vn-teal, #1aa7a0) 0%,
+        var(--vn-teal-dark, #0e7c86) 100%);
     color: #ffffff;
     font-weight: 600;
     font-size: 0.9rem;
@@ -148,15 +146,15 @@
   }
 
   &--confirmadas {
-    border-left: 4px solid #3b82f6;
+    border-left: 4px solid var(--vn-teal, #1aa7a0);
   }
 
   &--pendientes {
-    border-left: 4px solid #f2b90c;
+    border-left: 4px solid var(--vn-warning, #c98a12);
   }
 
   &--atendidas {
-    border-left: 4px solid #1aa7a0;
+    border-left: 4px solid var(--vn-mint, #4fd6a8);
   }
 }
 
@@ -356,19 +354,19 @@
   }
 
   &--confirmada {
-    border-left: 4px solid #3b82f6;
+    border-left: 4px solid var(--vn-teal, #1aa7a0);
   }
 
   &--pendiente {
-    border-left: 4px solid #f2b90c;
+    border-left: 4px solid var(--vn-warning, #c98a12);
   }
 
   &--atendida {
-    border-left: 4px solid #1aa7a0;
+    border-left: 4px solid var(--vn-mint, #4fd6a8);
   }
 
   &--cancelada {
-    border-left: 4px solid #e0554f;
+    border-left: 4px solid var(--vn-danger, #e0554f);
     opacity: 0.65;
   }
 
@@ -425,8 +423,8 @@
     border-radius: 999px;
     font-size: 0.7rem;
     font-weight: 600;
-    background: rgba(124, 58, 237, 0.12);
-    color: #6d28d9;
+    background: rgba(16, 38, 58, 0.08);
+    color: var(--vn-navy, #10263a);
   }
 
   &__motivo {
@@ -481,13 +479,13 @@
   text-transform: capitalize;
 
   &--confirmada {
-    background: #e8f1fd;
-    color: #2b6cb0;
+    background: rgba(26, 167, 160, 0.12);
+    color: var(--vn-teal-dark, #0e7c86);
   }
 
   &--pendiente {
-    background: #fef6e0;
-    color: #b7791f;
+    background: var(--vn-warning-bg, #fdf3e0);
+    color: var(--vn-warning, #c98a12);
   }
 
   &--atendida {
@@ -510,12 +508,12 @@
   cursor: pointer;
 
   &--confirmar {
-    background: #e8f1fd;
-    color: #2b6cb0;
-    border-color: #bee3f8;
+    background: rgba(26, 167, 160, 0.12);
+    color: var(--vn-teal-dark, #0e7c86);
+    border-color: rgba(26, 167, 160, 0.3);
 
     &:hover {
-      background: #bee3f8;
+      background: rgba(26, 167, 160, 0.22);
     }
   }
 
@@ -707,11 +705,9 @@
     padding: 0.65rem 1.4rem;
     border: none;
     border-radius: 0.6rem;
-    background: linear-gradient(
-      90deg,
-      var(--vn-teal, #1aa7a0) 0%,
-      var(--vn-teal-dark, #0e7c86) 100%
-    );
+    background: linear-gradient(90deg,
+        var(--vn-teal, #1aa7a0) 0%,
+        var(--vn-teal-dark, #0e7c86) 100%);
     color: #ffffff;
     font-weight: 600;
     font-size: 0.88rem;

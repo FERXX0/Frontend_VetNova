@@ -47,12 +47,12 @@ $vn-white: var(--vn-white, #ffffff);
   padding: 1rem 1.5rem;
   border-radius: 0.5rem;
   margin-bottom: 2.5rem;
-  
+
   &__icon {
     color: $vn-navy;
     display: flex;
     align-items: center;
-    
+
     svg {
       width: 1.5rem;
       height: 1.5rem;
@@ -74,7 +74,7 @@ $vn-white: var(--vn-white, #ffffff);
 .report-card {
   background: $vn-surface;
   border-radius: 0.75rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 15px rgba(16, 38, 58, 0.05);
   display: flex;
   flex-direction: column;
   transition: all 0.2s ease;
@@ -83,7 +83,7 @@ $vn-white: var(--vn-white, #ffffff);
 
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 25px rgba(16, 38, 58, 0.08);
     border-color: rgba(26, 167, 160, 0.2);
   }
 
@@ -145,7 +145,7 @@ $vn-white: var(--vn-white, #ffffff);
 
   &__footer {
     padding: 1rem 1.5rem;
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: rgba(16, 38, 58, 0.02);
     border-top: 1px solid $vn-border;
   }
 }
@@ -177,7 +177,7 @@ $vn-white: var(--vn-white, #ffffff);
   .page-container {
     padding: 0.5rem;
   }
-  
+
   .reports-grid {
     grid-template-columns: 1fr;
   }

@@ -21,10 +21,10 @@
         type="button"
         class="filtro-chip"
         [class.filtro-chip--activo]="filtroEstado() === 'todas'"
-        (click)="filtroEstado.set('todas')"
+        (click)="cambiarFiltroEstado('todas')"
       >
         Todas las Empresas
-        <span class="filtro-count">{{ empresas().length }}</span>
+        <span class="filtro-count">{{ total() }}</span>
       </button>
 
       @for (estado of estados; track estado.valor) {
@@ -32,7 +32,7 @@
           type="button"
           class="filtro-chip"
           [class.filtro-chip--activo]="filtroEstado() === estado.valor"
-          (click)="filtroEstado.set(estado.valor)"
+          (click)="cambiarFiltroEstado(estado.valor)"
         >
           {{ estado.etiqueta }}
         </button>
@@ -53,7 +53,7 @@
         <div class="spinner"></div>
         <p>Cargando listado de empresas…</p>
       </div>
-    } @else if (empresasFiltradas().length === 0) {
+    } @else if (empresas().length === 0) {
       <div class="empty-state">
         <p>
           @if (filtroEstado() === 'todas') {
@@ -89,7 +89,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (empresa of empresasFiltradas(); track empresa.id) {
+          @for (empresa of empresas(); track empresa.id) {
             <tr class="empresa-row">
               <td>
                 <div class="empresa-cell">
@@ -159,6 +159,18 @@
           }
         </tbody>
       </table>
+
+      @if (totalPaginas() > 1) {
+        <div class="paginacion">
+          <button type="button" class="btn-paginacion" [disabled]="paginaActual() === 1" (click)="irAPagina(paginaActual() - 1)">
+            Anterior
+          </button>
+          <span class="info-paginacion">Página {{ paginaActual() }} de {{ totalPaginas() }}</span>
+          <button type="button" class="btn-paginacion" [disabled]="paginaActual() === totalPaginas()" (click)="irAPagina(paginaActual() + 1)">
+            Siguiente
+          </button>
+        </div>
+      }
     }
   </div>
 

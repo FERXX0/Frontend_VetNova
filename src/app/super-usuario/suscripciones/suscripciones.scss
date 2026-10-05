@@ -23,7 +23,9 @@
     text-decoration: none;
     margin-bottom: 1rem;
 
-    &:hover { text-decoration: underline; }
+    &:hover {
+      text-decoration: underline;
+    }
   }
 
   &__header {
@@ -32,8 +34,17 @@
     justify-content: space-between;
     margin-bottom: 1.25rem;
 
-    h1 { margin: 0 0 0.2rem; font-size: 1.3rem; color: var(--vn-text-dark); }
-    p { margin: 0; font-size: 0.85rem; color: var(--vn-text-muted); }
+    h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.3rem;
+      color: var(--vn-text-dark);
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--vn-text-muted);
+    }
   }
 }
 
@@ -47,8 +58,14 @@
   font-weight: 700;
   cursor: pointer;
 
-  &:hover:not(:disabled) { opacity: 0.92; }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:hover:not(:disabled) {
+    opacity: 0.92;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .btn-secundario {
@@ -61,7 +78,9 @@
   font-weight: 600;
   cursor: pointer;
 
-  &:hover { background: var(--vn-bg); }
+  &:hover {
+    background: var(--vn-bg);
+  }
 }
 
 .alerta-error {
@@ -113,7 +132,9 @@
     color: var(--vn-text-dark);
   }
 
-  tr:last-child td { border-bottom: none; }
+  tr:last-child td {
+    border-bottom: none;
+  }
 }
 
 .badge {
@@ -124,11 +145,30 @@
   font-weight: 600;
   text-transform: capitalize;
 
-  &--prueba { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
-  &--activa { background: rgba(47, 191, 110, 0.12); color: #2fbf6e; }
-  &--vencida { background: rgba(242, 185, 12, 0.15); color: #b8860b; }
-  &--en_mora { background: rgba(224, 85, 79, 0.12); color: #e0554f; }
-  &--cancelada { background: rgba(138, 151, 161, 0.15); color: #8a97a1; }
+  &--prueba {
+    background: rgba(26, 167, 160, 0.12);
+    color: var(--vn-teal-dark, #0e7c86);
+  }
+
+  &--activa {
+    background: rgba(79, 214, 168, 0.16);
+    color: #0e8f5f;
+  }
+
+  &--vencida {
+    background: var(--vn-warning-bg, #fdf3e0);
+    color: var(--vn-warning, #c98a12);
+  }
+
+  &--en_mora {
+    background: var(--vn-danger-bg, #fdeceb);
+    color: var(--vn-danger, #e0554f);
+  }
+
+  &--cancelada {
+    background: var(--vn-surface, #f6f9fa);
+    color: var(--vn-text-muted, #8a97a1);
+  }
 }
 
 // ---------- Modal ----------
@@ -152,7 +192,11 @@
   max-height: 90vh;
   overflow-y: auto;
 
-  h2 { margin: 0 0 1.25rem; font-size: 1.15rem; color: var(--vn-text-dark); }
+  h2 {
+    margin: 0 0 1.25rem;
+    font-size: 1.15rem;
+    color: var(--vn-text-dark);
+  }
 
   &__error {
     background: rgba(224, 85, 79, 0.08);
@@ -196,7 +240,9 @@
     box-sizing: border-box;
     font-family: inherit;
 
-    &:focus { border-color: var(--vn-teal); }
+    &:focus {
+      border-color: var(--vn-teal);
+    }
   }
 }
 

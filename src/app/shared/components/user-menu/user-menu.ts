@@ -36,7 +36,7 @@ export class UserMenuComponent {
   });
 
   readonly perfilRuta = computed(() => {
-    return this.esSuperAdmin() ? '/super-usuario/perfil' : '/panel/perfil';
+    return this.session.esPersonalPlataforma() ? '/super-usuario/perfil' : '/panel/perfil';
   });
 
   toggleDropdown(): void {

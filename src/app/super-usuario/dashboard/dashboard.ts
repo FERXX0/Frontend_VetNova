@@ -69,32 +69,32 @@ export class DashboardComponent implements OnInit {
       icono: 'agregar',
       valor: 0,
       etiqueta: 'Agregar veterinaria',
-      colorFondo: '#e8f1fd',
-      colorIcono: '#3b82f6',
+      colorFondo: 'rgba(26, 167, 160, 0.12)',
+      colorIcono: '#0e7c86',
       ruta: '/super-usuario/empresas'
     },
     {
       icono: 'admin',
       valor: 0,
       etiqueta: 'Crear Administrador',
-      colorFondo: '#fef6e0',
-      colorIcono: '#f2b90c',
+      colorFondo: '#fdf3e0',
+      colorIcono: '#c98a12',
       ruta: '/super-usuario/usuarios'
     },
     {
       icono: 'suscripcion',
       valor: 0,
       etiqueta: 'Gestionar Suscripción',
-      colorFondo: '#fdeaea',
-      colorIcono: '#e05a5a',
+      colorFondo: '#fdeceb',
+      colorIcono: '#e0554f',
       ruta: '/super-usuario/empresas'
     },
     {
       icono: 'empresas',
       valor: 0,
       etiqueta: 'Ver empresas',
-      colorFondo: '#e9f9ef',
-      colorIcono: '#2fbf6e',
+      colorFondo: 'rgba(79, 214, 168, 0.16)',
+      colorIcono: '#0e8f5f',
       ruta: '/super-usuario/empresas'
     }
   ]);

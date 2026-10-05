@@ -14,6 +14,20 @@
 </div>
 
 <div class="settings-grid">
+    <!-- Alta de Empresa -->
+  <div class="card setting-card">
+    <div class="setting-header">
+      <div class="setting-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21h18M5 21V7l8-4v18M13 7l6 3v11"></path>
+          <path d="M9 9h.01M9 13h.01M9 17h.01"></path>
+        </svg>
+      </div>
+      <h3>Alta de Empresa</h3>
+    </div>
+    <p>Registra una nueva veterinaria, asígnale un plan y continúa con la creación de su primer administrador.</p>
+    <button type="button" class="btn-primary" (click)="abrirModalAlta()">Registrar Empresa</button>
+  </div>
   <!-- Parámetros del Sistema -->
   <div class="card setting-card">
     <div class="setting-header">
@@ -30,20 +44,6 @@
     <button class="btn-primary" disabled>Configurar</button>
   </div>
 
-  <!-- Planes y Precios -->
-  <div class="card setting-card">
-    <div class="setting-header">
-      <div class="setting-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect>
-          <line x1="2" y1="10" x2="22" y2="10"></line>
-        </svg>
-      </div>
-      <h3>Planes y Precios</h3>
-    </div>
-    <p>Gestión de tiers de suscripción, límites y características por plan.</p>
-    <button class="btn-primary" disabled>Configurar</button>
-  </div>
 
   <!-- Catálogo de Módulos -->
   <div class="card setting-card">
@@ -86,3 +86,89 @@
   </svg>
   <span>Este módulo estará disponible cuando el backend exponga el endpoint GET /configuracion-global</span>
 </div>
+
+
+<!-- Modal: Alta de Empresa (datos + plan) -->
+@if (modalAltaAbierto()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal-panel" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h2>Registrar Nueva Empresa</h2>
+        <button type="button" class="modal-close-btn" (click)="cerrarModal()" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+
+        <h3 class="modal-section-title">Datos de la empresa</h3>
+
+        <div class="form-group">
+          <label for="alta-nombre">Nombre Comercial *</label>
+          <input id="alta-nombre" type="text" formControlName="nombre" placeholder="Ej: Clínica San Roque" />
+        </div>
+
+        <div class="form-group">
+          <label for="alta-razon">Razón Social</label>
+          <input id="alta-razon" type="text" formControlName="razon_social" placeholder="Ej: San Roque Servicios S.A.S." />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="alta-nit">NIT / Identificación</label>
+            <input
+              id="alta-nit"
+              type="text"
+              formControlName="nit"
+              inputmode="numeric"
+              maxlength="11"
+              placeholder="900999999-1"
+              (input)="formatearNit($event)"
+            />
+            @if (form.get('nit')?.invalid && form.get('nit')?.touched) {
+              <small class="error-msg">Formato: 9 dígitos, guion y dígito de verificación (ej. 400349123-5)</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="alta-correo">Correo Electrónico</label>
+            <input id="alta-correo" type="email" formControlName="correo" placeholder="contacto@empresa.com" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="alta-zona">Zona Horaria *</label>
+          <input id="alta-zona" type="text" formControlName="zona_horaria" placeholder="America/Bogota" />
+        </div>
+
+        <h3 class="modal-section-title">Plan</h3>
+
+        <div class="form-group">
+          <label for="alta-plan">Plan a asignar *</label>
+          @if (cargandoPlanes()) {
+            <p class="hint-text">Cargando planes disponibles…</p>
+          } @else if (planes().length === 0) {
+            <p class="hint-text">No hay planes activos. Crea uno primero en Planes.</p>
+          } @else {
+            <select id="alta-plan" formControlName="plan_id">
+              <option value="" disabled>Selecciona un plan</option>
+              @for (plan of planes(); track plan.id) {
+                <option [value]="plan.id">{{ plan.nombre }} — {{ plan.precio_mensual }} {{ plan.moneda }}/mes</option>
+              }
+            </select>
+          }
+        </div>
+
+        @if (errorFormulario()) {
+          <p class="error-msg">{{ errorFormulario() }}</p>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn-submit" [disabled]="guardando() || planes().length === 0">
+            {{ guardando() ? 'Guardando…' : 'Registrar y continuar con el usuario' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

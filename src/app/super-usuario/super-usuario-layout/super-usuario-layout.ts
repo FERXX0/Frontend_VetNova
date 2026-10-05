@@ -15,6 +15,7 @@ interface NavItem {
   ruta: string;
   nombre: string;
   icono: string;
+  roles: string[];
 }
 
 @Component({
@@ -51,24 +52,50 @@ export class SuperUsuarioLayoutComponent {
     {
       ruta: '/super-usuario/dashboard',
       nombre: 'Inicio',
-      icono: 'dashboard'
+      icono: 'dashboard',
+      roles: ['super_admin', 'soporte']
     },
+    
     {
       ruta: '/super-usuario/empresas',
       nombre: 'Empresas Registradas',
-      icono: 'veterinarias'
+      icono: 'veterinarias',
+      roles: ['super_admin']
     },
+    
     {
       ruta: '/super-usuario/usuarios',
       nombre: 'Usuarios',
-      icono: 'usuarios'
+      icono: 'usuarios',
+      roles: ['super_admin']
     },
+
+    {
+      ruta: '/super-usuario/planes',
+      nombre: 'Planes y Precios',
+      icono: 'planes',
+      roles: ['super_admin', 'soporte']
+    },
+      
     {
       ruta: '/super-usuario/configuracion',
       nombre: 'Configuración Global',
-      icono: 'configuracion'
+      icono: 'configuracion',
+      roles: ['super_admin', 'soporte']
     },
+  
   ];
+  
+  /**
+  * Elementos del menú principal visibles según el rol del usuario.
+  */
+ readonly navVisible = computed(() => {
+  const codigo = this.usuario()?.rol?.codigo;
+  
+  return this.navPrincipal.filter(
+    (item) => !!codigo && item.roles.includes(codigo)
+  );
+});
 
   /**
    * Catálogo de módulos funcionales de VetNova.
@@ -77,21 +104,12 @@ export class SuperUsuarioLayoutComponent {
    * `usuarios` NO está aquí porque no es uno de los módulos
    * funcionales entregados por el backend.
    *
-   * `inicio` sí está aquí porque representa el módulo Inicio
-   * del sistema.
-   *
    * Todas las rutas quedan bajo /super-usuario/... (y no /panel/...)
    * para que el super administrador nunca salga de su propio árbol
    * de rutas al navegar por estos módulos. Los mismos componentes
    * siguen usándose también en /panel/... para el resto de usuarios.
    */
   readonly catalogoModulos = [
-    {
-      codigo: 'inicio',
-      nombre: 'Inicio',
-      ruta: '/super-usuario/dashboard',
-      icono: 'dashboard'
-    },
     {
       codigo: 'citas',
       nombre: 'Agenda Médica',
@@ -155,20 +173,14 @@ export class SuperUsuarioLayoutComponent {
     {
       codigo: 'servicios',
       nombre: 'Servicios',
-      icono: 'servicios',
-      proximamente: true
+      ruta: '/super-usuario/servicios',
+      icono: 'servicios'
     },
     {
       codigo: 'facturacion',
       nombre: 'Facturación',
       icono: 'facturacion',
       proximamente: true
-    },
-    {
-      codigo: 'configuracion',
-      nombre: 'Configuración',
-      ruta: '/super-usuario/perfil',
-      icono: 'configuracion'
     },
   ];
 
@@ -222,6 +234,7 @@ export class SuperUsuarioLayoutComponent {
     '/super-usuario/empresas': 'Gestión de Empresas',
     '/super-usuario/usuarios': 'Usuarios de Plataforma',
     '/super-usuario/configuracion': 'Configuración Global',
+    '/super-usuario/planes': 'Planes y Precios',
     '/super-usuario/agenda': 'Agenda Médica',
     '/super-usuario/pacientes': 'Pacientes',
     '/super-usuario/reportes': 'Reportes',
@@ -232,6 +245,7 @@ export class SuperUsuarioLayoutComponent {
     '/super-usuario/laboratorio': 'Laboratorio',
     '/super-usuario/formulaciones': 'Formulaciones',
     '/super-usuario/farmacia': 'Farmacia',
+    '/super-usuario/servicios': 'Servicios',
     '/super-usuario/perfil': 'Mi Perfil',
     '/super-usuario/monitoreo': 'Monitoreo',
     '/super-usuario/soporte': 'Soporte',
@@ -247,6 +261,7 @@ export class SuperUsuarioLayoutComponent {
     '/panel/laboratorio': 'Laboratorio',
     '/panel/formulaciones': 'Formulaciones',
     '/panel/farmacia': 'Farmacia',
+    '/panel/servicios': 'Servicios',
     '/panel/perfil': 'Mi Perfil',
   };
 

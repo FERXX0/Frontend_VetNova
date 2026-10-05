@@ -18,6 +18,7 @@ import { MonitoreoComponent } from './super-usuario/monitoreo/monitoreo';
 import { SoporteComponent } from './super-usuario/soporte/soporte';
 import { ReportesAdminComponent } from './super-usuario/reportes-admin/reportes-admin';
 import { ConfiguracionGlobalComponent } from './super-usuario/configuracion-global/configuracion-global';
+import { PlanesComponent } from './super-usuario/planes/planes';
 
 // ==========================================================
 // PANEL EMPRESA / TENANT
@@ -35,6 +36,7 @@ import { PanelDashboardComponent } from './panel/dashboard/panel-dashboard.compo
 import { AgendaComponent } from './panel/agenda/agenda';
 import { PacientesComponent } from './panel/pacientes/pacientes';
 import { PacienteDetalleComponent } from './panel/pacientes/paciente-detalle/paciente-detalle';
+import { ServiciosComponent } from './panel/servicios/servicios.component';
 
 import { UsuariosEmpresaComponent } from './panel/usuarios-empresa/usuarios-empresa.component';
 // import { ReportesEmpresaComponent } from './panel/reportes-empresa/reportes-empresa';
@@ -54,7 +56,7 @@ import { SinModulosComponent } from './shared/components/sin-modulos/sin-modulos
 // ==========================================================
 
 import { authGuard } from './core/guards/auth.guard';
-import { superAdminGuard } from './core/guards/super-admin.guard';
+import { plataformaGuard, plataformaChildGuard } from './core/guards/plataforma.guard';
 import { moduloGuard, moduloChildGuard } from './core/guards/modulo.guard';
 
 export const routes: Routes = [
@@ -92,19 +94,20 @@ export const routes: Routes = [
 
     canActivate: [
       authGuard,
-      superAdminGuard
+      plataformaGuard
     ],
 
     canActivateChild: [
       authGuard,
-      superAdminGuard
+      plataformaChildGuard
     ],
 
     children: [
-
+      
       {
         path: 'dashboard',
-        component: DashboardComponent
+        component: DashboardComponent,
+        data: { roles: ['super_admin', 'soporte'] }
       },
 
       {
@@ -152,6 +155,11 @@ export const routes: Routes = [
       {
         path: 'pacientes/:id',
         component: PacienteDetalleComponent
+      },
+
+      {
+        path: 'servicios',
+        component: ServiciosComponent
       },
 
       {
@@ -206,12 +214,21 @@ export const routes: Routes = [
 
       {
         path: 'configuracion',
-        component: ConfiguracionGlobalComponent
+        component: ConfiguracionGlobalComponent,
+        data: { roles: ['super_admin', 'soporte'] }
+      },
+
+      
+      {
+        path: 'planes',
+        component: PlanesComponent,
+        data: { roles: ['super_admin', 'soporte'] }
       },
 
       {
         path: 'perfil',
-        component: PerfilComponent
+        component: PerfilComponent,
+        data: { roles: ['super_admin', 'soporte'] }
       },
 
       {
@@ -285,6 +302,18 @@ export const routes: Routes = [
         component: PacienteDetalleComponent,
         data: {
           modulo: 'clientes_pacientes'
+        }
+      },
+
+      // ----------------------------------------------------
+      // SERVICIOS
+      // ----------------------------------------------------
+
+      {
+        path: 'servicios',
+        component: ServiciosComponent,
+        data: {
+          modulo: 'servicios'
         }
       },
 

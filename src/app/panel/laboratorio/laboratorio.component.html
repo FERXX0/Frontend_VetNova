@@ -18,15 +18,21 @@
 
     </div>
 
-    <button
-      type="button"
-      class="btn-primary"
-      (click)="abrirNuevaSolicitud()"
-    >
+    <button type="button" class="btn-primary" [disabled]="!puedeCrear()"
+      [title]="puedeCrear() ? '' : 'Selecciona una empresa para crear solicitudes'" (click)="abrirNuevaSolicitud()">
       + Nueva solicitud
     </button>
 
   </header>
+
+
+  <!-- MENSAJE -->
+  @if (mensaje()) {
+  <div class="toast" [class.toast--success]="tipoMensaje() === 'success'"
+    [class.toast--error]="tipoMensaje() === 'error'">
+    <span>{{ mensaje() }}</span>
+  </div>
+  }
 
 
   <!-- ESTADÍSTICAS -->
@@ -182,28 +188,28 @@
         ⌕
       </span>
 
-      <input
-        type="text"
-        placeholder="Buscar paciente, examen, diagnóstico..."
-        [value]="busqueda()"
-        (input)="
-          busqueda.set(
-            $any($event.target).value
-          )
-        "
-      />
+      <input type="text" placeholder="Buscar paciente, examen, diagnóstico..." [value]="busqueda()" (input)="
+          cambiarBusqueda($any($event.target).value)
+        " />
 
     </div>
 
 
-    <select
-      [value]="filtroEstado()"
-      (change)="
-        filtroEstado.set(
-          $any($event.target).value
-        )
-      "
-    >
+    @if (esVistaSuperUsuario()) {
+    <select [value]="filtroEmpresa()" (change)="onEmpresaChange($any($event.target).value)">
+      <option value="">Todas las empresas</option>
+      @for (empresa of empresasDisponibles(); track empresa.id) {
+      <option [value]="empresa.id" [selected]="empresa.id === filtroEmpresa()">
+        {{ empresa.nombre }}
+      </option>
+      }
+    </select>
+    }
+
+
+    <select [value]="filtroEstado()" (change)="
+        cambiarFiltroEstado($any($event.target).value)
+      ">
 
       <option value="Todos">
         Todos los estados
@@ -236,14 +242,9 @@
     </select>
 
 
-    <select
-      [value]="filtroPrioridad()"
-      (change)="
-        filtroPrioridad.set(
-          $any($event.target).value
-        )
-      "
-    >
+    <select [value]="filtroPrioridad()" (change)="
+        cambiarFiltroPrioridad($any($event.target).value)
+      ">
 
       <option value="Todas">
         Todas las prioridades
@@ -268,14 +269,9 @@
     </select>
 
 
-    <select
-      [value]="filtroCategoria()"
-      (change)="
-        filtroCategoria.set(
-          $any($event.target).value
-        )
-      "
-    >
+    <select [value]="filtroCategoria()" (change)="
+        cambiarFiltroCategoria($any($event.target).value)
+      ">
 
       <option value="Todas">
         Todas las categorías
@@ -304,11 +300,7 @@
     </select>
 
 
-    <button
-      type="button"
-      class="btn-secondary"
-      (click)="limpiarFiltros()"
-    >
+    <button type="button" class="btn-secondary" (click)="limpiarFiltros()">
       Limpiar
     </button>
 
@@ -327,13 +319,21 @@
         </h2>
 
         <span>
-          {{ solicitudesFiltradas().length }}
+          {{ total() }}
           registros encontrados
         </span>
 
       </div>
 
     </div>
+
+
+    @if (error()) {
+    <div class="alert-error">
+      <span>{{ error() }}</span>
+      <button type="button" (click)="cargarSolicitudes(paginaActual())">Reintentar</button>
+    </div>
+    }
 
 
     <div class="table-wrapper">
@@ -360,219 +360,237 @@
 
         <tbody>
 
+          @if (cargando()) {
+          <tr>
+            <td colspan="8" class="empty-state">
+              <div>
+                <strong>Cargando solicitudes...</strong>
+              </div>
+            </td>
+          </tr>
+          } @else {
+
+
           @for (
-            solicitud of solicitudesFiltradas();
-            track solicitud.id
+          solicitud of solicitudes();
+          track solicitud.id
           ) {
 
-            <tr>
+          <tr>
 
-              <!-- PACIENTE -->
+            <!-- PACIENTE -->
 
-              <td>
+            <td>
 
-                <div class="patient-cell">
+              <div class="patient-cell">
 
-                  <div class="patient-avatar">
-                    {{ solicitud.paciente.charAt(0) }}
-                  </div>
-
-                  <div>
-
-                    <strong>
-                      {{ solicitud.paciente }}
-                    </strong>
-
-                    <small>
-                      {{ solicitud.especie }}
-                      ·
-                      {{ solicitud.raza }}
-                    </small>
-
-                    <small>
-                      {{ solicitud.propietario }}
-                    </small>
-
-                  </div>
-
+                <div class="patient-avatar">
+                  {{ solicitud.paciente?.nombre?.charAt(0) }}
                 </div>
 
-              </td>
-
-
-              <!-- EXAMEN -->
-
-              <td>
-
-                <div class="exam-cell">
+                <div>
 
                   <strong>
-                    {{ solicitud.examen }}
+                    {{ solicitud.paciente?.nombre }}
                   </strong>
 
                   <small>
-                    {{ solicitud.categoria }}
+                    {{ solicitud.paciente?.especie }}
+                    ·
+                    {{ solicitud.paciente?.raza || 'Sin raza' }}
                   </small>
-
-                </div>
-
-              </td>
-
-
-              <!-- SOLICITUD -->
-
-              <td>
-
-                <div class="date-cell">
-
-                  <strong>
-                    {{
-                      formatearFecha(
-                        solicitud.fechaSolicitud
-                      )
-                    }}
-                  </strong>
 
                   <small>
-                    {{ solicitud.horaSolicitud }}
+                    {{ solicitud.propietario?.nombre }}
                   </small>
+
+                  @if (esVistaSuperUsuario() && solicitud.empresa_nombre) {
+                  <span class="empresa-tag">
+                    {{ solicitud.empresa_nombre }}
+                  </span>
+                  }
 
                 </div>
 
-              </td>
+              </div>
+
+            </td>
 
 
-              <!-- RESULTADO -->
+            <!-- EXAMEN -->
 
-              <td>
-                {{
+            <td>
+
+              <div class="exam-cell">
+
+                <strong>
+                  {{ solicitud.examen }}
+                </strong>
+
+                <small>
+                  {{ solicitud.categoria }}
+                </small>
+
+              </div>
+
+            </td>
+
+
+            <!-- SOLICITUD -->
+
+            <td>
+
+              <div class="date-cell">
+
+                <strong>
+                  {{
                   formatearFecha(
-                    solicitud.fechaResultadoEstimada
+                  solicitud.fecha_solicitud
                   )
-                }}
-              </td>
+                  }}
+                </strong>
+
+                <small>
+                  {{ solicitud.hora_solicitud }}
+                </small>
+
+              </div>
+
+            </td>
 
 
-              <!-- MUESTRA -->
+            <!-- RESULTADO -->
 
-              <td>
+            <td>
+              {{
+              formatearFecha(
+              solicitud.fecha_resultado_estimada
+              )
+              }}
+            </td>
 
-                <span class="sample-badge">
-                  🧫
-                  {{ solicitud.muestra }}
-                </span>
 
-              </td>
+            <!-- MUESTRA -->
+
+            <td>
+
+              <span class="sample-badge">
+                🧫
+                {{ solicitud.muestra }}
+              </span>
+
+            </td>
 
 
-              <!-- PRIORIDAD -->
+            <!-- PRIORIDAD -->
 
-              <td>
+            <td>
 
-                <span
-                  class="priority-badge"
-                  [ngClass]="
+              <span class="priority-badge" [ngClass]="
                     obtenerClasePrioridad(
                       solicitud.prioridad
                     )
-                  "
-                >
-                  {{ solicitud.prioridad }}
-                </span>
+                  ">
+                {{ solicitud.prioridad }}
+              </span>
 
-              </td>
+            </td>
 
 
-              <!-- ESTADO -->
+            <!-- ESTADO -->
 
-              <td>
+            <td>
 
-                <span
-                  class="status-badge"
-                  [ngClass]="
+              <span class="status-badge" [ngClass]="
                     obtenerClaseEstado(
                       solicitud.estado
                     )
-                  "
-                >
-                  {{ solicitud.estado }}
-                </span>
+                  ">
+                {{ solicitud.estado }}
+              </span>
 
-              </td>
+            </td>
 
 
-              <!-- ACCIONES -->
+            <!-- ACCIONES -->
 
-              <td>
+            <td>
 
-                <div class="actions">
+              <div class="actions">
 
-                  <button
-                    type="button"
-                    class="action-view"
-                    (click)="
+                <button type="button" class="action-view" (click)="
                       abrirDetalle(solicitud)
-                    "
-                  >
-                    Ver
-                  </button>
+                    ">
+                  Ver
+                </button>
 
-                  <button
-                    type="button"
-                    class="action-edit"
-                    (click)="
+                <button type="button" class="action-edit" (click)="
                       editarSolicitud(solicitud)
-                    "
-                  >
-                    Editar
-                  </button>
+                    ">
+                  Editar
+                </button>
 
-                </div>
+              </div>
 
-              </td>
+            </td>
 
-            </tr>
+          </tr>
 
           }
 
 
           @if (
-            solicitudesFiltradas().length === 0
+          solicitudes().length === 0
           ) {
 
-            <tr>
+          <tr>
 
-              <td
-                colspan="8"
-                class="empty-state"
-              >
+            <td colspan="8" class="empty-state">
 
-                <div>
+              <div>
 
-                  <span>🔎</span>
+                <span>🔎</span>
 
-                  <strong>
-                    No encontramos solicitudes
-                  </strong>
+                <strong>
+                  No encontramos solicitudes
+                </strong>
 
-                  <p>
-                    Intenta cambiar los filtros.
-                  </p>
+                <p>
+                  Intenta cambiar los filtros.
+                </p>
 
-                </div>
+              </div>
 
-              </td>
+            </td>
 
-            </tr>
+          </tr>
 
           }
 
+          }
         </tbody>
 
       </table>
 
     </div>
 
+    @if (totalPaginas() > 1) {
+    <div class="paginacion">
+      <button type="button" class="btn-paginacion" [disabled]="paginaActual() <= 1"
+        (click)="irAPagina(paginaActual() - 1)">
+        ‹ Anterior
+      </button>
+
+      <span class="paginacion-info">
+        Página {{ paginaActual() }} de {{ totalPaginas() }} ({{ total() }} solicitud(es))
+      </span>
+
+      <button type="button" class="btn-paginacion" [disabled]="paginaActual() >= totalPaginas()"
+        (click)="irAPagina(paginaActual() + 1)">
+        Siguiente ›
+      </button>
+    </div>
+    }
   </section>
 
 </div>
@@ -583,649 +601,589 @@
      ====================================================== -->
 
 @if (
-  modalDetalleAbierto() &&
-  solicitudSeleccionada()
+modalDetalleAbierto() &&
+solicitudSeleccionada()
 ) {
 
-  <div
-    class="modal-backdrop"
-    (click)="cerrarDetalle()"
-  >
+<div class="modal-backdrop" (click)="cerrarDetalle()">
 
-    <div
-      class="modal modal-large"
-      (click)="$event.stopPropagation()"
-    >
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
 
-      <!-- HEADER -->
+    <!-- HEADER -->
 
-      <div class="modal-header">
+    <div class="modal-header">
 
-        <div class="patient-header">
+      <div class="patient-header">
 
-          <div class="patient-avatar large">
-            {{ solicitudSeleccionada()!.paciente.charAt(0) }}
-          </div>
+        <div class="patient-avatar large">
+          {{ solicitudSeleccionada()!.paciente?.nombre?.charAt(0) }}
+        </div>
 
-          <div>
+        <div>
 
-            <div class="title-row">
+          <div class="title-row">
 
-              <h2>
-                {{ solicitudSeleccionada()!.examen }}
-              </h2>
+            <h2>
+              {{ solicitudSeleccionada()!.examen }}
+            </h2>
 
-              <span
-                class="status-badge"
-                [ngClass]="
+            <span class="status-badge" [ngClass]="
                   obtenerClaseEstado(
                     solicitudSeleccionada()!.estado
                   )
-                "
-              >
-                {{ solicitudSeleccionada()!.estado }}
-              </span>
-
-            </div>
-
-            <p>
-              Paciente:
-              {{ solicitudSeleccionada()!.paciente }}
-              ·
-              {{ solicitudSeleccionada()!.especie }}
-              ·
-              {{ solicitudSeleccionada()!.raza }}
-            </p>
-
-            <small>
-              Propietario:
-              {{ solicitudSeleccionada()!.propietario }}
-            </small>
+                ">
+              {{ solicitudSeleccionada()!.estado }}
+            </span>
 
           </div>
+
+          <p>
+            Paciente:
+            {{ solicitudSeleccionada()!.paciente?.nombre }}
+            ·
+            {{ solicitudSeleccionada()!.paciente?.especie }}
+            ·
+            {{ solicitudSeleccionada()!.paciente?.raza || 'Sin raza' }}
+          </p>
+
+          <small>
+            Propietario:
+            {{ solicitudSeleccionada()!.propietario?.nombre }}
+          </small>
+
+        </div>
+
+      </div>
+
+
+      <button type="button" class="close-button" (click)="cerrarDetalle()">
+        ×
+      </button>
+
+    </div>
+
+
+    <!-- INFORMACIÓN -->
+
+    <section class="detail-section">
+
+      <div class="section-heading">
+
+        <div>
+
+          <h3>
+            Información de la solicitud
+          </h3>
+
+          <p>
+            Datos generales del examen.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="detail-grid">
+
+        <div class="detail-item">
+
+          <span>
+            Examen
+          </span>
+
+          <strong>
+            {{ solicitudSeleccionada()!.examen }}
+          </strong>
 
         </div>
 
 
-        <button
-          type="button"
-          class="close-button"
-          (click)="cerrarDetalle()"
-        >
-          ×
+        <div class="detail-item">
+
+          <span>
+            Categoría
+          </span>
+
+          <strong>
+            {{ solicitudSeleccionada()!.categoria }}
+          </strong>
+
+        </div>
+
+
+        <div class="detail-item">
+
+          <span>
+            Diagnóstico
+          </span>
+
+          <strong>
+            {{ solicitudSeleccionada()!.diagnostico || '-' }}
+          </strong>
+
+        </div>
+
+
+        <div class="detail-item">
+
+          <span>
+            Fecha de solicitud
+          </span>
+
+          <strong>
+            {{
+            formatearFecha(
+            solicitudSeleccionada()!.fecha_solicitud
+            )
+            }}
+          </strong>
+
+        </div>
+
+
+        <div class="detail-item">
+
+          <span>
+            Hora
+          </span>
+
+          <strong>
+            {{ solicitudSeleccionada()!.hora_solicitud }}
+          </strong>
+
+        </div>
+
+
+        <div class="detail-item">
+
+          <span>
+            Resultado estimado
+          </span>
+
+          <strong>
+            {{
+            formatearFecha(
+            solicitudSeleccionada()!.fecha_resultado_estimada
+            )
+            }}
+          </strong>
+
+        </div>
+
+
+        <div class="detail-item">
+
+          <span>
+            Veterinario solicitante
+          </span>
+
+          <strong>
+            {{ solicitudSeleccionada()!.veterinario_nombre }}
+          </strong>
+
+        </div>
+
+
+        <div class="detail-item">
+
+          <span>
+            Laboratorio
+          </span>
+
+          <strong>
+            {{ solicitudSeleccionada()!.laboratorio }}
+          </strong>
+
+        </div>
+
+
+        <div class="detail-item">
+
+          <span>
+            Muestra
+          </span>
+
+          <strong>
+            {{ solicitudSeleccionada()!.muestra }}
+          </strong>
+
+        </div>
+
+
+        <div class="detail-item">
+
+          <span>
+            Prioridad
+          </span>
+
+          <span class="priority-badge" [ngClass]="
+                obtenerClasePrioridad(
+                  solicitudSeleccionada()!.prioridad
+                )
+              ">
+            {{ solicitudSeleccionada()!.prioridad }}
+          </span>
+
+        </div>
+
+      </div>
+
+
+      @if (
+      solicitudSeleccionada()!.observaciones
+      ) {
+
+      <div class="text-block">
+
+        <span>
+          Observaciones
+        </span>
+
+        <p>
+          {{ solicitudSeleccionada()!.observaciones }}
+        </p>
+
+      </div>
+
+      }
+
+    </section>
+
+
+    <!-- ESTADO -->
+
+    <section class="detail-section">
+
+      <div class="section-heading">
+
+        <div>
+
+          <h3>
+            Estado de la solicitud
+          </h3>
+
+          <p>
+            Actualiza el progreso del examen.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="state-actions">
+
+        <button type="button" [class.active]="
+              solicitudSeleccionada()!.estado ===
+              'Solicitado'
+            " (click)="
+              cambiarEstado(
+                solicitudSeleccionada()!,
+                'Solicitado'
+              )
+            ">
+          📋 Solicitado
+        </button>
+
+
+        <button type="button" [class.active]="
+              solicitudSeleccionada()!.estado ===
+              'Muestra recibida'
+            " (click)="
+              cambiarEstado(
+                solicitudSeleccionada()!,
+                'Muestra recibida'
+              )
+            ">
+          🧫 Muestra recibida
+        </button>
+
+
+        <button type="button" [class.active]="
+              solicitudSeleccionada()!.estado ===
+              'En procesamiento'
+            " (click)="
+              cambiarEstado(
+                solicitudSeleccionada()!,
+                'En procesamiento'
+              )
+            ">
+          ⚙️ Procesando
+        </button>
+
+
+        <button type="button" [class.active]="
+              solicitudSeleccionada()!.estado ===
+              'Resultado disponible'
+            " (click)="
+              cambiarEstado(
+                solicitudSeleccionada()!,
+                'Resultado disponible'
+              )
+            ">
+          ✓ Resultado
+        </button>
+
+
+        <button type="button" [class.active]="
+              solicitudSeleccionada()!.estado ===
+              'Finalizado'
+            " (click)="
+              cambiarEstado(
+                solicitudSeleccionada()!,
+                'Finalizado'
+              )
+            ">
+          ✓ Finalizado
+        </button>
+
+
+        <button type="button" [class.active]="
+              solicitudSeleccionada()!.estado ===
+              'Cancelado'
+            " (click)="
+              cambiarEstado(
+                solicitudSeleccionada()!,
+                'Cancelado'
+              )
+            ">
+          × Cancelado
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- RESULTADOS -->
+
+    <section class="detail-section">
+
+      <div class="section-heading">
+
+        <div>
+
+          <h3>
+            Resultados
+          </h3>
+
+          <p>
+            {{ solicitudSeleccionada()!.resultados.length }}
+            parámetros registrados.
+          </p>
+
+        </div>
+
+
+        <button type="button" class="btn-primary" (click)="abrirNuevoResultado()">
+          + Registrar resultado
         </button>
 
       </div>
 
 
-      <!-- INFORMACIÓN -->
+      @if (
+      solicitudSeleccionada()!.resultados.length
+      ) {
 
-      <section class="detail-section">
+      <div class="results-table-wrapper">
 
-        <div class="section-heading">
+        <table class="results-table">
 
-          <div>
+          <thead>
 
-            <h3>
-              Información de la solicitud
-            </h3>
+            <tr>
+              <th>Parámetro</th>
+              <th>Resultado</th>
+              <th>Unidad</th>
+              <th>Referencia</th>
+              <th>Observación</th>
+            </tr>
 
-            <p>
-              Datos generales del examen.
-            </p>
+          </thead>
 
-          </div>
-
-        </div>
-
-
-        <div class="detail-grid">
-
-          <div class="detail-item">
-
-            <span>
-              Examen
-            </span>
-
-            <strong>
-              {{ solicitudSeleccionada()!.examen }}
-            </strong>
-
-          </div>
-
-
-          <div class="detail-item">
-
-            <span>
-              Categoría
-            </span>
-
-            <strong>
-              {{ solicitudSeleccionada()!.categoria }}
-            </strong>
-
-          </div>
-
-
-          <div class="detail-item">
-
-            <span>
-              Diagnóstico
-            </span>
-
-            <strong>
-              {{ solicitudSeleccionada()!.diagnostico || '-' }}
-            </strong>
-
-          </div>
-
-
-          <div class="detail-item">
-
-            <span>
-              Fecha de solicitud
-            </span>
-
-            <strong>
-              {{
-                formatearFecha(
-                  solicitudSeleccionada()!.fechaSolicitud
-                )
-              }}
-            </strong>
-
-          </div>
-
-
-          <div class="detail-item">
-
-            <span>
-              Hora
-            </span>
-
-            <strong>
-              {{ solicitudSeleccionada()!.horaSolicitud }}
-            </strong>
-
-          </div>
-
-
-          <div class="detail-item">
-
-            <span>
-              Resultado estimado
-            </span>
-
-            <strong>
-              {{
-                formatearFecha(
-                  solicitudSeleccionada()!.fechaResultadoEstimada
-                )
-              }}
-            </strong>
-
-          </div>
-
-
-          <div class="detail-item">
-
-            <span>
-              Veterinario solicitante
-            </span>
-
-            <strong>
-              {{ solicitudSeleccionada()!.veterinario }}
-            </strong>
-
-          </div>
-
-
-          <div class="detail-item">
-
-            <span>
-              Laboratorio
-            </span>
-
-            <strong>
-              {{ solicitudSeleccionada()!.laboratorio }}
-            </strong>
-
-          </div>
-
-
-          <div class="detail-item">
-
-            <span>
-              Muestra
-            </span>
-
-            <strong>
-              {{ solicitudSeleccionada()!.muestra }}
-            </strong>
-
-          </div>
-
-
-          <div class="detail-item">
-
-            <span>
-              Prioridad
-            </span>
-
-            <span
-              class="priority-badge"
-              [ngClass]="
-                obtenerClasePrioridad(
-                  solicitudSeleccionada()!.prioridad
-                )
-              "
-            >
-              {{ solicitudSeleccionada()!.prioridad }}
-            </span>
-
-          </div>
-
-        </div>
-
-
-        @if (
-          solicitudSeleccionada()!.observaciones
-        ) {
-
-          <div class="text-block">
-
-            <span>
-              Observaciones
-            </span>
-
-            <p>
-              {{ solicitudSeleccionada()!.observaciones }}
-            </p>
-
-          </div>
-
-        }
-
-      </section>
-
-
-      <!-- ESTADO -->
-
-      <section class="detail-section">
-
-        <div class="section-heading">
-
-          <div>
-
-            <h3>
-              Estado de la solicitud
-            </h3>
-
-            <p>
-              Actualiza el progreso del examen.
-            </p>
-
-          </div>
-
-        </div>
-
-
-        <div class="state-actions">
-
-          <button
-            type="button"
-            [class.active]="
-              solicitudSeleccionada()!.estado ===
-              'Solicitado'
-            "
-            (click)="
-              cambiarEstado(
-                solicitudSeleccionada()!,
-                'Solicitado'
-              )
-            "
-          >
-            📋 Solicitado
-          </button>
-
-
-          <button
-            type="button"
-            [class.active]="
-              solicitudSeleccionada()!.estado ===
-              'Muestra recibida'
-            "
-            (click)="
-              cambiarEstado(
-                solicitudSeleccionada()!,
-                'Muestra recibida'
-              )
-            "
-          >
-            🧫 Muestra recibida
-          </button>
-
-
-          <button
-            type="button"
-            [class.active]="
-              solicitudSeleccionada()!.estado ===
-              'En procesamiento'
-            "
-            (click)="
-              cambiarEstado(
-                solicitudSeleccionada()!,
-                'En procesamiento'
-              )
-            "
-          >
-            ⚙️ Procesando
-          </button>
-
-
-          <button
-            type="button"
-            [class.active]="
-              solicitudSeleccionada()!.estado ===
-              'Resultado disponible'
-            "
-            (click)="
-              cambiarEstado(
-                solicitudSeleccionada()!,
-                'Resultado disponible'
-              )
-            "
-          >
-            ✓ Resultado
-          </button>
-
-
-          <button
-            type="button"
-            [class.active]="
-              solicitudSeleccionada()!.estado ===
-              'Finalizado'
-            "
-            (click)="
-              cambiarEstado(
-                solicitudSeleccionada()!,
-                'Finalizado'
-              )
-            "
-          >
-            ✓ Finalizado
-          </button>
-
-
-          <button
-            type="button"
-            [class.active]="
-              solicitudSeleccionada()!.estado ===
-              'Cancelado'
-            "
-            (click)="
-              cambiarEstado(
-                solicitudSeleccionada()!,
-                'Cancelado'
-              )
-            "
-          >
-            × Cancelado
-          </button>
-
-        </div>
-
-      </section>
-
-
-      <!-- RESULTADOS -->
-
-      <section class="detail-section">
-
-        <div class="section-heading">
-
-          <div>
-
-            <h3>
-              Resultados
-            </h3>
-
-            <p>
-              {{ solicitudSeleccionada()!.resultados.length }}
-              parámetros registrados.
-            </p>
-
-          </div>
-
-
-          <button
-            type="button"
-            class="btn-primary"
-            (click)="abrirNuevoResultado()"
-          >
-            + Registrar resultado
-          </button>
-
-        </div>
-
-
-        @if (
-          solicitudSeleccionada()!.resultados.length
-        ) {
-
-          <div class="results-table-wrapper">
-
-            <table class="results-table">
-
-              <thead>
-
-                <tr>
-                  <th>Parámetro</th>
-                  <th>Resultado</th>
-                  <th>Unidad</th>
-                  <th>Referencia</th>
-                  <th>Observación</th>
-                </tr>
-
-              </thead>
-
-              <tbody>
-
-                @for (
-                  resultado of solicitudSeleccionada()!.resultados;
-                  track $index
-                ) {
-
-                  <tr>
-
-                    <td>
-                      <strong>
-                        {{ resultado.parametro }}
-                      </strong>
-                    </td>
-
-                    <td>
-                      {{ resultado.resultado }}
-                    </td>
-
-                    <td>
-                      {{ resultado.unidad || '-' }}
-                    </td>
-
-                    <td>
-                      {{ resultado.referencia || '-' }}
-                    </td>
-
-                    <td>
-                      {{ resultado.observacion || '-' }}
-                    </td>
-
-                  </tr>
-
-                }
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        } @else {
-
-          <div class="section-empty">
-
-            <span>🧪</span>
-
-            <strong>
-              No hay resultados registrados
-            </strong>
-
-            <p>
-              Registra los resultados del examen.
-            </p>
-
-          </div>
-
-        }
-
-      </section>
-
-
-      <!-- NOTAS -->
-
-      <section class="detail-section">
-
-        <div class="section-heading">
-
-          <div>
-
-            <h3>
-              Notas del laboratorio
-            </h3>
-
-            <p>
-              {{ solicitudSeleccionada()!.notas.length }}
-              notas registradas.
-            </p>
-
-          </div>
-
-
-          <button
-            type="button"
-            class="btn-primary"
-            (click)="abrirNuevaNota()"
-          >
-            + Agregar nota
-          </button>
-
-        </div>
-
-
-        @if (
-          solicitudSeleccionada()!.notas.length
-        ) {
-
-          <div class="notes-list">
+          <tbody>
 
             @for (
-              nota of solicitudSeleccionada()!.notas;
-              track nota.id
+            resultado of solicitudSeleccionada()!.resultados;
+            track $index
             ) {
 
-              <article class="note-card">
+            <tr>
 
-                <div>
+              <td>
+                <strong>
+                  {{ resultado.parametro }}
+                </strong>
+              </td>
 
-                  <strong>
-                    {{ nota.usuario }}
-                  </strong>
+              <td>
+                {{ resultado.resultado }}
+              </td>
 
-                  <span>
-                    {{ formatearFecha(nota.fecha) }}
-                    ·
-                    {{ nota.hora }}
-                  </span>
+              <td>
+                {{ resultado.unidad || '-' }}
+              </td>
 
-                </div>
+              <td>
+                {{ resultado.referencia || '-' }}
+              </td>
 
-                <p>
-                  {{ nota.nota }}
-                </p>
+              <td>
+                {{ resultado.observacion || '-' }}
+              </td>
 
-              </article>
+            </tr>
 
             }
 
-          </div>
+          </tbody>
 
-        } @else {
+        </table>
 
-          <div class="section-empty">
+      </div>
 
-            <span>📝</span>
+      } @else {
+
+      <div class="section-empty">
+
+        <span>🧪</span>
+
+        <strong>
+          No hay resultados registrados
+        </strong>
+
+        <p>
+          Registra los resultados del examen.
+        </p>
+
+      </div>
+
+      }
+
+    </section>
+
+
+    <!-- NOTAS -->
+
+    <section class="detail-section">
+
+      <div class="section-heading">
+
+        <div>
+
+          <h3>
+            Notas del laboratorio
+          </h3>
+
+          <p>
+            {{ solicitudSeleccionada()!.notas.length }}
+            notas registradas.
+          </p>
+
+        </div>
+
+
+        <button type="button" class="btn-primary" (click)="abrirNuevaNota()">
+          + Agregar nota
+        </button>
+
+      </div>
+
+
+      @if (
+      solicitudSeleccionada()!.notas.length
+      ) {
+
+      <div class="notes-list">
+
+        @for (
+        nota of solicitudSeleccionada()!.notas;
+        track nota.id
+        ) {
+
+        <article class="note-card">
+
+          <div>
 
             <strong>
-              No hay notas registradas
+              {{ nota.usuario }}
             </strong>
 
-            <p>
-              Agrega una nota para realizar seguimiento.
-            </p>
+            <span>
+              {{ formatearFecha(nota.fecha) }}
+              ·
+              {{ nota.hora }}
+            </span>
 
           </div>
+
+          <p>
+            {{ nota.nota }}
+          </p>
+
+        </article>
 
         }
 
-      </section>
+      </div>
+
+      } @else {
+
+      <div class="section-empty">
+
+        <span>📝</span>
+
+        <strong>
+          No hay notas registradas
+        </strong>
+
+        <p>
+          Agrega una nota para realizar seguimiento.
+        </p>
+
+      </div>
+
+      }
+
+    </section>
 
 
-      <!-- FOOTER -->
+    <!-- FOOTER -->
 
-      <div class="modal-footer">
+    <div class="modal-footer">
 
-        <button
-          type="button"
-          class="btn-danger-outline"
-          (click)="
+      <button type="button" class="btn-danger-outline" (click)="
             eliminarSolicitud(
               solicitudSeleccionada()!
             )
-          "
-        >
-          Eliminar
+          ">
+        Eliminar
+      </button>
+
+
+      <div class="footer-right">
+
+        <button type="button" class="btn-secondary" (click)="cerrarDetalle()">
+          Cerrar
         </button>
 
-
-        <div class="footer-right">
-
-          <button
-            type="button"
-            class="btn-secondary"
-            (click)="cerrarDetalle()"
-          >
-            Cerrar
-          </button>
-
-          <button
-            type="button"
-            class="btn-primary"
-            (click)="
+        <button type="button" class="btn-primary" (click)="
               editarSolicitud(
                 solicitudSeleccionada()!
               )
-            "
-          >
-            Editar solicitud
-          </button>
-
-        </div>
+            ">
+          Editar solicitud
+        </button>
 
       </div>
 
     </div>
 
   </div>
+
+</div>
 
 }
 
@@ -1236,514 +1194,401 @@
 
 @if (modalFormularioAbierto()) {
 
-  <div
-    class="modal-backdrop"
-    (click)="cerrarFormulario()"
-  >
+<div class="modal-backdrop" (click)="cerrarFormulario()">
 
-    <div
-      class="modal modal-form"
-      (click)="$event.stopPropagation()"
-    >
+  <div class="modal modal-form" (click)="$event.stopPropagation()">
 
-      <div class="modal-header">
+    <div class="modal-header">
 
-        <div>
+      <div>
 
-          <h2>
-            {{
-              modoEdicion()
-                ? 'Editar solicitud'
-                : 'Nueva solicitud de laboratorio'
-            }}
-          </h2>
+        <h2>
+          {{
+          modoEdicion()
+          ? 'Editar solicitud'
+          : 'Nueva solicitud de laboratorio'
+          }}
+        </h2>
 
-          <p>
-            Registra la información del examen.
-          </p>
-
-        </div>
-
-
-        <button
-          type="button"
-          class="close-button"
-          (click)="cerrarFormulario()"
-        >
-          ×
-        </button>
+        <p>
+          Registra la información del examen.
+        </p>
 
       </div>
 
 
-      <div class="form-grid">
+      <button type="button" class="close-button" (click)="cerrarFormulario()">
+        ×
+      </button>
 
-        <div class="form-group">
+    </div>
 
-          <label>
-            Paciente *
-          </label>
 
-          <input
-            type="text"
-            [value]="formulario().paciente"
-            (input)="
+    @if (errorFormulario()) {
+    <div class="alert-error">
+      <span>{{ errorFormulario() }}</span>
+    </div>
+    }
+
+    <div class="form-grid">
+
+      <div class="form-group full">
+
+        <label>
+          Paciente *
+        </label>
+
+        <select [value]="formulario().pacienteId" (change)="
               actualizarFormulario(
-                'paciente',
+                'pacienteId',
                 $any($event.target).value
               )
-            "
-            placeholder="Nombre del paciente"
-          />
+            ">
+          <option value="">
+            Seleccionar paciente
+          </option>
 
-        </div>
+          @for (paciente of pacientes(); track paciente.id) {
+          <option [value]="paciente.id" [selected]="paciente.id === formulario().pacienteId">
+            {{ paciente.nombre }} · {{ paciente.especie
+            }}{{ paciente.propietario ? ' · ' + paciente.propietario : '' }}
+          </option>
+          }
+        </select>
 
+        @if (pacientes().length === 0) {
+        <span class="error-texto">
+          No hay pacientes registrados en esta empresa.
+        </span>
+        }
 
-        <div class="form-group">
+      </div>
 
-          <label>
-            Propietario *
-          </label>
+      <div class="form-group full">
 
-          <input
-            type="text"
-            [value]="formulario().propietario"
-            (input)="
-              actualizarFormulario(
-                'propietario',
-                $any($event.target).value
-              )
-            "
-            placeholder="Propietario"
-          />
+        <label>
+          Examen *
+        </label>
 
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Especie
-          </label>
-
-          <select
-            [value]="formulario().especie"
-            (change)="
-              actualizarFormulario(
-                'especie',
-                $any($event.target).value
-              )
-            "
-          >
-
-            <option value="Canino">
-              Canino
-            </option>
-
-            <option value="Felino">
-              Felino
-            </option>
-
-            <option value="Ave">
-              Ave
-            </option>
-
-            <option value="Otro">
-              Otro
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Raza
-          </label>
-
-          <input
-            type="text"
-            [value]="formulario().raza"
-            (input)="
-              actualizarFormulario(
-                'raza',
-                $any($event.target).value
-              )
-            "
-            placeholder="Raza"
-          />
-
-        </div>
-
-
-        <div class="form-group full">
-
-          <label>
-            Examen *
-          </label>
-
-          <input
-            type="text"
-            [value]="formulario().examen"
-            (input)="
+        <input type="text" [value]="formulario().examen" (input)="
               actualizarFormulario(
                 'examen',
                 $any($event.target).value
               )
-            "
-            placeholder="Nombre del examen"
-          />
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Categoría
-          </label>
-
-          <select
-            [value]="formulario().categoria"
-            (change)="
-              actualizarFormulario(
-                'categoria',
-                $any($event.target).value
-              )
-            "
-          >
-
-            <option value="Hematología">
-              Hematología
-            </option>
-
-            <option value="Bioquímica">
-              Bioquímica
-            </option>
-
-            <option value="Parasitología">
-              Parasitología
-            </option>
-
-            <option value="Urología">
-              Urología
-            </option>
-
-            <option value="Imagenología">
-              Imagenología
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Muestra
-          </label>
-
-          <select
-            [value]="formulario().muestra"
-            (change)="
-              actualizarFormulario(
-                'muestra',
-                $any($event.target).value
-              )
-            "
-          >
-
-            <option value="Sangre">
-              Sangre
-            </option>
-
-            <option value="Orina">
-              Orina
-            </option>
-
-            <option value="Heces">
-              Heces
-            </option>
-
-            <option value="Secreción">
-              Secreción
-            </option>
-
-            <option value="Tejido">
-              Tejido
-            </option>
-
-            <option value="Imagen">
-              Imagen
-            </option>
-
-            <option value="Otra">
-              Otra
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <div class="form-group full">
-
-          <label>
-            Diagnóstico
-          </label>
-
-          <input
-            type="text"
-            [value]="formulario().diagnostico"
-            (input)="
-              actualizarFormulario(
-                'diagnostico',
-                $any($event.target).value
-              )
-            "
-            placeholder="Diagnóstico relacionado"
-          />
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Fecha de solicitud *
-          </label>
-
-          <input
-            type="date"
-            [value]="formulario().fechaSolicitud"
-            (input)="
-              actualizarFormulario(
-                'fechaSolicitud',
-                $any($event.target).value
-              )
-            "
-          />
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Hora *
-          </label>
-
-          <input
-            type="time"
-            [value]="formulario().horaSolicitud"
-            (input)="
-              actualizarFormulario(
-                'horaSolicitud',
-                $any($event.target).value
-              )
-            "
-          />
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Resultado estimado
-          </label>
-
-          <input
-            type="date"
-            [value]="formulario().fechaResultadoEstimada"
-            (input)="
-              actualizarFormulario(
-                'fechaResultadoEstimada',
-                $any($event.target).value
-              )
-            "
-          />
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Veterinario *
-          </label>
-
-          <input
-            type="text"
-            [value]="formulario().veterinario"
-            (input)="
-              actualizarFormulario(
-                'veterinario',
-                $any($event.target).value
-              )
-            "
-            placeholder="Veterinario solicitante"
-          />
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Laboratorio *
-          </label>
-
-          <input
-            type="text"
-            [value]="formulario().laboratorio"
-            (input)="
-              actualizarFormulario(
-                'laboratorio',
-                $any($event.target).value
-              )
-            "
-            placeholder="Laboratorio"
-          />
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Prioridad
-          </label>
-
-          <select
-            [value]="formulario().prioridad"
-            (change)="
-              actualizarFormulario(
-                'prioridad',
-                $any($event.target).value
-              )
-            "
-          >
-
-            <option value="Baja">
-              Baja
-            </option>
-
-            <option value="Media">
-              Media
-            </option>
-
-            <option value="Alta">
-              Alta
-            </option>
-
-            <option value="Urgente">
-              Urgente
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Estado
-          </label>
-
-          <select
-            [value]="formulario().estado"
-            (change)="
-              actualizarFormulario(
-                'estado',
-                $any($event.target).value
-              )
-            "
-          >
-
-            <option value="Solicitado">
-              Solicitado
-            </option>
-
-            <option value="Muestra recibida">
-              Muestra recibida
-            </option>
-
-            <option value="En procesamiento">
-              En procesamiento
-            </option>
-
-            <option value="Resultado disponible">
-              Resultado disponible
-            </option>
-
-            <option value="Finalizado">
-              Finalizado
-            </option>
-
-            <option value="Cancelado">
-              Cancelado
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <div class="form-group full">
-
-          <label>
-            Observaciones
-          </label>
-
-          <textarea
-            rows="4"
-            [value]="formulario().observaciones"
-            (input)="
-              actualizarFormulario(
-                'observaciones',
-                $any($event.target).value
-              )
-            "
-            placeholder="Observaciones..."
-          ></textarea>
-
-        </div>
+            " placeholder="Nombre del examen" />
 
       </div>
 
 
-      <div class="modal-footer">
+      <div class="form-group">
 
-        <button
-          type="button"
-          class="btn-secondary"
-          (click)="cerrarFormulario()"
-        >
-          Cancelar
-        </button>
+        <label>
+          Categoría
+        </label>
 
-        <button
-          type="button"
-          class="btn-primary"
-          (click)="guardarSolicitud()"
-        >
-          {{
-            modoEdicion()
-              ? 'Guardar cambios'
-              : 'Registrar solicitud'
-          }}
-        </button>
+        <select [value]="formulario().categoria" (change)="
+              actualizarFormulario(
+                'categoria',
+                $any($event.target).value
+              )
+            ">
+
+          <option value="Hematología">
+            Hematología
+          </option>
+
+          <option value="Bioquímica">
+            Bioquímica
+          </option>
+
+          <option value="Parasitología">
+            Parasitología
+          </option>
+
+          <option value="Urología">
+            Urología
+          </option>
+
+          <option value="Imagenología">
+            Imagenología
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Muestra
+        </label>
+
+        <select [value]="formulario().muestra" (change)="
+              actualizarFormulario(
+                'muestra',
+                $any($event.target).value
+              )
+            ">
+
+          <option value="Sangre">
+            Sangre
+          </option>
+
+          <option value="Orina">
+            Orina
+          </option>
+
+          <option value="Heces">
+            Heces
+          </option>
+
+          <option value="Secreción">
+            Secreción
+          </option>
+
+          <option value="Tejido">
+            Tejido
+          </option>
+
+          <option value="Imagen">
+            Imagen
+          </option>
+
+          <option value="Otra">
+            Otra
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div class="form-group full">
+
+        <label>
+          Diagnóstico
+        </label>
+
+        <input type="text" [value]="formulario().diagnostico" (input)="
+              actualizarFormulario(
+                'diagnostico',
+                $any($event.target).value
+              )
+            " placeholder="Diagnóstico relacionado" />
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Fecha de solicitud *
+        </label>
+
+        <input type="date" [value]="formulario().fechaSolicitud" (input)="
+              actualizarFormulario(
+                'fechaSolicitud',
+                $any($event.target).value
+              )
+            " />
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Hora *
+        </label>
+
+        <input type="time" [value]="formulario().horaSolicitud" (input)="
+              actualizarFormulario(
+                'horaSolicitud',
+                $any($event.target).value
+              )
+            " />
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Resultado estimado
+        </label>
+
+        <input type="date" [value]="formulario().fechaResultadoEstimada" (input)="
+              actualizarFormulario(
+                'fechaResultadoEstimada',
+                $any($event.target).value
+              )
+            " />
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Veterinario *
+        </label>
+
+        <select [value]="formulario().veterinarioId" (change)="
+              actualizarFormulario(
+                'veterinarioId',
+                $any($event.target).value
+              )
+            ">
+          <option value="">
+            Seleccionar veterinario
+          </option>
+
+          @for (profesional of profesionales(); track profesional.id) {
+          <option [value]="profesional.id" [selected]="profesional.id === formulario().veterinarioId">
+            {{ profesional.nombre }}
+          </option>
+          }
+        </select>
+
+        @if (profesionales().length === 0) {
+        <span class="error-texto">
+          No hay veterinarios habilitados para Laboratorio.
+        </span>
+        }
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Laboratorio *
+        </label>
+
+        <input type="text" [value]="formulario().laboratorio" (input)="
+              actualizarFormulario(
+                'laboratorio',
+                $any($event.target).value
+              )
+            " placeholder="Laboratorio" />
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Prioridad
+        </label>
+
+        <select [value]="formulario().prioridad" (change)="
+              actualizarFormulario(
+                'prioridad',
+                $any($event.target).value
+              )
+            ">
+
+          <option value="Baja">
+            Baja
+          </option>
+
+          <option value="Media">
+            Media
+          </option>
+
+          <option value="Alta">
+            Alta
+          </option>
+
+          <option value="Urgente">
+            Urgente
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Estado
+        </label>
+
+        <select [value]="formulario().estado" (change)="
+              actualizarFormulario(
+                'estado',
+                $any($event.target).value
+              )
+            ">
+
+          <option value="Solicitado">
+            Solicitado
+          </option>
+
+          <option value="Muestra recibida">
+            Muestra recibida
+          </option>
+
+          <option value="En procesamiento">
+            En procesamiento
+          </option>
+
+          <option value="Resultado disponible">
+            Resultado disponible
+          </option>
+
+          <option value="Finalizado">
+            Finalizado
+          </option>
+
+          <option value="Cancelado">
+            Cancelado
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div class="form-group full">
+
+        <label>
+          Observaciones
+        </label>
+
+        <textarea rows="4" [value]="formulario().observaciones" (input)="
+              actualizarFormulario(
+                'observaciones',
+                $any($event.target).value
+              )
+            " placeholder="Observaciones..."></textarea>
 
       </div>
 
     </div>
 
+
+    <div class="modal-footer">
+
+      <button type="button" class="btn-secondary" (click)="cerrarFormulario()">
+        Cancelar
+      </button>
+
+      <button type="button" class="btn-primary" [disabled]="guardando()" (click)="guardarSolicitud()">
+        {{
+        modoEdicion()
+        ? 'Guardar cambios'
+        : 'Registrar solicitud'
+        }}
+      </button>
+
+    </div>
+
   </div>
+
+</div>
 
 }
 
@@ -1754,174 +1599,137 @@
 
 @if (modalResultadoAbierto()) {
 
-  <div
-    class="modal-backdrop"
-    (click)="cerrarResultado()"
-  >
+<div class="modal-backdrop" (click)="cerrarResultado()">
 
-    <div
-      class="modal modal-form"
-      (click)="$event.stopPropagation()"
-    >
+  <div class="modal modal-form" (click)="$event.stopPropagation()">
 
-      <div class="modal-header">
+    <div class="modal-header">
 
-        <div>
+      <div>
 
-          <h2>
-            Registrar resultado
-          </h2>
+        <h2>
+          Registrar resultado
+        </h2>
 
-          <p>
-            {{ solicitudSeleccionada()?.examen }}
-          </p>
-
-        </div>
-
-
-        <button
-          type="button"
-          class="close-button"
-          (click)="cerrarResultado()"
-        >
-          ×
-        </button>
+        <p>
+          {{ solicitudSeleccionada()?.examen }}
+        </p>
 
       </div>
 
 
-      <div class="form-grid">
+      <button type="button" class="close-button" (click)="cerrarResultado()">
+        ×
+      </button>
 
-        <div class="form-group">
+    </div>
 
-          <label>
-            Parámetro *
-          </label>
 
-          <input
-            type="text"
-            [value]="formularioResultado().parametro"
-            (input)="
+    @if (errorResultado()) {
+    <div class="alert-error">
+      <span>{{ errorResultado() }}</span>
+    </div>
+    }
+
+    <div class="form-grid">
+
+      <div class="form-group">
+
+        <label>
+          Parámetro *
+        </label>
+
+        <input type="text" [value]="formularioResultado().parametro" (input)="
               actualizarResultado(
                 'parametro',
                 $any($event.target).value
               )
-            "
-            placeholder="Ej. Hemoglobina"
-          />
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Resultado *
-          </label>
-
-          <input
-            type="text"
-            [value]="formularioResultado().resultado"
-            (input)="
-              actualizarResultado(
-                'resultado',
-                $any($event.target).value
-              )
-            "
-            placeholder="Ej. 14.2"
-          />
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Unidad
-          </label>
-
-          <input
-            type="text"
-            [value]="formularioResultado().unidad"
-            (input)="
-              actualizarResultado(
-                'unidad',
-                $any($event.target).value
-              )
-            "
-            placeholder="Ej. g/dL"
-          />
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label>
-            Referencia
-          </label>
-
-          <input
-            type="text"
-            [value]="formularioResultado().referencia"
-            (input)="
-              actualizarResultado(
-                'referencia',
-                $any($event.target).value
-              )
-            "
-            placeholder="Ej. 12 - 18"
-          />
-
-        </div>
-
-
-        <div class="form-group full">
-
-          <label>
-            Observación
-          </label>
-
-          <textarea
-            rows="4"
-            [value]="formularioResultado().observacion"
-            (input)="
-              actualizarResultado(
-                'observacion',
-                $any($event.target).value
-              )
-            "
-            placeholder="Observación del resultado..."
-          ></textarea>
-
-        </div>
+            " placeholder="Ej. Hemoglobina" />
 
       </div>
 
 
-      <div class="modal-footer">
+      <div class="form-group">
 
-        <button
-          type="button"
-          class="btn-secondary"
-          (click)="cerrarResultado()"
-        >
-          Cancelar
-        </button>
+        <label>
+          Resultado *
+        </label>
 
-        <button
-          type="button"
-          class="btn-primary"
-          (click)="guardarResultado()"
-        >
-          Guardar resultado
-        </button>
+        <input type="text" [value]="formularioResultado().resultado" (input)="
+              actualizarResultado(
+                'resultado',
+                $any($event.target).value
+              )
+            " placeholder="Ej. 14.2" />
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Unidad
+        </label>
+
+        <input type="text" [value]="formularioResultado().unidad" (input)="
+              actualizarResultado(
+                'unidad',
+                $any($event.target).value
+              )
+            " placeholder="Ej. g/dL" />
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Referencia
+        </label>
+
+        <input type="text" [value]="formularioResultado().referencia" (input)="
+              actualizarResultado(
+                'referencia',
+                $any($event.target).value
+              )
+            " placeholder="Ej. 12 - 18" />
+
+      </div>
+
+
+      <div class="form-group full">
+
+        <label>
+          Observación
+        </label>
+
+        <textarea rows="4" [value]="formularioResultado().observacion" (input)="
+              actualizarResultado(
+                'observacion',
+                $any($event.target).value
+              )
+            " placeholder="Observación del resultado..."></textarea>
 
       </div>
 
     </div>
 
+
+    <div class="modal-footer">
+
+      <button type="button" class="btn-secondary" (click)="cerrarResultado()">
+        Cancelar
+      </button>
+
+      <button type="button" class="btn-primary" [disabled]="guardando()" (click)="guardarResultado()">
+        Guardar resultado
+      </button>
+
+    </div>
+
   </div>
+
+</div>
 
 }
 
@@ -1932,88 +1740,71 @@
 
 @if (modalNotaAbierto()) {
 
-  <div
-    class="modal-backdrop"
-    (click)="cerrarNota()"
-  >
+<div class="modal-backdrop" (click)="cerrarNota()">
 
-    <div
-      class="modal modal-small"
-      (click)="$event.stopPropagation()"
-    >
+  <div class="modal modal-small" (click)="$event.stopPropagation()">
 
-      <div class="modal-header">
+    <div class="modal-header">
 
-        <div>
+      <div>
 
-          <h2>
-            Agregar nota
-          </h2>
+        <h2>
+          Agregar nota
+        </h2>
 
-          <p>
-            {{ solicitudSeleccionada()?.paciente }}
-          </p>
-
-        </div>
-
-
-        <button
-          type="button"
-          class="close-button"
-          (click)="cerrarNota()"
-        >
-          ×
-        </button>
+        <p>
+          {{ solicitudSeleccionada()?.paciente?.nombre }}
+        </p>
 
       </div>
 
 
-      <div class="form-grid single">
+      <button type="button" class="close-button" (click)="cerrarNota()">
+        ×
+      </button>
 
-        <div class="form-group">
+    </div>
 
-          <label>
-            Nota *
-          </label>
 
-          <textarea
-            rows="7"
-            [value]="formularioNota().nota"
-            (input)="
+    @if (errorNota()) {
+    <div class="alert-error">
+      <span>{{ errorNota() }}</span>
+    </div>
+    }
+
+    <div class="form-grid single">
+
+      <div class="form-group">
+
+        <label>
+          Nota *
+        </label>
+
+        <textarea rows="7" [value]="formularioNota().nota" (input)="
               actualizarNota(
                 $any($event.target).value
               )
-            "
-            placeholder="Escribe una nota..."
-          ></textarea>
-
-        </div>
-
-      </div>
-
-
-      <div class="modal-footer">
-
-        <button
-          type="button"
-          class="btn-secondary"
-          (click)="cerrarNota()"
-        >
-          Cancelar
-        </button>
-
-        <button
-          type="button"
-          class="btn-primary"
-          (click)="guardarNota()"
-        >
-          Guardar nota
-        </button>
+            " placeholder="Escribe una nota..."></textarea>
 
       </div>
 
     </div>
 
+
+    <div class="modal-footer">
+
+      <button type="button" class="btn-secondary" (click)="cerrarNota()">
+        Cancelar
+      </button>
+
+      <button type="button" class="btn-primary" [disabled]="guardando()" (click)="guardarNota()">
+        Guardar nota
+      </button>
+
+    </div>
+
   </div>
+
+</div>
 
 }

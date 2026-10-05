@@ -142,7 +142,7 @@
         type="text"
         placeholder="Buscar medicamento, principio activo, lote..."
         [ngModel]="busqueda()"
-        (ngModelChange)="busqueda.set($event)"
+        (ngModelChange)="busqueda.set($event); aplicarFiltros()"
       />
 
     </div>
@@ -154,7 +154,7 @@
 
       <select
         [ngModel]="filtroCategoria()"
-        (ngModelChange)="filtroCategoria.set($event)"
+        (ngModelChange)="filtroCategoria.set($event); aplicarFiltros()"
       >
 
         <option value="Todas">
@@ -178,7 +178,7 @@
 
       <select
         [ngModel]="filtroEstado()"
-        (ngModelChange)="filtroEstado.set($event)"
+        (ngModelChange)="filtroEstado.set($event); aplicarFiltros()"
       >
 
         <option value="Todos">Todos</option>
@@ -196,7 +196,7 @@
 
       <select
         [ngModel]="filtroStock()"
-        (ngModelChange)="filtroStock.set($event)"
+        (ngModelChange)="filtroStock.set($event); aplicarFiltros()"
       >
 
         <option value="Todos">Todos</option>
@@ -506,6 +506,30 @@
       </table>
 
     </div>
+
+    @if (totalPaginas() > 1) {
+      <div class="paginacion">
+        <button
+          type="button"
+          class="btn-page"
+          [disabled]="paginaActual() <= 1"
+          (click)="cambiarPagina(paginaActual() - 1)"
+        >
+          Anterior
+        </button>
+        <span class="page-info">
+          Página {{ paginaActual() }} de {{ totalPaginas() }}
+        </span>
+        <button
+          type="button"
+          class="btn-page"
+          [disabled]="paginaActual() >= totalPaginas()"
+          (click)="cambiarPagina(paginaActual() + 1)"
+        >
+          Siguiente
+        </button>
+      </div>
+    }
 
   </section>
 

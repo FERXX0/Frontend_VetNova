@@ -5,7 +5,7 @@ import { UsuarioService } from '../../core/services/usuario.service';
 import { EmpresaService } from '../../core/services/empresa.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { Usuario, UsuarioPayload } from '../../core/models/usuario.model';
-import { Empresa } from '../../core/models/empresa.model';
+import { Empresa, EmpresaOpcion } from '../../core/models/empresa.model';
 import { Rol } from '../../core/models/auth.model';
 
 @Component({
@@ -21,16 +21,8 @@ export class UsuariosAdminComponent implements OnInit {
   private readonly catalogoService = inject(CatalogoService);
   private readonly fb = inject(FormBuilder);
 
-  private esEmpresaSistema(empresaId: string): boolean {
-    const empresa = this.empresas().find(
-      e => e.id === empresaId
-    );
-
-    return empresa?.es_empresa_sistema === true;
-  }
-
   usuarios = signal<Usuario[]>([]);
-  empresas = signal<Empresa[]>([]);
+  empresas = signal<EmpresaOpcion[]>([]);
   roles = signal<Rol[]>([]);
   rolesDisponibles = signal<Rol[]>([]);
 
@@ -76,8 +68,8 @@ export class UsuariosAdminComponent implements OnInit {
   }
 
   private cargarCatalogos(): void {
-    this.empresaService.listar().subscribe({
-      next: (res) => this.empresas.set(res.data || []),
+    this.empresaService.listarOpciones().subscribe({
+      next: (res) => this.empresas.set(res || []),
       error: () => this.empresas.set([]),
     });
 
@@ -158,7 +150,7 @@ export class UsuariosAdminComponent implements OnInit {
       activo: true,
     });
 
-    this.actualizarRolesDisponibles(empresaId);
+    this.actualizarRolesDisponibles();
 
     this.form
       .get('contrasena')
@@ -191,7 +183,7 @@ export class UsuariosAdminComponent implements OnInit {
       activo: usuario.activo,
     });
 
-    this.actualizarRolesDisponibles(usuario.empresa_id);
+    this.actualizarRolesDisponibles();
     
     // La contraseña es opcional al editar; y la empresa no se puede reasignar
     // desde aquí (el backend la resuelve por la ruta /empresas/{empresa}/usuarios/{usuario}).
@@ -270,7 +262,7 @@ export class UsuariosAdminComponent implements OnInit {
       return;
     }
 
-    this.actualizarRolesDisponibles(empresaId);
+    this.actualizarRolesDisponibles();
 
     const rolActual = this.form.get('rol_id')?.value;
 
@@ -283,24 +275,10 @@ export class UsuariosAdminComponent implements OnInit {
     }
   }
 
-  private actualizarRolesDisponibles(empresaId: string): void {
-    const empresaSistema = this.esEmpresaSistema(empresaId);
-
-    if (empresaSistema) {
-      this.rolesDisponibles.set(
-        this.roles().filter(
-          rol =>
-            rol.codigo === 'soporte' ||
-            rol.codigo === 'super_admin'
-        )
-      );
-
-      return;
-    }
-
+  private actualizarRolesDisponibles(): void {
     this.rolesDisponibles.set(
       this.roles().filter(
-        rol => rol.codigo !== 'super_admin'
+        rol => rol.codigo !== 'super_admin' && rol.codigo !== 'soporte'
       )
     );
   }

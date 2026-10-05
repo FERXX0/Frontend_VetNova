@@ -69,85 +69,92 @@ export class PanelLayoutComponent {
   // ==========================================================
 
   readonly catalogoModulos: MenuItem[] = [
-    {
-      codigo: 'citas',
-      nombre: 'Agenda Médica',
-      ruta: '/panel/agenda',
-      icono: 'agenda'
-    },
-    {
-      codigo: 'clientes_pacientes',
-      nombre: 'Pacientes',
-      ruta: '/panel/pacientes',
-      icono: 'pacientes'
-    },
-    {
-      codigo: 'usuarios',
-      nombre: 'Usuarios',
-      ruta: '/panel/usuarios',
-      icono: 'usuarios'
-    },
-    {
-      codigo: 'reportes',
-      nombre: 'Reportes',
-      ruta: '/panel/reportes',
-      icono: 'reportes'
-    },
-    {
-      codigo: 'historias_clinicas',
-      nombre: 'Historias Clínicas',
-      icono: 'historia',
-      proximamente: true
-    },
-    {
-      codigo: 'esquema_v_d',
-      nombre: 'Vacunación y Desp.',
-      icono: 'vacuna',
-      proximamente: true
-    },
-    {
-      codigo: 'hospitalizacion',
-      nombre: 'Hospitalización',
-      icono: 'hospital',
-      proximamente: true
-    },
-    {
-      codigo: 'procedimientos',
-      nombre: 'Procedimientos',
-      icono: 'procedimiento',
-      proximamente: true
-    },
-    {
-      codigo: 'laboratorio',
-      nombre: 'Laboratorio',
-      icono: 'laboratorio',
-      proximamente: true
-    },
-    {
-      codigo: 'formulaciones',
-      nombre: 'Formulaciones',
-      icono: 'receta',
-      proximamente: true
-    },
-    {
-      codigo: 'farmacia',
-      nombre: 'Farmacia',
-      icono: 'farmacia',
-      proximamente: true
-    },
-    {
-      codigo: 'servicios',
-      nombre: 'Servicios',
-      icono: 'servicios',
-      proximamente: true
-    },
-    {
-      codigo: 'facturacion',
-      nombre: 'Facturación',
-      icono: 'facturacion',
-      proximamente: true
-    }
-  ];
+  {
+    codigo: 'citas',
+    nombre: 'Agenda Médica',
+    ruta: '/panel/agenda',
+    icono: 'agenda'
+  },
+  {
+    codigo: 'clientes_pacientes',
+    nombre: 'Pacientes',
+    ruta: '/panel/pacientes',
+    icono: 'pacientes'
+  },
+  {
+    codigo: 'usuarios',
+    nombre: 'Usuarios',
+    ruta: '/panel/usuarios',
+    icono: 'usuarios'
+  },
+  {
+    codigo: 'reportes',
+    nombre: 'Reportes',
+    icono: 'reportes',
+    proximamente: true   // <-- se agrega: su ruta real está comentada y el componente no está terminado
+  },
+  {
+    codigo: 'historias_clinicas',
+    nombre: 'Historias Clínicas',
+    ruta: '/panel/historias-clinicas',   // <-- se agrega
+    icono: 'historia'
+    // se quita proximamente: true
+  },
+  {
+    codigo: 'esquema_v_d',
+    nombre: 'Vacunación y Desp.',
+    ruta: '/panel/esquema-v-d',          // <-- se agrega
+    icono: 'vacuna'
+    // se quita proximamente: true
+  },
+  {
+    codigo: 'hospitalizacion',
+    nombre: 'Hospitalización',
+    ruta: '/panel/hospitalizacion',      // <-- se agrega
+    icono: 'hospital'
+    // se quita proximamente: true
+  },
+  {
+    codigo: 'procedimientos',
+    nombre: 'Procedimientos',
+    ruta: '/panel/procedimientos',       // <-- se agrega
+    icono: 'procedimiento'
+    // se quita proximamente: true
+  },
+  {
+    codigo: 'laboratorio',
+    nombre: 'Laboratorio',
+    ruta: '/panel/laboratorio',          // <-- se agrega
+    icono: 'laboratorio'
+    // se quita proximamente: true
+  },
+  {
+    codigo: 'formulaciones',
+    nombre: 'Formulaciones',
+    ruta: '/panel/formulaciones',        // <-- se agrega
+    icono: 'receta'
+    // se quita proximamente: true
+  },
+  {
+    codigo: 'farmacia',
+    nombre: 'Farmacia',
+    ruta: '/panel/farmacia',             // <-- se agrega
+    icono: 'farmacia'
+    // se quita proximamente: true
+  },
+  {
+    codigo: 'servicios',
+    nombre: 'Servicios',
+    ruta: '/panel/servicios',
+    icono: 'servicios'
+  },
+  {
+    codigo: 'facturacion',
+    nombre: 'Facturación',
+    icono: 'facturacion',
+    proximamente: true   // sin cambios, este sí es cascarón
+  }
+];
 
   // ==========================================================
   // CÓDIGOS DE MÓDULOS ASIGNADOS AL USUARIO

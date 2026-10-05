@@ -54,6 +54,15 @@ export class SessionService {
   esSuperAdministrador(): boolean {
     return !!this.usuario()?.es_super_administrador;
   }
+  
+  codigoRol(): string | null {
+    return this.usuario()?.rol?.codigo ?? null;
+  }
+
+  esPersonalPlataforma(): boolean {
+    const codigo = this.codigoRol();
+    return codigo === 'super_admin' || codigo === 'soporte';
+  }
 
   private leerUsuario(): UsuarioAutenticado | null {
     if (!this.esNavegador) {

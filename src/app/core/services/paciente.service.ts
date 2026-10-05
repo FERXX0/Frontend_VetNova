@@ -4,57 +4,42 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Paciente, PacientePayload } from '../models/paciente.model';
 import { PaginacionLaravel } from '../models/empresa.model';
+import { AlcanceApi, urlRecurso } from '../utils/alcance-api';
 
-/**
- * Servicio para gestión de Pacientes (Mascotas y Propietarios).
- * Módulo: 'clientes_pacientes' (Administración de Mascotas).
- * 
- * ⚠️ CONTRATO PENDIENTE EN BACKEND:
- * Los siguientes endpoints REST aún no han sido implementados en el backend Laravel
- * (devolverán 404 hasta que las rutas y el PacienteController sean creados).
- * 
- * Rutas propuestas:
- * - Opción 1 (por token de empresa - usada por defecto):
- *     GET    /pacientes
- *     POST   /pacientes
- *     GET    /pacientes/{id}
- *     PUT    /pacientes/{id}
- *     DELETE /pacientes/{id}
- * - Opción 2 (anidada bajo empresa para superadmin):
- *     GET    /empresas/{empresa}/pacientes
- *     POST   /empresas/{empresa}/pacientes
- *     GET    /empresas/{empresa}/pacientes/{id}
- *     PUT    /empresas/{empresa}/pacientes/{id}
- *     DELETE /empresas/{empresa}/pacientes/{id}
- */
 @Injectable({ providedIn: 'root' })
 export class PacienteService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/pacientes`;
 
-  listar(params?: { buscar?: string; especie?: string; empresa_id?: string; page?: number }): Observable<PaginacionLaravel<Paciente>> {
+  private url(alcance?: AlcanceApi): string {
+    return urlRecurso(environment.apiUrl, 'pacientes', alcance);
+  }
+
+  listar(
+    params?: { buscar?: string; especie?: string; page?: number; per_page?: number },
+    alcance?: AlcanceApi
+  ): Observable<PaginacionLaravel<Paciente>> {
     let httpParams = new HttpParams();
     if (params?.buscar) httpParams = httpParams.set('buscar', params.buscar);
     if (params?.especie) httpParams = httpParams.set('especie', params.especie);
-    if (params?.empresa_id) httpParams = httpParams.set('empresa_id', params.empresa_id);
     if (params?.page) httpParams = httpParams.set('page', params.page.toString());
+    if (params?.per_page) httpParams = httpParams.set('per_page', params.per_page.toString());
 
-    return this.http.get<PaginacionLaravel<Paciente>>(this.baseUrl, { params: httpParams });
+    return this.http.get<PaginacionLaravel<Paciente>>(this.url(alcance), { params: httpParams });
   }
 
-  obtener(id: string): Observable<Paciente> {
-    return this.http.get<Paciente>(`${this.baseUrl}/${id}`);
+  obtener(id: string, alcance?: AlcanceApi): Observable<Paciente> {
+    return this.http.get<Paciente>(`${this.url(alcance)}/${id}`);
   }
 
-  crear(payload: PacientePayload): Observable<Paciente> {
-    return this.http.post<Paciente>(this.baseUrl, payload);
+  crear(payload: PacientePayload, alcance?: AlcanceApi): Observable<Paciente> {
+    return this.http.post<Paciente>(this.url(alcance), payload);
   }
 
-  actualizar(id: string, payload: PacientePayload): Observable<Paciente> {
-    return this.http.put<Paciente>(`${this.baseUrl}/${id}`, payload);
+  actualizar(id: string, payload: PacientePayload, alcance?: AlcanceApi): Observable<Paciente> {
+    return this.http.put<Paciente>(`${this.url(alcance)}/${id}`, payload);
   }
 
-  eliminar(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  eliminar(id: string, alcance?: AlcanceApi): Observable<void> {
+    return this.http.delete<void>(`${this.url(alcance)}/${id}`);
   }
 }

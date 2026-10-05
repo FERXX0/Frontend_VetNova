@@ -1,0 +1,189 @@
+<div class="planes-page">
+
+  <a class="planes-page__volver" routerLink="/super-usuario/configuracion">← Volver a Configuración Global</a>
+
+  <header class="planes-page__header">
+    <div>
+      <h1>Planes y Precios</h1>
+      <p>Define los planes de suscripción y los módulos que incluye cada uno</p>
+    </div>
+
+    <button type="button" class="btn-primario" (click)="abrirCrear()">Nuevo plan</button>
+  </header>
+
+  @if (mensaje()) {
+    <div class="alerta alerta--ok">{{ mensaje() }}</div>
+  }
+
+  @if (error()) {
+    <div class="alerta alerta--error">
+      <span>{{ error() }}</span>
+      <button type="button" class="btn-secundario" (click)="cargarPlanes()">Reintentar</button>
+    </div>
+  }
+
+  <div class="tabla-wrapper">
+    @if (cargando()) {
+      <div class="estado-vacio">Cargando planes…</div>
+    } @else if (planes().length === 0) {
+      <div class="estado-vacio">
+        <p>Todavía no hay planes creados.</p>
+        <button type="button" class="btn-secundario" (click)="abrirCrear()">Crear el primer plan</button>
+      </div>
+    } @else {
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th>Mensual</th>
+            <th>Anual</th>
+            <th>Usuarios</th>
+            <th>Módulos incluidos</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (plan of planes(); track plan.id) {
+            <tr>
+              <td>
+                <strong>{{ plan.nombre }}</strong>
+                <small>{{ plan.codigo }}</small>
+              </td>
+              <td>{{ formatearMoneda(plan.precio_mensual, plan.moneda) }}</td>
+              <td>{{ formatearMoneda(plan.precio_anual, plan.moneda) }}</td>
+              <td>{{ plan.maximo_usuarios ?? 'Sin límite' }}</td>
+              <td>
+                @if ((plan.modulos ?? []).length === 0) {
+                  <span class="sin-modulos">Sin módulos</span>
+                } @else {
+                  <div class="chips">
+                    @for (modulo of (plan.modulos ?? []).slice(0, 4); track modulo.id) {
+                      <span class="chip">{{ modulo.nombre }}</span>
+                    }
+                    @if ((plan.modulos ?? []).length > 4) {
+                      <span class="chip chip--mas">+{{ (plan.modulos ?? []).length - 4 }}</span>
+                    }
+                  </div>
+                }
+              </td>
+              <td>
+                <span class="badge" [class.badge--inactivo]="!plan.activo">
+                  {{ plan.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="acciones">
+                <button type="button" class="btn-secundario" (click)="abrirEditar(plan)">Editar</button>
+                <button type="button" class="btn-peligro" (click)="eliminar(plan)">Eliminar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (ultimaPagina() > 1) {
+        <div class="paginacion">
+          <button type="button" class="btn-secundario" [disabled]="pagina() === 1" (click)="paginaAnterior()">Anterior</button>
+          <span>Página {{ pagina() }} de {{ ultimaPagina() }}</span>
+          <button type="button" class="btn-secundario" [disabled]="pagina() === ultimaPagina()" (click)="paginaSiguiente()">Siguiente</button>
+        </div>
+      }
+    }
+  </div>
+
+  @if (modalAbierto()) {
+    <div class="modal-fondo" (click)="cerrarModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+
+        <h2>{{ editandoId() ? 'Editar plan' : 'Nuevo plan' }}</h2>
+
+        <form [formGroup]="form" (ngSubmit)="guardar()" class="modal__form">
+
+          <div class="grid">
+            <label class="campo">
+              Nombre *
+              <input type="text" formControlName="nombre" placeholder="Ej. Plan Básico" />
+              @if (form.controls.nombre.touched && form.controls.nombre.invalid) {
+                <small class="campo__error">Ingresa el nombre del plan.</small>
+              }
+            </label>
+
+            <label class="campo">
+              Código *
+              <input type="text" formControlName="codigo" placeholder="Ej. basico" />
+              @if (form.controls.codigo.touched && form.controls.codigo.invalid) {
+                <small class="campo__error">Ingresa un código único.</small>
+              }
+            </label>
+
+            <label class="campo campo--full">
+              Descripción
+              <textarea rows="2" formControlName="descripcion"></textarea>
+            </label>
+
+            <label class="campo">
+              Precio mensual *
+              <input type="number" min="0" formControlName="precio_mensual" />
+            </label>
+
+            <label class="campo">
+              Precio anual
+              <input type="number" min="0" formControlName="precio_anual" />
+            </label>
+
+            <label class="campo">
+              Moneda (3 letras) *
+              <input type="text" maxlength="3" formControlName="moneda" />
+            </label>
+
+            <label class="campo">
+              Máximo de usuarios
+              <input type="number" min="1" formControlName="maximo_usuarios" placeholder="Vacío = sin límite" />
+            </label>
+
+            <label class="campo campo--check">
+              <input type="checkbox" formControlName="activo" />
+              Plan activo
+            </label>
+          </div>
+
+          <div class="modulos">
+            <div class="modulos__cabecera">
+              <strong>Módulos incluidos ({{ modulosSeleccionados().length }})</strong>
+              <div>
+                <button type="button" class="btn-enlace" (click)="seleccionarTodos()">Todos</button>
+                <button type="button" class="btn-enlace" (click)="quitarTodos()">Ninguno</button>
+              </div>
+            </div>
+
+            <div class="modulos__lista">
+              @for (modulo of modulosCatalogo(); track modulo.id) {
+                <label class="modulo" [class.modulo--activo]="moduloSeleccionado(modulo.id)">
+                  <input
+                    type="checkbox"
+                    [checked]="moduloSeleccionado(modulo.id)"
+                    (change)="toggleModulo(modulo.id)"
+                  />
+                  {{ modulo.nombre }}
+                </label>
+              }
+            </div>
+          </div>
+
+          @if (errorFormulario()) {
+            <div class="alerta alerta--error">{{ errorFormulario() }}</div>
+          }
+
+          <div class="modal__pie">
+            <button type="button" class="btn-secundario" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primario" [disabled]="guardando()">
+              {{ guardando() ? 'Guardando…' : 'Guardar plan' }}
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

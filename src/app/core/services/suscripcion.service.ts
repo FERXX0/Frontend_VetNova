@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { PaginacionLaravel } from '../models/empresa.model';
 import { Suscripcion, SuscripcionPayload } from '../models/suscripcion.model';
@@ -17,9 +18,11 @@ export class SuscripcionService {
   }
 
   crear(empresaId: string, payload: SuscripcionPayload): Observable<Suscripcion> {
-    return this.http.post<Suscripcion>(
-      `${environment.apiUrl}/empresas/${empresaId}/suscripciones`,
-      payload
-    );
+    return this.http
+      .post<{ message: string; suscripcion: Suscripcion }>(
+        `${environment.apiUrl}/empresas/${empresaId}/suscripciones`,
+        payload
+      )
+      .pipe(map((respuesta) => respuesta.suscripcion));
   }
 }

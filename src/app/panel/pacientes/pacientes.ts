@@ -2,10 +2,11 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { EmpresaService } from '../../core/services/empresa.service';
-import { Empresa } from '../../core/models/empresa.model';
+import { Empresa, EmpresaOpcion } from '../../core/models/empresa.model';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PacienteService } from '../../core/services/paciente.service';
 import { EstadoPaciente, Paciente, PacientePayload, SexoPaciente } from '../../core/models/paciente.model';
+import { AlcanceApi } from '../../core/utils/alcance-api';
 
 @Component({
   selector: 'app-pacientes',
@@ -21,10 +22,9 @@ export class PacientesComponent implements OnInit {
   private readonly empresaService = inject(EmpresaService);
 
   // Esta misma pantalla se usa en /super-usuario/pacientes y en /panel/pacientes.
-  // El selector de Empresa SOLO aplica en la vista de Super Usuario.
   readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
 
-  empresasDisponibles = signal<Empresa[]>([]);
+  empresasDisponibles = signal<EmpresaOpcion[]>([]);
   filtroEmpresa = signal<string>('todas');
 
   pacientes = signal<Paciente[]>([]);
@@ -118,18 +118,26 @@ export class PacientesComponent implements OnInit {
   ngOnInit(): void {
     this.cargarPacientes();
     if (this.esVistaSuperUsuario()) {
-      this.empresaService.listar().subscribe({
-        next: (respuesta) => this.empresasDisponibles.set(respuesta.data),
+      this.empresaService.listarOpciones().subscribe({
+        next: (respuesta) => this.empresasDisponibles.set(respuesta || []),
         error: () => {},
       });
     }
+  }
+
+  private alcanceListado(): AlcanceApi | undefined {
+    return this.esVistaSuperUsuario() ? { plataforma: true, empresaId: null } : undefined;
+  }
+
+  private alcanceEscritura(empresaId?: string | null): AlcanceApi | undefined {
+    return this.esVistaSuperUsuario() ? { plataforma: true, empresaId } : undefined;
   }
 
   cargarPacientes(): void {
     this.cargando.set(true);
     this.error.set(null);
 
-    this.pacienteService.listar().subscribe({
+    this.pacienteService.listar(undefined, this.alcanceListado()).subscribe({
       next: (res) => {
         this.pacientes.set(res.data || []);
         this.cargando.set(false);
@@ -220,15 +228,18 @@ export class PacientesComponent implements OnInit {
     }
 
     this.guardando.set(true);
-    const payload: PacientePayload = this.form.value;
+    const { empresa_id, ...payload }: { empresa_id?: string } & PacientePayload = this.form.value;
     const enEdicion = this.pacienteEnEdicion();
+    const alcance = enEdicion
+      ? this.alcanceEscritura(enEdicion.empresa_id)
+      : this.alcanceEscritura(empresa_id);
 
     const req$ = enEdicion
-      ? this.pacienteService.actualizar(enEdicion.id, payload)
-      : this.pacienteService.crear(payload);
+      ? this.pacienteService.actualizar(enEdicion.id, payload, alcance)
+      : this.pacienteService.crear(payload, alcance);
 
     req$.subscribe({
-      next: (pacienteGuardado) => {
+      next: () => {
         this.guardando.set(false);
         this.modalAbierto.set(false);
         this.cargarPacientes();
@@ -248,7 +259,7 @@ export class PacientesComponent implements OnInit {
     );
     if (!confirmado) return;
 
-    this.pacienteService.eliminar(paciente.id).subscribe({
+    this.pacienteService.eliminar(paciente.id, this.alcanceEscritura(paciente.empresa_id)).subscribe({
       next: () => this.cargarPacientes(),
       error: (err) => {
         this.error.set(

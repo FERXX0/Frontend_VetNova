@@ -28,7 +28,7 @@
 
       <div class="sa-layout__role-badge">
         <span class="sa-layout__role-badge-dot"></span>
-        <span>Super Admin</span>
+        <span>{{ usuario()?.rol?.nombre }}</span>
       </div>
     </div>
 
@@ -40,7 +40,7 @@
       </div>
 
       <!-- Menú principal -->
-      @for (item of navPrincipal; track item.ruta) {
+      @for (item of navVisible(); track item.ruta) {
 
         <a
           [routerLink]="item.ruta"
@@ -113,6 +113,13 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                   />
+                </svg>
+              }
+
+              @case ('planes') {
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/>
+                <line x1="2" y1="10" x2="22" y2="10" stroke="currentColor" stroke-width="1.7"/>
                 </svg>
               }
 
@@ -344,6 +351,7 @@
             @if (modulo.ruta && modulo.habilitado) {
               <a
                 [routerLink]="modulo.ruta"
+                routerLinkActive="sa-layout__module-item--activo"
                 class="sa-layout__module-item"
                 (click)="cerrarSidebar()"
               >

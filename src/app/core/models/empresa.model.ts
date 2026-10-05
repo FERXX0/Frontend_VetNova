@@ -1,5 +1,11 @@
 export type EstadoEmpresa = 'activa' | 'inactiva' | 'suspendida';
 
+export interface EmpresaOpcion {
+  id: string;
+  nombre: string;
+  estado: EstadoEmpresa;
+}
+
 export interface Empresa {
   id: string;
   nombre: string;

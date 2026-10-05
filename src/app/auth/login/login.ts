@@ -65,10 +65,13 @@ export class LoginComponent {
     const { usuario, contrasena } = this.form.value;
 
     this.authService.login({ correo: usuario, contrasena }).subscribe({
-      next: (respuesta) => {
+            next: (respuesta) => {
         this.isSubmitting.set(false);
 
-        if (respuesta.usuario.es_super_administrador) {
+        if (
+          respuesta.usuario.es_super_administrador ||
+          respuesta.usuario.rol?.codigo === 'soporte'
+        ) {
           this.router.navigate(['/super-usuario/dashboard']);
         } else {
           const modulos = respuesta.usuario.modulos || [];

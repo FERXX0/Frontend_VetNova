@@ -11,9 +11,10 @@ import { ModuloEmpresaService, ModuloEmpresaRegistro } from '../../../core/servi
 import { UsuarioService } from '../../../core/services/usuario.service';
 import { Empresa, EmpresaPayload, EstadoEmpresa } from '../../../core/models/empresa.model';
 import { Suscripcion, SuscripcionPayload, Plan, EstadoSuscripcion, PeriodoSuscripcion } from '../../../core/models/suscripcion.model';
-import { Cita, CitaPayload, EstadoCita, TipoConsulta } from '../../../core/models/cita.model';
+import { Cita, CitaPayload, EstadoCita, Profesional, TipoConsulta } from '../../../core/models/cita.model';
 import { Paciente, PacientePayload, EstadoPaciente } from '../../../core/models/paciente.model';
 import { Modulo } from '../../../core/models/auth.model';
+import { AlcanceApi } from '../../../core/utils/alcance-api';
 
 export type TabEmpresa = 'resumen' | 'modulos' | 'usuarios' | 'suscripciones' | 'citas' | 'pacientes';
 
@@ -45,6 +46,7 @@ export class EmpresaDetalleComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   empresaId = signal('');
+  alcance = computed<AlcanceApi>(() => ({ plataforma: true, empresaId: this.empresaId() }));
   empresa = signal<Empresa | null>(null);
   cargando = signal(true);
   error = signal<string | null>(null);
@@ -96,6 +98,8 @@ export class EmpresaDetalleComponent implements OnInit {
   // ---------- Citas / Agenda de esta empresa ----------
   fechaCitas = signal(this.formatoFechaIso(new Date()));
   citas = signal<Cita[]>([]);
+  profesionales = signal<Profesional[]>([]);
+  errorCita = signal<string | null>(null);
   cargandoCitas = signal(false);
   modalCitaAbierto = signal(false);
   guardandoCita = signal(false);
@@ -108,6 +112,7 @@ export class EmpresaDetalleComponent implements OnInit {
   filtroTextoPaciente = signal('');
   modalPacienteAbierto = signal(false);
   guardandoPaciente = signal(false);
+  errorPaciente = signal<string | null>(null);
   formPaciente: FormGroup;
 
   // ---------- Modal Edición Datos Empresa ----------
@@ -143,6 +148,7 @@ export class EmpresaDetalleComponent implements OnInit {
       plan_id: ['', Validators.required],
       estado: ['activa', Validators.required],
       periodo: ['mensual', Validators.required],
+      ciclo_facturacion: ['mensual', Validators.required],
       monto: [0, [Validators.required, Validators.min(0)]],
       moneda: ['COP', Validators.required],
       inicia_en: [new Date().toISOString().slice(0, 16), Validators.required],
@@ -151,6 +157,7 @@ export class EmpresaDetalleComponent implements OnInit {
 
     this.formCita = this.fb.group({
       paciente_id: ['', Validators.required],
+      veterinario_id: ['', Validators.required],
       fecha: [this.formatoFechaIso(new Date()), Validators.required],
       hora_inicio: ['09:00', Validators.required],
       motivo: ['', [Validators.required, Validators.maxLength(255)]],
@@ -165,11 +172,10 @@ export class EmpresaDetalleComponent implements OnInit {
       sexo: ['macho', Validators.required],
       fecha_nacimiento: [''],
       peso_kg: [null],
-      propietario: this.fb.group({
-        nombre: ['', [Validators.required, Validators.maxLength(150)]],
-        celular: ['', [Validators.required, Validators.maxLength(30)]],
-        correo: ['', [Validators.email]],
-      }),
+      estado: ['activo', Validators.required],
+      propietario_nombre: ['', [Validators.required, Validators.maxLength(150)]],
+      propietario_celular: ['', [Validators.required, Validators.maxLength(30)]],
+      propietario_correo: ['', [Validators.email]],
     });
   }
 
@@ -184,25 +190,9 @@ export class EmpresaDetalleComponent implements OnInit {
     this.cargando.set(true);
     this.error.set(null);
 
-    this.empresaService.listar().subscribe({
-      next: (res) => {
-        const encontrada = (res.data || []).find((e) => e.id === this.empresaId());
-        if (encontrada) {
-          this.empresa.set(encontrada);
-        } else {
-          this.empresa.set({
-            id: this.empresaId(),
-            nombre: 'Veterinaria / Empresa Registrada',
-            razon_social: 'Empresa Multitenant S.A.S.',
-            nit: '900.123.456-7',
-            correo: 'contacto@empresa.com',
-            zona_horaria: 'America/Bogota',
-            estado: 'activa',
-            es_empresa_sistema: false,
-            creado_en: new Date().toISOString(),
-            actualizado_en: new Date().toISOString(),
-          });
-        }
+    this.empresaService.obtener(this.empresaId()).subscribe({
+      next: (emp) => {
+        this.empresa.set(emp);
         this.cargando.set(false);
         this.cargarSuscripciones();
         this.cargarUsuariosTenant();
@@ -210,9 +200,10 @@ export class EmpresaDetalleComponent implements OnInit {
         this.cargarPacientes();
         this.cargarModulosEmpresa();
       },
-      error: () => {
+      error: (err) => {
         this.cargando.set(false);
-        this.error.set('No se pudo cargar la información de la empresa.');
+        this.empresa.set(null);
+        this.error.set(err?.error?.message || 'No se pudo obtener la empresa.');
       },
     });
   }
@@ -274,7 +265,7 @@ export class EmpresaDetalleComponent implements OnInit {
 
   cargarCitas(): void {
     this.cargandoCitas.set(true);
-    this.citaService.listarPorFecha(this.fechaCitas()).subscribe({
+    this.citaService.listarPorFecha(this.fechaCitas(), this.alcance()).subscribe({
       next: (lista) => {
         this.citas.set(lista || []);
         this.cargandoCitas.set(false);
@@ -285,7 +276,7 @@ export class EmpresaDetalleComponent implements OnInit {
 
   cargarPacientes(): void {
     this.cargandoPacientes.set(true);
-    this.pacienteService.listar().subscribe({
+    this.pacienteService.listar({ per_page: 100 }, this.alcance()).subscribe({
       next: (res: any) => {
         const lista = res?.data || (Array.isArray(res) ? res : []);
         this.pacientes.set(lista);
@@ -463,6 +454,7 @@ export class EmpresaDetalleComponent implements OnInit {
       plan_id: '',
       estado: 'activa',
       periodo: 'mensual',
+      ciclo_facturacion: 'mensual',
       monto: 0,
       moneda: 'COP',
       inicia_en: new Date().toISOString().slice(0, 16),
@@ -500,9 +492,9 @@ export class EmpresaDetalleComponent implements OnInit {
         this.guardandoSuscripcion.set(false);
         this.modalSuscripcionAbierto.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.guardandoSuscripcion.set(false);
-        this.modalSuscripcionAbierto.set(false);
+        window.alert(err?.error?.message ?? 'No se pudo guardar la suscripción.');
       },
     });
   }
@@ -517,8 +509,14 @@ export class EmpresaDetalleComponent implements OnInit {
 
   abrirModalCita(): void {
     const pac = this.pacientes()[0];
+    this.errorCita.set(null);
+    this.citaService.listarProfesionales(this.alcance()).subscribe({
+      next: (profs) => this.profesionales.set(profs || []),
+      error: () => this.profesionales.set([]),
+    });
     this.formCita.reset({
       paciente_id: pac?.id ?? '',
+      veterinario_id: '',
       fecha: this.fechaCitas(),
       hora_inicio: '10:00',
       motivo: '',
@@ -529,6 +527,7 @@ export class EmpresaDetalleComponent implements OnInit {
   }
 
   guardarCita(): void {
+    this.errorCita.set(null);
     if (this.formCita.invalid) {
       this.formCita.markAllAsTouched();
       return;
@@ -542,7 +541,7 @@ export class EmpresaDetalleComponent implements OnInit {
       paciente_nombre: pac?.nombre ?? 'Paciente',
       propietario_nombre: pac?.propietario?.nombre ?? '',
       propietario_celular: pac?.propietario?.celular ?? '',
-      veterinario_nombre: 'Veterinario de Sede',
+      veterinario_id: val.veterinario_id,
       fecha: val.fecha,
       hora_inicio: val.hora_inicio,
       motivo: val.motivo,
@@ -551,15 +550,15 @@ export class EmpresaDetalleComponent implements OnInit {
       observaciones: val.observaciones,
     };
 
-    this.citaService.crear(payload).subscribe({
+    this.citaService.crear(payload, this.alcance()).subscribe({
       next: (nueva) => {
         this.citas.update((lista) => [...lista, nueva]);
         this.guardandoCita.set(false);
         this.modalCitaAbierto.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.guardandoCita.set(false);
-        this.modalCitaAbierto.set(false);
+        this.errorCita.set(err?.error?.message || 'No se pudo guardar la cita.');
       },
     });
   }
@@ -586,6 +585,7 @@ export class EmpresaDetalleComponent implements OnInit {
   });
 
   abrirModalPaciente(): void {
+    this.errorPaciente.set(null);
     this.formPaciente.reset({
       nombre: '',
       especie: 'Canino',
@@ -593,16 +593,16 @@ export class EmpresaDetalleComponent implements OnInit {
       sexo: 'macho',
       fecha_nacimiento: '',
       peso_kg: null,
-      propietario: {
-        nombre: '',
-        celular: '',
-        correo: '',
-      },
+      estado: 'activo',
+      propietario_nombre: '',
+      propietario_celular: '',
+      propietario_correo: '',
     });
     this.modalPacienteAbierto.set(true);
   }
 
   guardarPaciente(): void {
+    this.errorPaciente.set(null);
     if (this.formPaciente.invalid) {
       this.formPaciente.markAllAsTouched();
       return;
@@ -610,15 +610,15 @@ export class EmpresaDetalleComponent implements OnInit {
     this.guardandoPaciente.set(true);
     const payload: PacientePayload = this.formPaciente.value;
 
-    this.pacienteService.crear(payload).subscribe({
+    this.pacienteService.crear(payload, this.alcance()).subscribe({
       next: (nuevo) => {
         this.pacientes.update((lista) => [nuevo, ...lista]);
         this.guardandoPaciente.set(false);
         this.modalPacienteAbierto.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.guardandoPaciente.set(false);
-        this.modalPacienteAbierto.set(false);
+        this.errorPaciente.set(err?.error?.message || 'No se pudo registrar el paciente.');
       },
     });
   }

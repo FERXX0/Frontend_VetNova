@@ -1,3 +1,4 @@
+import { Modulo } from './auth.model';
 export type EstadoSuscripcion = 'prueba' | 'activa' | 'vencida' | 'en_mora' | 'cancelada';
 
 export type PeriodoSuscripcion = 'mensual' | 'trimestral' | 'semestral' | 'anual';
@@ -14,6 +15,19 @@ export interface Plan {
   activo: boolean;
   creado_en: string;
   actualizado_en: string;
+  modulos?: Modulo[];
+}
+
+export interface PlanPayload {
+  codigo: string;
+  nombre: string;
+  descripcion: string | null;
+  precio_mensual: number;
+  precio_anual: number | null;
+  moneda: string;
+  maximo_usuarios: number | null;
+  activo: boolean;
+  modulos: string[];
 }
 
 export interface Suscripcion {
@@ -37,6 +51,7 @@ export interface SuscripcionPayload {
   plan_id: string;
   estado: EstadoSuscripcion;
   periodo: PeriodoSuscripcion;
+  ciclo_facturacion: 'mensual' | 'anual';
   monto: number;
   moneda: string;
   inicia_en: string;

@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { FiltrosUsuariosGlobal, PaginacionUsuarios, Usuario, UsuarioPayload } from '../models/usuario.model';
 
@@ -30,11 +31,15 @@ export class UsuarioService {
   }
 
   crear(empresaId: string, payload: UsuarioPayload): Observable<Usuario> {
-    return this.http.post<Usuario>(`${this.apiUrl}/empresas/${empresaId}/usuarios`, payload);
+    return this.http
+    .post<{ message: string; usuario: Usuario }>(`${this.apiUrl}/empresas/${empresaId}/usuarios`, payload)
+    .pipe(map((respuesta) => respuesta.usuario));
   }
-
+  
   actualizar(empresaId: string, usuarioId: string, payload: UsuarioPayload): Observable<Usuario> {
-    return this.http.put<Usuario>(`${this.apiUrl}/empresas/${empresaId}/usuarios/${usuarioId}`, payload);
+    return this.http
+    .put<{ message: string; usuario: Usuario }>(`${this.apiUrl}/empresas/${empresaId}/usuarios/${usuarioId}`, payload)
+    .pipe(map((respuesta) => respuesta.usuario));
   }
 
   eliminar(empresaId: string, usuarioId: string): Observable<void> {

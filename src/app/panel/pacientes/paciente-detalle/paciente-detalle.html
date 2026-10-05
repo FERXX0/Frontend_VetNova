@@ -10,6 +10,8 @@
 
   @if (cargando()) {
     <div class="detalle-page__cargando">Cargando ficha del paciente…</div>
+  } @else if (error()) {
+    <div class="detalle-page__cargando">{{ error() }}</div>
   } @else if (paciente(); as p) {
     <!-- Tarjeta Principal de la Mascota -->
     <div class="ficha-mascota">

@@ -287,7 +287,7 @@
           Todos los roles
         </option>
 
-        @for (rol of roles; track rol) {
+        @for (rol of roles(); track rol) {
 
           <option [value]="rol">
             {{ rol }}
@@ -821,27 +821,40 @@
 
 
             <div class="form-field">
-
-              <label>
-                Rol
-                <span>*</span>
-              </label>
-
-              <select
-                [value]="formulario().rol"
-                (change)="actualizarCampo('rol', $any($event.target).value)"
-              >
-
-                @for (rol of roles; track rol) {
-
-                  <option [value]="rol">
-                    {{ rol }}
-                  </option>
-
+              <label>Rol <span>*</span></label>
+              <select (change)="actualizarCampo('rolId', $any($event.target).value)">
+                <option value="" disabled [selected]="!formulario().rolId">
+                  Selecciona un rol
+                </option>
+                @for (rol of rolesDisponibles(); track rol.id) {
+                  <option [value]="rol.id" [selected]="rol.id === formulario().rolId">{{ rol.nombre }}</option>
                 }
-
               </select>
+            </div>
 
+            <div class="form-field">
+              <label>Tipo de documento <span>*</span></label>
+              <select (change)="actualizarCampo('tipoIdentificacion', $any($event.target).value)">
+                <option value="CC" [selected]="formulario().tipoIdentificacion === 'CC'">CC</option>
+                <option value="CE" [selected]="formulario().tipoIdentificacion === 'CE'">CE</option>
+                <option value="NIT" [selected]="formulario().tipoIdentificacion === 'NIT'">NIT</option>
+                <option value="PASAPORTE" [selected]="formulario().tipoIdentificacion === 'PASAPORTE'">Pasaporte</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label>Número de documento <span>*</span></label>
+              <input type="text" inputmode="numeric" placeholder="1075000000"
+                [value]="formulario().numeroIdentificacion"
+                (input)="soloNumeros($event, 'numeroIdentificacion', 15)" />
+            </div>
+
+            <div class="form-field">
+              <label>Contraseña @if (!modoEdicion()) { <span>*</span> }</label>
+              <input type="password" autocomplete="new-password"
+                [placeholder]="modoEdicion() ? 'Dejar vacío para no cambiarla' : 'Mínimo 8 caracteres'"
+                [value]="formulario().contrasena"
+                (input)="actualizarCampo('contrasena', $any($event.target).value)" />
             </div>
 
 
@@ -916,7 +929,7 @@
           <div class="modules-grid">
 
             @for (
-              modulo of modulosDisponibles;
+              modulo of modulosDisponibles();
               track modulo.codigo
             ) {
 

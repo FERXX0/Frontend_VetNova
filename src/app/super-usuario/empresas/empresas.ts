@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -17,15 +17,11 @@ export class EmpresasComponent implements OnInit {
   cargando = signal(false);
   error = signal<string | null>(null);
 
-  // Filtro por estado (todo el listado se trae de una vez; Laravel pagina server-side,
-  // pero el filtro por estado aquí es client-side sobre la página actual)
-  filtroEstado = signal<EstadoEmpresa | 'todas'>('todas');
+  paginaActual = signal(1);
+  totalPaginas = signal(1);
+  total = signal(0);
 
-  empresasFiltradas = computed(() => {
-    const filtro = this.filtroEstado();
-    const lista = this.empresas();
-    return filtro === 'todas' ? lista : lista.filter((e) => e.estado === filtro);
-  });
+  filtroEstado = signal<EstadoEmpresa | 'todas'>('todas');
 
   // ---------- Modal crear/editar ----------
   modalAbierto = signal(false);
@@ -59,13 +55,22 @@ export class EmpresasComponent implements OnInit {
     this.cargarEmpresas();
   }
 
-  cargarEmpresas(): void {
+  cambiarFiltroEstado(estado: EstadoEmpresa | 'todas'): void {
+    this.filtroEstado.set(estado);
+    this.cargarEmpresas(1);
+  }
+
+  cargarEmpresas(pagina = 1): void {
     this.cargando.set(true);
     this.error.set(null);
 
-    this.empresaService.listar().subscribe({
+    const filtro = this.filtroEstado();
+    this.empresaService.listar({ page: pagina, estado: filtro === 'todas' ? undefined : filtro }).subscribe({
       next: (respuesta) => {
         this.empresas.set(respuesta.data);
+        this.paginaActual.set(respuesta.current_page);
+        this.totalPaginas.set(respuesta.last_page);
+        this.total.set(respuesta.total);
         this.cargando.set(false);
       },
       error: () => {
@@ -73,6 +78,11 @@ export class EmpresasComponent implements OnInit {
         this.cargando.set(false);
       },
     });
+  }
+
+  irAPagina(pagina: number): void {
+    if (pagina < 1 || pagina > this.totalPaginas()) return;
+    this.cargarEmpresas(pagina);
   }
 
   abrirModalCrear(): void {
@@ -139,7 +149,7 @@ export class EmpresasComponent implements OnInit {
       next: () => {
         this.guardando.set(false);
         this.modalAbierto.set(false);
-        this.cargarEmpresas();
+        this.cargarEmpresas(this.paginaActual());
       },
       error: (err) => {
         this.guardando.set(false);
@@ -155,7 +165,7 @@ export class EmpresasComponent implements OnInit {
     if (!confirmado) return;
 
     this.empresaService.eliminar(empresa.id).subscribe({
-      next: () => this.cargarEmpresas(),
+      next: () => this.cargarEmpresas(this.paginaActual()),
       error: () => this.error.set('No se pudo eliminar la veterinaria.'),
     });
   }

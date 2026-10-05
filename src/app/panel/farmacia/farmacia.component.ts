@@ -1,64 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, signal } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-
-interface Movimiento {
-  id: number;
-  tipo: 'Entrada' | 'Salida' | 'Ajuste';
-  cantidad: number;
-  fecha: string;
-  motivo: string;
-  responsable: string;
-}
-
-interface Medicamento {
-  id: number;
-  codigo: string;
-  nombre: string;
-  principioActivo: string;
-  concentracion: string;
-  presentacion: string;
-  categoria: string;
-  laboratorio: string;
-
-  lote: string;
-  fechaVencimiento: string;
-
-  stock: number;
-  stockMinimo: number;
-  unidad: string;
-
-  ubicacion: string;
-  precioCompra: number;
-  precioVenta: number;
-
-  estado: 'Activo' | 'Inactivo';
-  movimientos: Movimiento[];
-}
-
-interface FormularioMedicamento {
-  nombre: string;
-  principioActivo: string;
-  concentracion: string;
-  presentacion: string;
-  categoria: string;
-  laboratorio: string;
-  lote: string;
-  fechaVencimiento: string;
-  stock: number;
-  stockMinimo: number;
-  unidad: string;
-  ubicacion: string;
-  precioCompra: number;
-  precioVenta: number;
-}
-
-interface FormularioMovimiento {
-  tipo: 'Entrada' | 'Salida' | 'Ajuste';
-  cantidad: number;
-  motivo: string;
-  responsable: string;
-}
+import { AlcanceApi } from '../../core/utils/alcance-api';
+import { FormularioMedicamento, FormularioMovimiento, Medicamento, ResumenFarmacia } from '../../core/models/farmacia.model';
+import { FarmaciaService } from '../../core/services/farmacia.service';
 
 @Component({
   selector: 'app-farmacia',
@@ -67,361 +12,105 @@ interface FormularioMovimiento {
   templateUrl: './farmacia.component.html',
   styleUrl: './farmacia.component.scss',
 })
-export class FarmaciaComponent {
+export class FarmaciaComponent implements OnInit, OnChanges {
+  @Input() alcance?: AlcanceApi;
 
-  private contador = 7;
-  private contadorMovimiento = 30;
+  private farmaciaService = inject(FarmaciaService);
 
-  readonly medicamentos = signal<Medicamento[]>([
-    {
-      id: 1,
-      codigo: 'MED-0001',
-      nombre: 'Amoxicilina',
-      principioActivo: 'Amoxicilina',
-      concentracion: '250 mg',
-      presentacion: 'Suspensión oral',
-      categoria: 'Antibióticos',
-      laboratorio: 'Laboratorios VetPharma',
-      lote: 'AMX-2601',
-      fechaVencimiento: '2027-05-18',
-      stock: 42,
-      stockMinimo: 15,
-      unidad: 'Frascos',
-      ubicacion: 'Estante A-01',
-      precioCompra: 18500,
-      precioVenta: 28000,
-      estado: 'Activo',
-      movimientos: [
-        {
-          id: 1,
-          tipo: 'Entrada',
-          cantidad: 50,
-          fecha: '2026-09-01',
-          motivo: 'Compra a proveedor',
-          responsable: 'Pepito Vetnova',
-        },
-        {
-          id: 2,
-          tipo: 'Salida',
-          cantidad: 8,
-          fecha: '2026-09-10',
-          motivo: 'Dispensación',
-          responsable: 'Dra. Laura Martínez',
-        },
-      ],
-    },
-    {
-      id: 2,
-      codigo: 'MED-0002',
-      nombre: 'Carprofeno',
-      principioActivo: 'Carprofeno',
-      concentracion: '50 mg',
-      presentacion: 'Tabletas',
-      categoria: 'Analgésicos',
-      laboratorio: 'VetCare',
-      lote: 'CAR-2604',
-      fechaVencimiento: '2027-02-10',
-      stock: 8,
-      stockMinimo: 12,
-      unidad: 'Tabletas',
-      ubicacion: 'Estante A-03',
-      precioCompra: 8500,
-      precioVenta: 14000,
-      estado: 'Activo',
-      movimientos: [
-        {
-          id: 3,
-          tipo: 'Entrada',
-          cantidad: 30,
-          fecha: '2026-08-20',
-          motivo: 'Compra a proveedor',
-          responsable: 'Pepito Vetnova',
-        },
-        {
-          id: 4,
-          tipo: 'Salida',
-          cantidad: 22,
-          fecha: '2026-09-11',
-          motivo: 'Dispensación',
-          responsable: 'Dr. Andrés Pérez',
-        },
-      ],
-    },
-    {
-      id: 3,
-      codigo: 'MED-0003',
-      nombre: 'Omeprazol',
-      principioActivo: 'Omeprazol',
-      concentracion: '20 mg',
-      presentacion: 'Cápsulas',
-      categoria: 'Gastrointestinales',
-      laboratorio: 'Animal Health',
-      lote: 'OMP-2603',
-      fechaVencimiento: '2026-11-25',
-      stock: 24,
-      stockMinimo: 10,
-      unidad: 'Cápsulas',
-      ubicacion: 'Estante B-02',
-      precioCompra: 4200,
-      precioVenta: 7500,
-      estado: 'Activo',
-      movimientos: [
-        {
-          id: 5,
-          tipo: 'Entrada',
-          cantidad: 40,
-          fecha: '2026-08-15',
-          motivo: 'Compra a proveedor',
-          responsable: 'Pepito Vetnova',
-        },
-        {
-          id: 6,
-          tipo: 'Salida',
-          cantidad: 16,
-          fecha: '2026-09-08',
-          motivo: 'Dispensación',
-          responsable: 'Dra. Laura Martínez',
-        },
-      ],
-    },
-    {
-      id: 4,
-      codigo: 'MED-0004',
-      nombre: 'Prednisolona',
-      principioActivo: 'Prednisolona',
-      concentracion: '5 mg',
-      presentacion: 'Tabletas',
-      categoria: 'Antiinflamatorios',
-      laboratorio: 'VetMed',
-      lote: 'PRE-2602',
-      fechaVencimiento: '2027-08-30',
-      stock: 36,
-      stockMinimo: 10,
-      unidad: 'Tabletas',
-      ubicacion: 'Estante A-05',
-      precioCompra: 3100,
-      precioVenta: 6000,
-      estado: 'Activo',
-      movimientos: [
-        {
-          id: 7,
-          tipo: 'Entrada',
-          cantidad: 40,
-          fecha: '2026-09-03',
-          motivo: 'Compra a proveedor',
-          responsable: 'Pepito Vetnova',
-        },
-        {
-          id: 8,
-          tipo: 'Salida',
-          cantidad: 4,
-          fecha: '2026-09-12',
-          motivo: 'Dispensación',
-          responsable: 'Dr. Andrés Pérez',
-        },
-      ],
-    },
-    {
-      id: 5,
-      codigo: 'MED-0005',
-      nombre: 'Clorhexidina',
-      principioActivo: 'Clorhexidina',
-      concentracion: '2%',
-      presentacion: 'Solución tópica',
-      categoria: 'Antisépticos',
-      laboratorio: 'BioVet',
-      lote: 'CLX-2512',
-      fechaVencimiento: '2026-10-15',
-      stock: 7,
-      stockMinimo: 10,
-      unidad: 'Frascos',
-      ubicacion: 'Estante C-01',
-      precioCompra: 12500,
-      precioVenta: 19000,
-      estado: 'Activo',
-      movimientos: [
-        {
-          id: 9,
-          tipo: 'Entrada',
-          cantidad: 20,
-          fecha: '2026-07-10',
-          motivo: 'Compra a proveedor',
-          responsable: 'Pepito Vetnova',
-        },
-        {
-          id: 10,
-          tipo: 'Salida',
-          cantidad: 13,
-          fecha: '2026-09-09',
-          motivo: 'Dispensación',
-          responsable: 'Dra. Laura Martínez',
-        },
-      ],
-    },
-    {
-      id: 6,
-      codigo: 'MED-0006',
-      nombre: 'Antiparasitario',
-      principioActivo: 'Praziquantel',
-      concentracion: '100 mg',
-      presentacion: 'Tabletas',
-      categoria: 'Antiparasitarios',
-      laboratorio: 'PetPharma',
-      lote: 'PRA-2605',
-      fechaVencimiento: '2028-01-20',
-      stock: 58,
-      stockMinimo: 20,
-      unidad: 'Tabletas',
-      ubicacion: 'Estante B-05',
-      precioCompra: 5200,
-      precioVenta: 9000,
-      estado: 'Activo',
-      movimientos: [
-        {
-          id: 11,
-          tipo: 'Entrada',
-          cantidad: 60,
-          fecha: '2026-09-05',
-          motivo: 'Compra a proveedor',
-          responsable: 'Pepito Vetnova',
-        },
-        {
-          id: 12,
-          tipo: 'Salida',
-          cantidad: 2,
-          fecha: '2026-09-13',
-          motivo: 'Dispensación',
-          responsable: 'Dr. Andrés Pérez',
-        },
-      ],
-    },
-  ]);
+  readonly cargando = signal(false);
+  readonly error = signal<string | null>(null);
+
+  readonly medicamentos = signal<Medicamento[]>([]);
+  readonly resumen = signal<ResumenFarmacia | null>(null);
 
   readonly busqueda = signal('');
   readonly filtroCategoria = signal('Todas');
   readonly filtroEstado = signal('Todos');
   readonly filtroStock = signal('Todos');
 
+  readonly paginaActual = signal(1);
+  readonly totalPaginas = signal(1);
+  readonly totalRegistros = signal(0);
+  readonly porPagina = signal(15);
+
   readonly modalDetalleAbierto = signal(false);
   readonly modalFormularioAbierto = signal(false);
   readonly modalMovimientoAbierto = signal(false);
 
-  readonly medicamentoSeleccionado =
-    signal<Medicamento | null>(null);
+  readonly medicamentoSeleccionado = signal<Medicamento | null>(null);
 
   readonly modoEdicion = signal(false);
-  readonly medicamentoEditandoId = signal<number | null>(null);
+  readonly medicamentoEditandoId = signal<string | null>(null);
 
-  readonly formulario = signal<FormularioMedicamento>(
-    this.formularioVacio()
-  );
-
-  readonly formularioMovimiento = signal<FormularioMovimiento>(
-    this.movimientoVacio()
-  );
+  readonly formulario = signal<FormularioMedicamento>(this.formularioVacio());
+  readonly formularioMovimiento = signal<FormularioMovimiento>(this.movimientoVacio());
 
   readonly categorias = computed(() => {
-    const lista = this.medicamentos()
-      .map((medicamento) => medicamento.categoria)
-      .filter(Boolean);
-
-    return [...new Set(lista)];
+    const backendCats = this.resumen()?.categorias ?? [];
+    const localCats = this.medicamentos().map(m => m.categoria).filter(Boolean);
+    return [...new Set([...backendCats, ...localCats])];
   });
 
-  readonly medicamentosFiltrados = computed(() => {
-    const texto = this.busqueda().trim().toLowerCase();
-    const categoria = this.filtroCategoria();
-    const estado = this.filtroEstado();
-    const stock = this.filtroStock();
+  readonly totalMedicamentos = computed(() => this.resumen()?.total_medicamentos ?? this.totalRegistros());
+  readonly medicamentosActivos = computed(() => this.resumen()?.medicamentos_activos ?? 0);
+  readonly stockBajo = computed(() => this.resumen()?.stock_bajo ?? 0);
+  readonly proximosVencer = computed(() => this.resumen()?.proximos_vencer ?? 0);
+  readonly valorInventario = computed(() => this.resumen()?.valor_inventario ?? 0);
 
-    return this.medicamentos().filter((medicamento) => {
+  readonly medicamentosFiltrados = computed(() => this.medicamentos());
 
-      const coincideTexto =
-        !texto ||
-        medicamento.codigo.toLowerCase().includes(texto) ||
-        medicamento.nombre.toLowerCase().includes(texto) ||
-        medicamento.principioActivo.toLowerCase().includes(texto) ||
-        medicamento.laboratorio.toLowerCase().includes(texto) ||
-        medicamento.lote.toLowerCase().includes(texto);
+  ngOnInit(): void {
+    this.cargarDatos();
+  }
 
-      const coincideCategoria =
-        categoria === 'Todas' ||
-        medicamento.categoria === categoria;
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['alcance'] && !changes['alcance'].firstChange) {
+      this.cargarDatos();
+    }
+  }
 
-      const coincideEstado =
-        estado === 'Todos' ||
-        medicamento.estado === estado;
+  cargarDatos(): void {
+    this.cargando.set(true);
+    this.error.set(null);
 
-      let coincideStock = true;
-
-      if (stock === 'Bajo') {
-        coincideStock =
-          medicamento.stock <= medicamento.stockMinimo;
-      }
-
-      if (stock === 'Disponible') {
-        coincideStock =
-          medicamento.stock > medicamento.stockMinimo;
-      }
-
-      if (stock === 'Agotado') {
-        coincideStock = medicamento.stock === 0;
-      }
-
-      return (
-        coincideTexto &&
-        coincideCategoria &&
-        coincideEstado &&
-        coincideStock
-      );
+    this.farmaciaService.obtenerResumen(this.alcance).subscribe({
+      next: (res) => this.resumen.set(res),
+      error: () => {},
     });
-  });
 
-  readonly totalMedicamentos = computed(
-    () => this.medicamentos().length
-  );
+    this.farmaciaService.obtenerMedicamentos(this.alcance, {
+      busqueda: this.busqueda(),
+      categoria: this.filtroCategoria(),
+      estado: this.filtroEstado(),
+      stock: this.filtroStock(),
+      page: this.paginaActual(),
+      per_page: this.porPagina(),
+    }).subscribe({
+      next: (resp) => {
+        this.medicamentos.set(resp.data);
+        this.paginaActual.set(resp.current_page);
+        this.totalPaginas.set(resp.last_page);
+        this.totalRegistros.set(resp.total);
+        this.cargando.set(false);
+      },
+      error: (err) => {
+        this.error.set(err.error?.message ?? 'Error al cargar los medicamentos de farmacia.');
+        this.cargando.set(false);
+      },
+    });
+  }
 
-  readonly medicamentosActivos = computed(
-    () =>
-      this.medicamentos().filter(
-        (medicamento) => medicamento.estado === 'Activo'
-      ).length
-  );
+  aplicarFiltros(): void {
+    this.paginaActual.set(1);
+    this.cargarDatos();
+  }
 
-  readonly stockBajo = computed(
-    () =>
-      this.medicamentos().filter(
-        (medicamento) =>
-          medicamento.estado === 'Activo' &&
-          medicamento.stock <= medicamento.stockMinimo
-      ).length
-  );
-
-  readonly proximosVencer = computed(() => {
-    const hoy = new Date();
-    const limite = new Date();
-    limite.setDate(hoy.getDate() + 90);
-
-    return this.medicamentos().filter((medicamento) => {
-      const vencimiento = new Date(
-        `${medicamento.fechaVencimiento}T00:00:00`
-      );
-
-      return (
-        medicamento.estado === 'Activo' &&
-        vencimiento >= hoy &&
-        vencimiento <= limite
-      );
-    }).length;
-  });
-
-  readonly valorInventario = computed(() =>
-    this.medicamentos().reduce(
-      (total, medicamento) =>
-        total + medicamento.stock * medicamento.precioCompra,
-      0
-    )
-  );
+  cambiarPagina(nuevaPagina: number): void {
+    if (nuevaPagina >= 1 && nuevaPagina <= this.totalPaginas()) {
+      this.paginaActual.set(nuevaPagina);
+      this.cargarDatos();
+    }
+  }
 
   private formularioVacio(): FormularioMedicamento {
     return {
@@ -452,8 +141,16 @@ export class FarmaciaComponent {
   }
 
   abrirDetalle(medicamento: Medicamento): void {
-    this.medicamentoSeleccionado.set(medicamento);
-    this.modalDetalleAbierto.set(true);
+    this.farmaciaService.obtenerDetalle(medicamento.id, this.alcance).subscribe({
+      next: (det) => {
+        this.medicamentoSeleccionado.set(det);
+        this.modalDetalleAbierto.set(true);
+      },
+      error: () => {
+        this.medicamentoSeleccionado.set(medicamento);
+        this.modalDetalleAbierto.set(true);
+      },
+    });
   }
 
   cerrarDetalle(): void {
@@ -473,19 +170,19 @@ export class FarmaciaComponent {
 
     this.formulario.set({
       nombre: medicamento.nombre,
-      principioActivo: medicamento.principioActivo,
+      principioActivo: medicamento.principioActivo || medicamento.principio_activo || '',
       concentracion: medicamento.concentracion,
       presentacion: medicamento.presentacion,
       categoria: medicamento.categoria,
-      laboratorio: medicamento.laboratorio,
-      lote: medicamento.lote,
-      fechaVencimiento: medicamento.fechaVencimiento,
+      laboratorio: medicamento.laboratorio || '',
+      lote: medicamento.lote || '',
+      fechaVencimiento: medicamento.fechaVencimiento || medicamento.fecha_vencimiento || '',
       stock: medicamento.stock,
-      stockMinimo: medicamento.stockMinimo,
-      unidad: medicamento.unidad,
-      ubicacion: medicamento.ubicacion,
-      precioCompra: medicamento.precioCompra,
-      precioVenta: medicamento.precioVenta,
+      stockMinimo: medicamento.stockMinimo ?? medicamento.stock_minimo ?? 0,
+      unidad: medicamento.unidad || 'Unidades',
+      ubicacion: medicamento.ubicacion || '',
+      precioCompra: medicamento.precioCompra ?? medicamento.precio_compra ?? 0,
+      precioVenta: medicamento.precioVenta ?? medicamento.precio_venta ?? 0,
     });
 
     this.modalDetalleAbierto.set(false);
@@ -496,10 +193,7 @@ export class FarmaciaComponent {
     this.modalFormularioAbierto.set(false);
   }
 
-  actualizarFormulario(
-    campo: keyof FormularioMedicamento,
-    valor: string | number
-  ): void {
+  actualizarFormulario(campo: keyof FormularioMedicamento, valor: string | number): void {
     this.formulario.update((actual) => ({
       ...actual,
       [campo]: valor,
@@ -523,63 +217,34 @@ export class FarmaciaComponent {
     const id = this.medicamentoEditandoId();
 
     if (this.modoEdicion() && id !== null) {
-
-      this.medicamentos.update((medicamentos) =>
-        medicamentos.map((medicamento) =>
-          medicamento.id === id
-            ? {
-                ...medicamento,
-                ...formulario,
-                stock: Number(formulario.stock) || 0,
-                stockMinimo:
-                  Number(formulario.stockMinimo) || 0,
-                precioCompra:
-                  Number(formulario.precioCompra) || 0,
-                precioVenta:
-                  Number(formulario.precioVenta) || 0,
-              }
-            : medicamento
-        )
-      );
-
-      this.actualizarSeleccionado(id);
-
+      this.farmaciaService.actualizarMedicamento(id, formulario, this.alcance).subscribe({
+        next: () => {
+          this.modalFormularioAbierto.set(false);
+          this.cargarDatos();
+        },
+        error: (err) => {
+          alert(err.error?.message ?? 'Error al actualizar medicamento.');
+        },
+      });
     } else {
-
-      const nuevo: Medicamento = {
-        id: this.contador,
-        codigo: `MED-${String(this.contador).padStart(4, '0')}`,
-        ...formulario,
-        stock: Number(formulario.stock) || 0,
-        stockMinimo: Number(formulario.stockMinimo) || 0,
-        precioCompra: Number(formulario.precioCompra) || 0,
-        precioVenta: Number(formulario.precioVenta) || 0,
-        estado: 'Activo',
-        movimientos: [],
-      };
-
-      this.contador++;
-
-      this.medicamentos.update((medicamentos) => [
-        nuevo,
-        ...medicamentos,
-      ]);
+      this.farmaciaService.crearMedicamento(formulario, this.alcance).subscribe({
+        next: () => {
+          this.modalFormularioAbierto.set(false);
+          this.cargarDatos();
+        },
+        error: (err) => {
+          alert(err.error?.message ?? 'Error al crear medicamento.');
+        },
+      });
     }
-
-    this.modalFormularioAbierto.set(false);
   }
 
-  abrirMovimiento(
-    medicamento: Medicamento,
-    tipo: FormularioMovimiento['tipo'] = 'Entrada'
-  ): void {
+  abrirMovimiento(medicamento: Medicamento, tipo: FormularioMovimiento['tipo'] = 'Entrada'): void {
     this.medicamentoSeleccionado.set(medicamento);
-
     this.formularioMovimiento.set({
       ...this.movimientoVacio(),
       tipo,
     });
-
     this.modalMovimientoAbierto.set(true);
   }
 
@@ -587,10 +252,7 @@ export class FarmaciaComponent {
     this.modalMovimientoAbierto.set(false);
   }
 
-  actualizarMovimiento(
-    campo: keyof FormularioMovimiento,
-    valor: string | number
-  ): void {
+  actualizarMovimiento(campo: keyof FormularioMovimiento, valor: string | number): void {
     this.formularioMovimiento.update((actual) => ({
       ...actual,
       [campo]: valor,
@@ -610,65 +272,27 @@ export class FarmaciaComponent {
       return;
     }
 
-    let nuevoStock = medicamento.stock;
-
-    if (formulario.tipo === 'Entrada') {
-      nuevoStock += Number(formulario.cantidad);
-    }
-
-    if (formulario.tipo === 'Salida') {
-      nuevoStock -= Number(formulario.cantidad);
-
-      if (nuevoStock < 0) {
-        return;
-      }
-    }
-
-    if (formulario.tipo === 'Ajuste') {
-      nuevoStock = Number(formulario.cantidad);
-    }
-
-    const movimiento: Movimiento = {
-      id: this.contadorMovimiento++,
-      tipo: formulario.tipo,
-      cantidad: Number(formulario.cantidad),
-      fecha: new Date().toISOString().split('T')[0],
-      motivo: formulario.motivo,
-      responsable: formulario.responsable,
-    };
-
-    this.medicamentos.update((medicamentos) =>
-      medicamentos.map((item) =>
-        item.id === medicamento.id
-          ? {
-              ...item,
-              stock: nuevoStock,
-              movimientos: [
-                movimiento,
-                ...item.movimientos,
-              ],
-            }
-          : item
-      )
-    );
-
-    this.actualizarSeleccionado(medicamento.id);
-    this.modalMovimientoAbierto.set(false);
+    this.farmaciaService.registrarMovimiento(medicamento.id, formulario, this.alcance).subscribe({
+      next: (resp) => {
+        this.medicamentoSeleccionado.set(resp.medicamento);
+        this.modalMovimientoAbierto.set(false);
+        this.cargarDatos();
+      },
+      error: (err) => {
+        alert(err.error?.message ?? 'Error al registrar movimiento.');
+      },
+    });
   }
 
-  cambiarEstado(
-    medicamento: Medicamento,
-    estado: Medicamento['estado']
-  ): void {
-    this.medicamentos.update((medicamentos) =>
-      medicamentos.map((item) =>
-        item.id === medicamento.id
-          ? { ...item, estado }
-          : item
-      )
-    );
-
-    this.actualizarSeleccionado(medicamento.id);
+  cambiarEstado(medicamento: Medicamento, estado: Medicamento['estado']): void {
+    this.farmaciaService.cambiarEstado(medicamento.id, estado, this.alcance).subscribe({
+      next: () => {
+        this.cargarDatos();
+      },
+      error: (err) => {
+        alert(err.error?.message ?? 'Error al cambiar estado.');
+      },
+    });
   }
 
   eliminarMedicamento(medicamento: Medicamento): void {
@@ -680,20 +304,16 @@ export class FarmaciaComponent {
       return;
     }
 
-    this.medicamentos.update((medicamentos) =>
-      medicamentos.filter((item) => item.id !== medicamento.id)
-    );
-
-    this.modalDetalleAbierto.set(false);
-    this.medicamentoSeleccionado.set(null);
-  }
-
-  actualizarSeleccionado(id: number): void {
-    const actualizado = this.medicamentos().find(
-      (medicamento) => medicamento.id === id
-    );
-
-    this.medicamentoSeleccionado.set(actualizado ?? null);
+    this.farmaciaService.eliminarMedicamento(medicamento.id, this.alcance).subscribe({
+      next: () => {
+        this.modalDetalleAbierto.set(false);
+        this.medicamentoSeleccionado.set(null);
+        this.cargarDatos();
+      },
+      error: (err) => {
+        alert(err.error?.message ?? 'Error al eliminar el medicamento.');
+      },
+    });
   }
 
   limpiarFiltros(): void {
@@ -701,30 +321,26 @@ export class FarmaciaComponent {
     this.filtroCategoria.set('Todas');
     this.filtroEstado.set('Todos');
     this.filtroStock.set('Todos');
+    this.aplicarFiltros();
   }
 
   obtenerEstadoStock(medicamento: Medicamento): string {
     if (medicamento.stock === 0) {
       return 'Agotado';
     }
-
-    if (medicamento.stock <= medicamento.stockMinimo) {
+    const min = medicamento.stockMinimo ?? medicamento.stock_minimo ?? 0;
+    if (medicamento.stock <= min) {
       return 'Stock bajo';
     }
-
     return 'Disponible';
   }
 
   obtenerDiasParaVencer(fecha: string): number {
+    if (!fecha) return 0;
     const hoy = new Date();
     const vencimiento = new Date(`${fecha}T00:00:00`);
-
-    const diferencia =
-      vencimiento.getTime() - hoy.getTime();
-
-    return Math.ceil(
-      diferencia / (1000 * 60 * 60 * 24)
-    );
+    const diferencia = vencimiento.getTime() - hoy.getTime();
+    return Math.ceil(diferencia / (1000 * 60 * 60 * 24));
   }
 
   formatearMoneda(valor: number): string {

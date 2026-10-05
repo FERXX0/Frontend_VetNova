@@ -326,8 +326,9 @@
         <div class="suscripciones-tab">
           <div class="tab-section-header">
             <div>
-              <h3>Planes y Suscripciones de la Empresa</h3>
-              <p>Historial de contratos, estados de pago y fechas de renovación.</p>
+              <h3>Plan Activo de la Empresa</h3>
+              <p>Plan vigente y su historial de cambios.</p>
+              <button type="button" class="btn-secondary" (click)="abrirModalSuscripcion()">Asignar otro plan</button>
             </div>
           </div>
 
@@ -673,7 +674,7 @@
               }
             </select>
           </div>
-
+          
           <div class="form-row">
             <div class="form-group">
               <label for="s_estado">Estado</label>
@@ -689,6 +690,16 @@
                 <option value="mensual">Mensual</option>
                 <option value="trimestral">Trimestral</option>
                 <option value="semestral">Semestral</option>
+                <option value="anual">Anual</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="s_ciclo_facturacion">Ciclo de facturación</label>
+              <select id="s_ciclo_facturacion" formControlName="ciclo_facturacion">
+                <option value="mensual">Mensual</option>
                 <option value="anual">Anual</option>
               </select>
             </div>
@@ -735,6 +746,16 @@
             </select>
           </div>
 
+          <div class="form-group">
+            <label for="c_veterinario">Profesional responsable *</label>
+            <select id="c_veterinario" formControlName="veterinario_id">
+              <option value="" disabled>Selecciona un profesional</option>
+              @for (p of profesionales(); track p.id) {
+                <option [value]="p.id">{{ p.nombre }}</option>
+              }
+            </select>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label for="c_fecha">Fecha *</label>
@@ -750,6 +771,10 @@
             <label for="c_motivo">Motivo de la Cita *</label>
             <input id="c_motivo" type="text" formControlName="motivo" placeholder="Ej: Chequeo preventivo" />
           </div>
+
+          @if (errorCita()) {
+            <div class="alerta-form-error">{{ errorCita() }}</div>
+          }
 
           <div class="modal-card__actions">
             <button type="button" class="btn-secondary" (click)="modalCitaAbierto.set(false)">Cancelar</button>
@@ -788,23 +813,27 @@
             </div>
           </div>
 
-          <div formGroupName="propietario">
+          <div>
             <h4 class="form-subtitle">Datos del Propietario / Cliente</h4>
             <div class="form-group">
               <label for="pr_nombre">Nombre Completo *</label>
-              <input id="pr_nombre" type="text" formControlName="nombre" />
+              <input id="pr_nombre" type="text" formControlName="propietario_nombre" />
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label for="pr_cel">Celular / Teléfono *</label>
-                <input id="pr_cel" type="text" formControlName="celular" />
+                <input id="pr_cel" type="text" formControlName="propietario_celular" />
               </div>
               <div class="form-group">
                 <label for="pr_mail">Correo</label>
-                <input id="pr_mail" type="email" formControlName="correo" />
+                <input id="pr_mail" type="email" formControlName="propietario_correo" />
               </div>
             </div>
           </div>
+
+          @if (errorPaciente()) {
+            <div class="alerta-form-error">{{ errorPaciente() }}</div>
+          }
 
           <div class="modal-card__actions">
             <button type="button" class="btn-secondary" (click)="modalPacienteAbierto.set(false)">Cancelar</button>

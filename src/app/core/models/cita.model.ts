@@ -1,6 +1,12 @@
 export type EstadoCita = 'pendiente' | 'confirmada' | 'cancelada' | 'atendida';
 export type TipoConsulta = 'general' | 'vacunacion' | 'desparasitacion' | 'cirugia' | 'urgencia' | 'control' | 'estetica';
 
+export interface Profesional {
+  id: string;
+  empresa_id: string;
+  nombre: string;
+}
+
 export interface Cita {
   id: string;
   empresa_id?: string;
@@ -11,7 +17,7 @@ export interface Cita {
   propietario_celular?: string;
   servicio_id?: string | null;
   servicio_nombre?: string | null;
-  veterinario_id?: string;
+  veterinario_id?: string | null;
   veterinario_nombre: string;
   fecha: string; // YYYY-MM-DD
   hora_inicio: string; // HH:mm
@@ -25,13 +31,12 @@ export interface Cita {
 }
 
 export interface CitaPayload {
-  empresa_id?: string;
   paciente_id: string;
   paciente_nombre: string;
   propietario_nombre?: string;
   propietario_celular?: string;
   servicio_id?: string | null;
-  veterinario_nombre: string;
+  veterinario_id: string;
   fecha: string;
   hora_inicio: string;
   hora_fin?: string;

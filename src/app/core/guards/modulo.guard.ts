@@ -60,6 +60,7 @@ export const moduloGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   laboratorio: '/panel/laboratorio',
   formulaciones: '/panel/formulaciones',
   farmacia: '/panel/farmacia',
+  servicios: '/panel/servicios',
 };
 
   // Verificar si tiene el módulo requerido

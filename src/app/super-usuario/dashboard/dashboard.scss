@@ -146,7 +146,7 @@
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0 10px 24px rgba(16, 38, 58, 0.08);
-    border-color: #cbd5e1;
+    border-color: var(--vn-text-muted, #8a97a1);
 
     .kpi-card__arrow {
       opacity: 1;
@@ -165,7 +165,10 @@
     flex-shrink: 0;
     transition: transform 0.2s ease;
 
-    svg { width: 1.35rem; height: 1.35rem; }
+    svg {
+      width: 1.35rem;
+      height: 1.35rem;
+    }
   }
 
   &__text {
@@ -173,15 +176,26 @@
     flex-direction: column;
     flex: 1;
 
-    strong { font-size: 1.25rem; font-weight: 800; color: var(--vn-text-dark); line-height: 1.2; }
-    span { font-size: 0.8rem; font-weight: 600; color: var(--vn-text-muted); margin-top: 0.15rem; }
+    strong {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--vn-text-dark);
+      line-height: 1.2;
+    }
+
+    span {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--vn-text-muted);
+      margin-top: 0.15rem;
+    }
   }
 
   &__arrow {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #94a3b8;
+    color: var(--vn-text-muted, #8a97a1);
     opacity: 0.4;
     transition: all 0.2s ease;
     margin-left: auto;
@@ -215,9 +229,22 @@
   min-height: 6.5rem;
   box-shadow: 0 1px 3px rgba(16, 38, 58, 0.03);
 
-  &__title { font-size: 0.78rem; color: var(--vn-text-muted); }
-  &__value { font-size: 1.4rem; font-weight: 700; color: var(--vn-text-dark); }
-  &__sparkline { width: 100%; height: 1.5rem; margin-top: auto; }
+  &__title {
+    font-size: 0.78rem;
+    color: var(--vn-text-muted);
+  }
+
+  &__value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--vn-text-dark);
+  }
+
+  &__sparkline {
+    width: 100%;
+    height: 1.5rem;
+    margin-top: auto;
+  }
 }
 
 // ---------- Panel genérico (Estadísticas / Reportes) ----------
@@ -376,11 +403,11 @@
 .planes-section,
 .suscripciones-section {
   margin-top: 28px;
-  background: #ffffff;
-  border: 1px solid #e5e9ed;
+  background: var(--vn-white, #ffffff);
+  border: 1px solid var(--vn-border, #e5e9ec);
   border-radius: 14px;
   padding: 24px;
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 3px 12px rgba(16, 38, 58, 0.04);
 }
 
 .section-header {
@@ -406,26 +433,26 @@
 }
 
 .section-header__icon--planes {
-  background: #e8f1ff;
-  color: #3b82f6;
+  background: rgba(26, 167, 160, 0.12);
+  color: var(--vn-teal-dark, #0e7c86);
 }
 
 .section-header__icon--suscripciones {
-  background: #eaf8f0;
-  color: #16a56b;
+  background: rgba(79, 214, 168, 0.16);
+  color: #0e8f5f;
 }
 
 .section-header h2 {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: #172033;
+  color: var(--vn-navy, #10263a);
 }
 
 .section-header p {
   margin: 4px 0 0;
   font-size: 13px;
-  color: #78909c;
+  color: var(--vn-text-muted, #8a97a1);
 }
 
 /* =====================================================
@@ -440,10 +467,10 @@
 
 .plan-card {
   position: relative;
-  border: 1px solid #dfe6ec;
+  border: 1px solid var(--vn-border, #e5e9ec);
   border-radius: 13px;
   padding: 20px;
-  background: #fff;
+  background: var(--vn-white, #ffffff);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -451,32 +478,32 @@
 
 .plan-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 24px rgba(16, 38, 58, 0.08);
 }
 
 .plan-card--azul {
-  border-color: #cfe1ff;
-  background: linear-gradient(180deg, #fafdff 0%, #f3f8ff 100%);
+  border-color: rgba(26, 167, 160, 0.35);
+  background: linear-gradient(180deg, var(--vn-white, #ffffff) 0%, rgba(26, 167, 160, 0.08) 100%);
 }
 
 .plan-card--morado {
-  border-color: #ddcffd;
-  background: linear-gradient(180deg, #fff 0%, #faf7ff 100%);
+  border-color: rgba(16, 38, 58, 0.2);
+  background: linear-gradient(180deg, var(--vn-white, #ffffff) 0%, rgba(16, 38, 58, 0.04) 100%);
 }
 
 .plan-card--verde {
-  border-color: #c7eadb;
-  background: linear-gradient(180deg, #fff 0%, #f3fcf8 100%);
+  border-color: rgba(79, 214, 168, 0.45);
+  background: linear-gradient(180deg, var(--vn-white, #ffffff) 0%, rgba(79, 214, 168, 0.08) 100%);
 }
 
 .plan-card--naranja {
-  border-color: #f5dcc0;
-  background: linear-gradient(180deg, #fff 0%, #fff9f2 100%);
+  border-color: rgba(201, 138, 18, 0.35);
+  background: linear-gradient(180deg, var(--vn-white, #ffffff) 0%, rgba(201, 138, 18, 0.06) 100%);
 }
 
 .plan-card--rojo {
-  border-color: #f1cccc;
-  background: linear-gradient(180deg, #fff 0%, #fff6f6 100%);
+  border-color: rgba(224, 85, 79, 0.35);
+  background: linear-gradient(180deg, var(--vn-white, #ffffff) 0%, rgba(224, 85, 79, 0.05) 100%);
 }
 
 .plan-card__top {
@@ -492,28 +519,28 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e8f1ff;
-  color: #3b82f6;
+  background: rgba(26, 167, 160, 0.12);
+  color: var(--vn-teal-dark, #0e7c86);
 }
 
 .plan-card--morado .plan-card__icon {
-  background: #eee7ff;
-  color: #805ad5;
+  background: rgba(16, 38, 58, 0.08);
+  color: var(--vn-navy, #10263a);
 }
 
 .plan-card--verde .plan-card__icon {
-  background: #e0f8ed;
-  color: #16a56b;
+  background: rgba(79, 214, 168, 0.16);
+  color: #0e8f5f;
 }
 
 .plan-card--naranja .plan-card__icon {
-  background: #fff0df;
-  color: #e88722;
+  background: var(--vn-warning-bg, #fdf3e0);
+  color: var(--vn-warning, #c98a12);
 }
 
 .plan-card--rojo .plan-card__icon {
-  background: #ffe6e6;
-  color: #e05a5a;
+  background: var(--vn-danger-bg, #fdeceb);
+  color: var(--vn-danger, #e0554f);
 }
 
 .plan-card__icon svg {
@@ -531,26 +558,26 @@
 
 .plan-card__estado--activo,
 .suscripcion-card__estado--activo {
-  background: #dcf8ea;
-  color: #11965d;
+  background: rgba(79, 214, 168, 0.16);
+  color: #0e8f5f;
 }
 
 .plan-card__estado--inactivo,
 .suscripcion-card__estado--inactivo {
-  background: #edf1f3;
-  color: #6c7b87;
+  background: var(--vn-surface, #f6f9fa);
+  color: var(--vn-text-muted, #8a97a1);
 }
 
 .plan-card h3 {
   margin: 18px 0 8px;
   font-size: 18px;
-  color: #172033;
+  color: var(--vn-navy, #10263a);
 }
 
 .plan-card__descripcion {
   min-height: 40px;
   margin: 0;
-  color: #78909c;
+  color: var(--vn-text-muted, #8a97a1);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -558,8 +585,8 @@
 .plan-card__precios {
   margin-top: 18px;
   padding: 15px 0;
-  border-top: 1px solid #e5ebf0;
-  border-bottom: 1px solid #e5ebf0;
+  border-top: 1px solid var(--vn-border, #e5e9ec);
+  border-bottom: 1px solid var(--vn-border, #e5e9ec);
   display: grid;
   gap: 10px;
 }
@@ -572,12 +599,12 @@
 }
 
 .plan-card__precios span {
-  color: #78909c;
+  color: var(--vn-text-muted, #8a97a1);
   font-size: 12px;
 }
 
 .plan-card__precios strong {
-  color: #172033;
+  color: var(--vn-navy, #10263a);
   font-size: 16px;
 }
 
@@ -586,7 +613,7 @@
   align-items: center;
   gap: 8px;
   margin: 15px 0;
-  color: #607d8b;
+  color: var(--vn-text-dark, #1c2b36);
   font-size: 12px;
 }
 
@@ -598,10 +625,10 @@
 .plan-card__button {
   width: 100%;
   height: 38px;
-  border: 1px solid #9fc4ff;
+  border: 1px solid rgba(26, 167, 160, 0.35);
   border-radius: 8px;
-  background: #fff;
-  color: #3b82f6;
+  background: var(--vn-white, #ffffff);
+  color: var(--vn-teal-dark, #0e7c86);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -613,7 +640,7 @@
 }
 
 .plan-card__button:hover {
-  background: #edf5ff;
+  background: rgba(26, 167, 160, 0.08);
 }
 
 .plan-card__button svg {
@@ -625,7 +652,7 @@
   grid-column: 1 / -1;
   padding: 40px;
   text-align: center;
-  color: #78909c;
+  color: var(--vn-text-muted, #8a97a1);
 }
 
 /* =====================================================
@@ -639,30 +666,30 @@
 }
 
 .suscripcion-card {
-  border: 1px solid #dfe6ec;
+  border: 1px solid var(--vn-border, #e5e9ec);
   border-radius: 13px;
   padding: 18px;
-  background: #fff;
+  background: var(--vn-white, #ffffff);
 }
 
 .suscripcion-card--azul {
-  border-color: #cfe1ff;
-  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  border-color: rgba(26, 167, 160, 0.35);
+  background: linear-gradient(180deg, var(--vn-white, #ffffff) 0%, rgba(26, 167, 160, 0.08) 100%);
 }
 
 .suscripcion-card--morado {
-  border-color: #dfd2fc;
-  background: linear-gradient(180deg, #ffffff 0%, #fbf9ff 100%);
+  border-color: rgba(16, 38, 58, 0.2);
+  background: linear-gradient(180deg, var(--vn-white, #ffffff) 0%, rgba(16, 38, 58, 0.04) 100%);
 }
 
 .suscripcion-card--verde {
-  border-color: #ccebdd;
-  background: linear-gradient(180deg, #ffffff 0%, #f7fdf9 100%);
+  border-color: rgba(79, 214, 168, 0.45);
+  background: linear-gradient(180deg, var(--vn-white, #ffffff) 0%, rgba(79, 214, 168, 0.08) 100%);
 }
 
 .suscripcion-card--naranja {
-  border-color: #f5dfc5;
-  background: linear-gradient(180deg, #ffffff 0%, #fffbf6 100%);
+  border-color: rgba(201, 138, 18, 0.35);
+  background: linear-gradient(180deg, var(--vn-white, #ffffff) 0%, rgba(201, 138, 18, 0.06) 100%);
 }
 
 .suscripcion-card__header {
@@ -678,18 +705,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e8f1ff;
-  color: #3b82f6;
+  background: rgba(26, 167, 160, 0.12);
+  color: var(--vn-teal-dark, #0e7c86);
 }
 
 .suscripcion-card--morado .suscripcion-card__plan-icon {
-  background: #eee7ff;
-  color: #805ad5;
+  background: rgba(16, 38, 58, 0.08);
+  color: var(--vn-navy, #10263a);
 }
 
 .suscripcion-card--verde .suscripcion-card__plan-icon {
-  background: #e0f8ed;
-  color: #16a56b;
+  background: rgba(79, 214, 168, 0.16);
+  color: #0e8f5f;
 }
 
 .suscripcion-card__plan-icon svg {
@@ -699,14 +726,14 @@
 
 .suscripcion-card__header h3 {
   margin: 0;
-  color: #172033;
+  color: var(--vn-navy, #10263a);
   font-size: 15px;
 }
 
 .suscripcion-card__header span:not(.suscripcion-card__estado) {
   display: block;
   margin-top: 3px;
-  color: #90a4ae;
+  color: var(--vn-text-muted, #8a97a1);
   font-size: 11px;
 }
 
@@ -722,18 +749,18 @@
 }
 
 .suscripcion-card__cantidad strong {
-  color: #172033;
+  color: var(--vn-navy, #10263a);
   font-size: 30px;
 }
 
 .suscripcion-card__cantidad span {
-  color: #78909c;
+  color: var(--vn-text-muted, #8a97a1);
   font-size: 12px;
 }
 
 .suscripcion-card__datos {
   padding: 13px;
-  border: 1px solid #e5ebf0;
+  border: 1px solid var(--vn-border, #e5e9ec);
   border-radius: 9px;
   display: grid;
   gap: 10px;
@@ -747,12 +774,12 @@
 }
 
 .suscripcion-card__datos span {
-  color: #78909c;
+  color: var(--vn-text-muted, #8a97a1);
   font-size: 11px;
 }
 
 .suscripcion-card__datos strong {
-  color: #344454;
+  color: var(--vn-text-dark, #1c2b36);
   font-size: 12px;
 }
 
@@ -761,7 +788,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: #2675e8;
+  color: var(--vn-teal-dark, #0e7c86);
   font-size: 12px;
   font-weight: 600;
   display: flex;
@@ -783,7 +810,7 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(15, 23, 42, 0.42);
+  background: rgba(16, 38, 58, 0.42);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -794,9 +821,9 @@
   width: min(620px, 100%);
   max-height: 90vh;
   overflow-y: auto;
-  background: #fff;
+  background: var(--vn-white, #ffffff);
   border-radius: 15px;
-  box-shadow: 0 25px 70px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 25px 70px rgba(16, 38, 58, 0.2);
 }
 
 .plan-modal__header {
@@ -804,7 +831,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #edf1f4;
+  border-bottom: 1px solid var(--vn-border, #e5e9ec);
 }
 
 .plan-modal__titulo {
@@ -817,8 +844,8 @@
   width: 45px;
   height: 45px;
   border-radius: 13px;
-  background: #e8f1ff;
-  color: #3b82f6;
+  background: rgba(26, 167, 160, 0.12);
+  color: var(--vn-teal-dark, #0e7c86);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -832,13 +859,13 @@
 .plan-modal__titulo h2 {
   margin: 0;
   font-size: 19px;
-  color: #172033;
+  color: var(--vn-navy, #10263a);
 }
 
 .plan-modal__titulo span {
   display: block;
   margin-top: 3px;
-  color: #90a4ae;
+  color: var(--vn-text-muted, #8a97a1);
   font-size: 11px;
 }
 
@@ -847,7 +874,7 @@
   height: 34px;
   border: 0;
   background: transparent;
-  color: #90a4ae;
+  color: var(--vn-text-muted, #8a97a1);
   font-size: 25px;
   cursor: pointer;
 }
@@ -865,13 +892,13 @@
 }
 
 .plan-modal__estado .activo {
-  background: #dcf8ea;
-  color: #11965d;
+  background: rgba(79, 214, 168, 0.16);
+  color: #0e8f5f;
 }
 
 .plan-modal__estado .inactivo {
-  background: #edf1f3;
-  color: #6c7b87;
+  background: var(--vn-surface, #f6f9fa);
+  color: var(--vn-text-muted, #8a97a1);
 }
 
 .plan-modal__contenido {
@@ -881,7 +908,7 @@
 .plan-modal__fila {
   min-height: 44px;
   padding: 9px 0;
-  border-bottom: 1px solid #f0f3f5;
+  border-bottom: 1px solid var(--vn-border, #e5e9ec);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -889,12 +916,12 @@
 }
 
 .plan-modal__fila span {
-  color: #78909c;
+  color: var(--vn-text-muted, #8a97a1);
   font-size: 12px;
 }
 
 .plan-modal__fila strong {
-  color: #344454;
+  color: var(--vn-text-dark, #1c2b36);
   font-size: 13px;
   text-align: right;
 }
@@ -905,7 +932,7 @@
 
 .plan-modal__fila--vertical p {
   margin: 8px 0 0;
-  color: #607d8b;
+  color: var(--vn-text-dark, #1c2b36);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -916,7 +943,7 @@
 
 .plan-modal__modulos h3 {
   margin: 0 0 13px;
-  color: #172033;
+  color: var(--vn-navy, #10263a);
   font-size: 14px;
 }
 
@@ -932,41 +959,41 @@
   gap: 7px;
   padding: 9px 10px;
   border-radius: 8px;
-  background: #f6f9fb;
-  color: #536875;
+  background: var(--vn-surface, #f6f9fa);
+  color: var(--vn-text-dark, #1c2b36);
   font-size: 11px;
 }
 
 .plan-modal__modulos-lista svg {
   width: 15px;
   height: 15px;
-  color: #16a56b;
+  color: #0e8f5f;
 }
 
 .plan-modal__sin-modulos {
-  color: #90a4ae;
+  color: var(--vn-text-muted, #8a97a1);
   font-size: 12px;
 }
 
 .plan-modal__footer {
   padding: 15px 22px;
-  border-top: 1px solid #edf1f4;
+  border-top: 1px solid var(--vn-border, #e5e9ec);
   display: flex;
   justify-content: flex-end;
 }
 
 .plan-modal__footer button {
-  border: 1px solid #d8e0e6;
+  border: 1px solid var(--vn-border, #e5e9ec);
   border-radius: 8px;
-  background: #fff;
+  background: var(--vn-white, #ffffff);
   padding: 9px 18px;
-  color: #536875;
+  color: var(--vn-text-dark, #1c2b36);
   cursor: pointer;
   font-size: 12px;
 }
 
 .plan-modal__footer button:hover {
-  background: #f6f9fb;
+  background: var(--vn-surface, #f6f9fa);
 }
 
 /* =====================================================
@@ -974,6 +1001,7 @@
    ===================================================== */
 
 @media (max-width: 1100px) {
+
   .planes-grid,
   .suscripciones-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -981,6 +1009,7 @@
 }
 
 @media (max-width: 700px) {
+
   .planes-section,
   .suscripciones-section {
     padding: 17px;

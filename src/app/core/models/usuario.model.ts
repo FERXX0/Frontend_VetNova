@@ -1,5 +1,5 @@
 import { PaginacionLaravel } from './empresa.model';
-import { Rol } from './auth.model';
+import { Rol, Modulo } from './auth.model';
 
 export interface UsuarioEmpresaResumen {
   id: string;
@@ -25,6 +25,7 @@ export interface Usuario {
   correo: string;
   activo: boolean;
   es_super_administrador: boolean;
+  modulos?: Modulo[];
   creado_en?: string;
   actualizado_en?: string;
 }
