@@ -1,4 +1,4 @@
-export type EstadoCita = 'pendiente' | 'confirmada' | 'cancelada' | 'atendida';
+export type EstadoCita = 'pendiente' | 'confirmada' | 'cumplida' | 'cancelada' | 'atendida';
 export type TipoConsulta = 'general' | 'vacunacion' | 'desparasitacion' | 'cirugia' | 'urgencia' | 'control' | 'estetica';
 
 export interface Profesional {
@@ -25,6 +25,8 @@ export interface Cita {
   motivo: string;
   tipo_consulta: TipoConsulta;
   estado: EstadoCita;
+  cumplida_en?: string | null;
+  atendida_en?: string | null;
   observaciones?: string;
   creado_en?: string;
   actualizado_en?: string;
@@ -43,5 +45,7 @@ export interface CitaPayload {
   motivo: string;
   tipo_consulta: TipoConsulta;
   estado: EstadoCita;
+  cumplida_en?: string | null;
+  atendida_en?: string | null;
   observaciones?: string;
 }

@@ -54,26 +54,34 @@ export class EmpresaDetalleComponent implements OnInit {
   tabActiva = signal<TabEmpresa>('resumen');
 
   // ---------- Catálogo y Aprovisionamiento de Módulos del Tenant ----------
-  todosModulos = signal<Modulo[]>([
-    { id: '1', codigo: 'citas', nombre: 'Agenda Médica y Citas', orden: 1, activo: true },
-    { id: '2', codigo: 'clientes_pacientes', nombre: 'Pacientes y Clientes', orden: 2, activo: true },
-    { id: '3', codigo: 'historias_clinicas', nombre: 'Historias Clínicas', orden: 3, activo: true },
-    { id: '4', codigo: 'facturacion', nombre: 'Facturación y Cobros', orden: 4, activo: true },
-    { id: '5', codigo: 'farmacia', nombre: 'Inventario / Farmacia', orden: 5, activo: true },
-    { id: '6', codigo: 'usuarios', nombre: 'Gestión de Colaboradores', orden: 6, activo: true },
-    { id: '7', codigo: 'reportes', nombre: 'Reportes y Métricas', orden: 7, activo: true },
-  ]);
+  todosModulos = signal<Modulo[]>([]);
 
   // Módulos realmente aprovisionados para esta empresa (cargados del backend).
   modulosEmpresaRegistros = signal<ModuloEmpresaRegistro[]>([]);
+  modulosPlan = signal<Modulo[]>([]);
   cargandoModulos = signal(false);
   guardandoModuloCodigo = signal<string | null>(null);
 
+  modulosIncluidosPlan = computed(() =>
+    new Set(this.modulosPlan().map((modulo) => modulo.codigo))
+  );
+
+  modulosAdicionalesActivos = computed(() =>
+    new Set(
+      this.modulosEmpresaRegistros()
+        .filter((registro) => registro.activo)
+        .map((registro) => registro.modulo?.codigo)
+        .filter((codigo): codigo is string => !!codigo)
+    )
+  );
+
   modulosHabilitados = computed(() =>
-    this.modulosEmpresaRegistros()
-      .filter((r) => r.activo)
-      .map((r) => r.modulo?.codigo)
-      .filter((c): c is string => !!c)
+    this.todosModulos()
+      .filter((modulo) =>
+        this.modulosIncluidosPlan().has(modulo.codigo) ||
+        this.modulosAdicionalesActivos().has(modulo.codigo)
+      )
+      .map((modulo) => modulo.codigo)
   );
 
   tieneModuloCitas = computed(() => this.modulosHabilitados().includes('citas'));
@@ -258,8 +266,22 @@ export class EmpresaDetalleComponent implements OnInit {
 
   cargarSuscripciones(): void {
     this.suscripcionService.listarPorEmpresa(this.empresaId()).subscribe({
-      next: (res) => this.suscripciones.set(res.data || []),
-      error: () => {},
+      next: (res) => {
+        const lista = res.data || [];
+        this.suscripciones.set(lista);
+
+        const ahora = new Date();
+        const vigente = lista.find((suscripcion) =>
+          (suscripcion.estado === 'activa' || suscripcion.estado === 'prueba') &&
+          (!suscripcion.finaliza_en || new Date(suscripcion.finaliza_en) > ahora)
+        );
+
+        this.modulosPlan.set(vigente?.plan?.modulos || []);
+      },
+      error: () => {
+        this.suscripciones.set([]);
+        this.modulosPlan.set([]);
+      },
     });
   }
 
@@ -305,7 +327,14 @@ export class EmpresaDetalleComponent implements OnInit {
   }
 
   toggleModulo(modulo: Modulo): void {
-    if (this.guardandoModuloCodigo()) return; // evita doble click mientras persiste
+    if (this.guardandoModuloCodigo()) return;
+
+    // Los módulos incluidos en el plan siempre están habilitados y no se
+    // administran como adiciones. Solo los que están fuera del plan pueden
+    // adquirirse/desactivarse como módulo adicional.
+    if (this.modulosIncluidosPlan().has(modulo.codigo)) {
+      return;
+    }
 
     const registroActual = this.registroDeModulo(modulo.id);
     const nuevoActivo = !(registroActual?.activo ?? false);
@@ -330,11 +359,23 @@ export class EmpresaDetalleComponent implements OnInit {
           });
           this.guardandoModuloCodigo.set(null);
         },
-        error: () => {
-          this.error.set(`No se pudo actualizar el módulo "${modulo.nombre}". Intenta de nuevo.`);
+        error: (err) => {
+          this.error.set(err?.error?.errors?.modulo_id?.[0] || `No se pudo actualizar el módulo "${modulo.nombre}". Intenta de nuevo.`);
           this.guardandoModuloCodigo.set(null);
         },
       });
+  }
+
+  moduloIncluidoEnPlan(codigo: string): boolean {
+    return this.modulosIncluidosPlan().has(codigo);
+  }
+
+  moduloEsAdicion(codigo: string): boolean {
+    return !this.moduloIncluidoEnPlan(codigo) && this.modulosAdicionalesActivos().has(codigo);
+  }
+
+  moduloDisponible(codigo: string): boolean {
+    return this.moduloIncluidoEnPlan(codigo) || this.moduloEsAdicion(codigo);
   }
 
   // ---------- Gestión de Usuarios del Tenant ----------
@@ -489,6 +530,8 @@ export class EmpresaDetalleComponent implements OnInit {
     this.suscripcionService.crear(this.empresaId(), payload).subscribe({
       next: (nueva) => {
         this.suscripciones.update((lista) => [nueva, ...lista]);
+        this.modulosPlan.set(nueva.plan?.modulos || []);
+        this.cargarModulosEmpresa();
         this.guardandoSuscripcion.set(false);
         this.modalSuscripcionAbierto.set(false);
       },

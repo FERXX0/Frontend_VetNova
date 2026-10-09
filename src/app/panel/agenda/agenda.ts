@@ -1,5 +1,6 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -13,11 +14,14 @@ import { Cita, CitaPayload, EstadoCita, Profesional, TipoConsulta } from '../../
 import { Paciente } from '../../core/models/paciente.model';
 import { Servicio } from '../../core/models/servicio.model';
 import { AlcanceApi } from '../../core/utils/alcance-api';
+import { SessionService } from '../../core/services/session.service';
+import { AtencionCitaService } from '../../core/services/atencion-cita.service';
+import { AtencionCitaPayload, AtencionCitaResponse, HistorialAgendaItem, MedicamentoAtencion, MedicamentoAtencionPayload } from '../../core/models/atencion-cita.model';
 
 @Component({
   selector: 'app-agenda',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './agenda.html',
   styleUrl: './agenda.scss',
 })
@@ -29,6 +33,8 @@ export class AgendaComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly sessionService = inject(SessionService);
+  private readonly atencionCitaService = inject(AtencionCitaService);
 
   // Esta misma pantalla se usa en /super-usuario/agenda y en /panel/agenda.
   readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
@@ -70,6 +76,7 @@ export class AgendaComponent implements OnInit {
   readonly estados: { valor: EstadoCita; etiqueta: string }[] = [
     { valor: 'pendiente', etiqueta: 'Pendiente' },
     { valor: 'confirmada', etiqueta: 'Confirmada' },
+    { valor: 'cumplida', etiqueta: 'Cumplida' },
     { valor: 'atendida', etiqueta: 'Atendida' },
     { valor: 'cancelada', etiqueta: 'Cancelada' },
   ];
@@ -97,6 +104,7 @@ export class AgendaComponent implements OnInit {
       total: todasDelDia.length,
       confirmadas: todasDelDia.filter((c) => c.estado === 'confirmada').length,
       pendientes: todasDelDia.filter((c) => c.estado === 'pendiente').length,
+      cumplidas: todasDelDia.filter((c) => c.estado === 'cumplida').length,
       atendidas: todasDelDia.filter((c) => c.estado === 'atendida').length,
     };
   });
@@ -121,16 +129,65 @@ export class AgendaComponent implements OnInit {
 
   form: FormGroup;
 
+  // ---------- Atención clínica desde la cita ----------
+  modalAtencionAbierto = signal(false);
+  atencionCargando = signal(false);
+  atencionGuardando = signal(false);
+  atencionError = signal<string | null>(null);
+  atencionCita = signal<Cita | null>(null);
+  tipoFormatoAtencion = signal<AtencionCitaResponse['tipo_formato']>('general');
+  medicamentosDisponibles = signal<MedicamentoAtencion[]>([]);
+  historialAgendaAtencion = signal<HistorialAgendaItem[]>([]);
+  medicamentosAtencion = signal<MedicamentoAtencionPayload[]>([]);
+
+  atencion = signal({
+    fecha: this.formatoFechaIso(new Date()),
+    motivo: '',
+    peso_kg: null as number | null,
+    temperatura_c: null as number | null,
+    diagnostico: '',
+    tratamiento: '',
+    observaciones: '',
+    evolucion: '',
+    detalles: {
+      procedimiento: '',
+      categoria: '',
+      duracion: '',
+      sala: '',
+      prioridad: 'Media',
+      indicaciones: '',
+    },
+    vacunacion: {
+      nombre: '',
+      tipo: 'Otra' as 'Antirrábica' | 'Polivalente' | 'Refuerzo' | 'Otra',
+      lote: '',
+      fecha_aplicacion: this.formatoFechaIso(new Date()),
+      proxima_fecha: '',
+      observaciones: '',
+    },
+    desparasitacion: {
+      producto: '',
+      tipo: 'Interna' as 'Interna' | 'Externa' | 'Interna y Externa',
+      fecha_aplicacion: this.formatoFechaIso(new Date()),
+      proxima_fecha: '',
+      observaciones: '',
+    },
+  });
+
+  readonly esRecepcionista = computed(() => this.sessionService.codigoRol() === 'recepcionista');
+  readonly esVeterinario = computed(() => this.sessionService.codigoRol() === 'veterinario');
+  readonly puedeAgendar = computed(() => !this.esVeterinario());
+
   constructor() {
     this.form = this.fb.group({
       empresa_id: [''],
       paciente_id: ['', [Validators.required]],
-      servicio_id: [''],
+      servicio_id: ['', [Validators.required]],
       veterinario_id: ['', [Validators.required]],
       fecha: [this.fechaSeleccionada(), [Validators.required]],
       hora_inicio: ['09:00', [Validators.required]],
       hora_fin: ['09:30'],
-      tipo_consulta: ['general', [Validators.required]],
+      tipo_consulta: [{ value: 'general', disabled: true }, [Validators.required]],
       motivo: ['', [Validators.required, Validators.maxLength(200)]],
       estado: ['confirmada', [Validators.required]],
       observaciones: ['', [Validators.maxLength(300)]],
@@ -227,7 +284,10 @@ export class AgendaComponent implements OnInit {
 
   onServicioSeleccionado(servicioId: string): void {
     const servicio = this.servicios().find((s) => s.id === servicioId);
-    if (!servicio) return;
+    if (!servicio) {
+      this.form.patchValue({ tipo_consulta: 'general', hora_fin: '' });
+      return;
+    }
 
     this.form.patchValue({ tipo_consulta: servicio.tipo_consulta });
 
@@ -305,6 +365,11 @@ export class AgendaComponent implements OnInit {
   }
 
   abrirModalCrear(horaInicial?: string): void {
+    if (!this.puedeAgendar()) {
+      this.error.set('Los veterinarios no pueden agendar citas.');
+      return;
+    }
+
     this.citaEnEdicion.set(null);
     this.errorFormulario.set(null);
     if (this.esVistaSuperUsuario()) {
@@ -319,7 +384,7 @@ export class AgendaComponent implements OnInit {
         fecha: this.fechaSeleccionada(),
         hora_inicio: horaInicial || '09:00',
         hora_fin: '09:30',
-        tipo_consulta: 'general',
+        tipo_consulta: { value: 'general', disabled: true },
         motivo: '',
         estado: 'confirmada',
         observaciones: '',
@@ -333,7 +398,7 @@ export class AgendaComponent implements OnInit {
         fecha: this.fechaSeleccionada(),
         hora_inicio: horaInicial || '09:00',
         hora_fin: '09:30',
-        tipo_consulta: 'general',
+        tipo_consulta: { value: 'general', disabled: true },
         motivo: '',
         estado: 'confirmada',
         observaciones: '',
@@ -356,7 +421,7 @@ export class AgendaComponent implements OnInit {
       fecha: cita.fecha,
       hora_inicio: cita.hora_inicio,
       hora_fin: cita.hora_fin || '',
-      tipo_consulta: cita.tipo_consulta,
+      tipo_consulta: { value: cita.tipo_consulta, disabled: true },
       motivo: cita.motivo,
       estado: cita.estado,
       observaciones: cita.observaciones || '',
@@ -369,6 +434,11 @@ export class AgendaComponent implements OnInit {
   }
 
   guardar(): void {
+    if (!this.puedeAgendar() && !this.citaEnEdicion()) {
+      this.errorFormulario.set('Los veterinarios no pueden agendar citas.');
+      return;
+    }
+
     this.errorFormulario.set(null);
 
     if (this.form.invalid) {
@@ -382,7 +452,7 @@ export class AgendaComponent implements OnInit {
     }
 
     this.guardando.set(true);
-    const formVal = this.form.value;
+    const formVal = this.form.getRawValue();
     const { empresa_id, ...restoForm } = formVal;
     const pacienteSeleccionado = this.pacientes().find((p) => p.id === restoForm.paciente_id);
 
@@ -432,6 +502,218 @@ export class AgendaComponent implements OnInit {
     this.citaService.eliminar(cita.id, this.alcanceEscritura(cita.empresa_id)).subscribe({
       next: () => this.cargarCitas(),
       error: () => this.error.set('No se pudo eliminar la cita en el servidor.'),
+    });
+  }
+
+  marcarLlegada(cita: Cita): void {
+    this.citaService.cambiarEstado(cita.id, 'cumplida', this.alcanceEscritura(cita.empresa_id)).subscribe({
+      next: () => this.cargarCitas(),
+      error: (err) => this.error.set(err?.error?.message || 'No se pudo registrar la llegada del paciente.'),
+    });
+  }
+
+  abrirAtencion(cita: Cita): void {
+    if (cita.estado !== 'cumplida') {
+      this.error.set('La cita debe ser marcada como cumplida por recepción antes de iniciar la atención.');
+      return;
+    }
+
+    this.atencionCargando.set(true);
+    this.atencionError.set(null);
+    this.atencionCita.set(cita);
+
+    this.atencionCitaService.obtener(cita.id, this.alcanceEscritura(cita.empresa_id)).subscribe({
+      next: (respuesta) => {
+        this.tipoFormatoAtencion.set(respuesta.tipo_formato);
+        this.medicamentosDisponibles.set(respuesta.medicamentos || []);
+        this.historialAgendaAtencion.set(respuesta.historial_agenda || []);
+        this.inicializarAtencion(cita);
+        this.modalAtencionAbierto.set(true);
+        this.atencionCargando.set(false);
+      },
+      error: (err) => {
+        this.atencionCargando.set(false);
+        this.atencionError.set(err?.error?.message || 'No se pudo cargar el formato de atención.');
+      },
+    });
+  }
+
+  private inicializarAtencion(cita: Cita): void {
+    const hoy = this.formatoFechaIso(new Date());
+    this.atencion.set({
+      fecha: hoy,
+      motivo: cita.motivo || '',
+      peso_kg: null,
+      temperatura_c: null,
+      diagnostico: '',
+      tratamiento: '',
+      observaciones: cita.observaciones || '',
+      evolucion: '',
+      detalles: {
+        procedimiento: '', categoria: '', duracion: '', sala: '', prioridad: 'Media', indicaciones: '',
+      },
+      vacunacion: {
+        nombre: '', tipo: 'Otra', lote: '', fecha_aplicacion: hoy, proxima_fecha: '', observaciones: '',
+      },
+      desparasitacion: {
+        producto: '', tipo: 'Interna', fecha_aplicacion: hoy, proxima_fecha: '', observaciones: '',
+      },
+    });
+    this.medicamentosAtencion.set([]);
+    this.historialAgendaAtencion.set([]);
+  }
+
+  cerrarAtencion(): void {
+    if (this.atencionGuardando()) return;
+    this.modalAtencionAbierto.set(false);
+    this.atencionCita.set(null);
+    this.historialAgendaAtencion.set([]);
+  }
+
+  actualizarAtencion<K extends keyof ReturnType<typeof this.atencion>>(campo: K, valor: ReturnType<typeof this.atencion>[K]): void {
+    this.atencion.update((actual) => ({ ...actual, [campo]: valor }));
+  }
+
+  actualizarDetalle(campo: keyof ReturnType<typeof this.atencion>['detalles'], valor: string): void {
+    this.atencion.update((actual) => ({
+      ...actual,
+      detalles: { ...actual.detalles, [campo]: valor },
+    }));
+  }
+
+  actualizarVacunacion(campo: keyof ReturnType<typeof this.atencion>['vacunacion'], valor: string): void {
+    this.atencion.update((actual) => ({
+      ...actual,
+      vacunacion: { ...actual.vacunacion, [campo]: valor },
+    }));
+  }
+
+  actualizarDesparasitacion(campo: keyof ReturnType<typeof this.atencion>['desparasitacion'], valor: string): void {
+    this.atencion.update((actual) => ({
+      ...actual,
+      desparasitacion: { ...actual.desparasitacion, [campo]: valor },
+    }));
+  }
+
+  agregarMedicamentoAtencion(): void {
+    this.medicamentosAtencion.update((lista) => [
+      ...lista,
+      {
+        medicamento_id: '',
+        dosis_cantidad: 1,
+        dosis_unidad: 'dosis',
+        frecuencia_horas: 8,
+        duracion_dias: 1,
+        via: 'Oral',
+        indicaciones: null,
+      },
+    ]);
+  }
+
+  eliminarMedicamentoAtencion(index: number): void {
+    this.medicamentosAtencion.update((lista) => lista.filter((_, i) => i !== index));
+  }
+
+  actualizarMedicamentoAtencion(index: number, campo: keyof MedicamentoAtencionPayload, valor: string | number | null): void {
+    this.medicamentosAtencion.update((lista) => lista.map((item, i) => i === index ? { ...item, [campo]: valor } : item));
+  }
+
+  medicamentoSeleccionado(id: string): MedicamentoAtencion | undefined {
+    return this.medicamentosDisponibles().find((med) => med.id === id);
+  }
+
+  cantidadMedicamento(index: number): number {
+    const item = this.medicamentosAtencion()[index];
+    if (!item) return 0;
+    const administracionesDia = item.frecuencia_horas ? 24 / item.frecuencia_horas : 1;
+    return Number((item.dosis_cantidad * administracionesDia * item.duracion_dias).toFixed(2));
+  }
+
+  guardarAtencion(): void {
+    const cita = this.atencionCita();
+    const tipo = this.tipoFormatoAtencion();
+    const datos = this.atencion();
+
+    if (!cita) return;
+
+    if ((tipo !== 'vacunacion' && tipo !== 'desparasitacion') && !datos.diagnostico.trim()) {
+      this.atencionError.set('El diagnóstico es obligatorio para este tipo de atención.');
+      return;
+    }
+
+    if (tipo === 'vacunacion' && (!datos.vacunacion.nombre || !datos.vacunacion.proxima_fecha)) {
+      this.atencionError.set('Completa la vacuna y la próxima fecha.');
+      return;
+    }
+
+    if (tipo === 'desparasitacion' && (!datos.desparasitacion.producto || !datos.desparasitacion.proxima_fecha)) {
+      this.atencionError.set('Completa el producto y la próxima fecha.');
+      return;
+    }
+
+    if (tipo === 'cirugia' && (!datos.detalles.procedimiento || !datos.detalles.categoria || !datos.detalles.duracion || !datos.detalles.sala || !datos.detalles.indicaciones)) {
+      this.atencionError.set('Completa los datos requeridos del procedimiento quirúrgico.');
+      return;
+    }
+
+    if (this.medicamentosAtencion().some((med) => !med.medicamento_id || !med.dosis_cantidad || !med.duracion_dias || !med.via)) {
+      this.atencionError.set('Completa todos los datos requeridos de los medicamentos.');
+      return;
+    }
+
+    const payload: AtencionCitaPayload = {
+      fecha: datos.fecha,
+      motivo: datos.motivo,
+      peso_kg: datos.peso_kg,
+      temperatura_c: datos.temperatura_c,
+      diagnostico: datos.diagnostico || null,
+      tratamiento: datos.tratamiento || null,
+      observaciones: datos.observaciones || null,
+      evolucion: datos.evolucion || null,
+      detalles: datos.detalles,
+      medicamentos: this.medicamentosAtencion(),
+    };
+
+    if (tipo === 'vacunacion') payload.vacunacion = { ...datos.vacunacion, lote: datos.vacunacion.lote || null, observaciones: datos.vacunacion.observaciones || null };
+    if (tipo === 'desparasitacion') payload.desparasitacion = { ...datos.desparasitacion, observaciones: datos.desparasitacion.observaciones || null };
+
+    this.atencionGuardando.set(true);
+    this.atencionError.set(null);
+
+
+    this.atencionCitaService.registrar(cita.id, payload, this.alcanceEscritura(cita.empresa_id)).subscribe({
+      next: () => {
+        // La atención clínica se guardó correctamente.
+        // Ahora marcamos la cita como atendida.
+        this.citaService.cambiarEstado(
+          cita.id,
+          'atendida',
+        this.alcanceEscritura(cita.empresa_id)).subscribe({
+          next: () => {
+            this.atencionGuardando.set(false);
+            this.modalAtencionAbierto.set(false);
+            this.atencionCita.set(null);
+            this.historialAgendaAtencion.set([]);
+
+            // Recargar la agenda para reflejar el nuevo estado.
+            this.cargarCitas();
+          },
+          error: (err) => {
+            this.atencionGuardando.set(false);
+            this.atencionError.set(
+              err?.error?.message ||
+              'La atención se guardó, pero no se pudo actualizar el estado de la cita.'
+            );
+          },
+        });
+      },
+      error: (err) => {
+        this.atencionGuardando.set(false);
+        this.atencionError.set(
+          err?.error?.message ||
+          'No se pudo guardar la atención clínica.'
+        );
+      },
     });
   }
 

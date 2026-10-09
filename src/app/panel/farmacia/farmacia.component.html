@@ -292,7 +292,7 @@
                     </strong>
 
                     <span>
-                      {{ medicamento.concentracion }}
+                      {{ medicamento.concentracion }} {{ medicamento.concentracion_unidad }}
                       ·
                       {{ medicamento.presentacion }}
                     </span>
@@ -365,7 +365,7 @@
                     </strong>
 
                     <span>
-                      {{ medicamento.unidad }}
+                      {{ medicamento.presentacion }}
                     </span>
 
                   </div>
@@ -688,7 +688,7 @@
               </strong>
 
               <small>
-                {{ medicamento.unidad }}
+                {{ medicamento.presentacion }}
               </small>
 
             </div>
@@ -815,6 +815,14 @@
                     <span>
                       {{ movimiento.motivo }}
                     </span>
+
+                    @if (movimiento.tipo === 'Salida' && movimiento.comprador_nombre) {
+                      <small>Comprador: {{ movimiento.comprador_nombre }}</small>
+                    }
+
+                    @if (movimiento.tipo === 'Salida' && movimiento.total !== null && movimiento.total !== undefined) {
+                      <small>Total: {{ formatearMoneda(movimiento.total) }}</small>
+                    }
 
                   </div>
 
@@ -1076,12 +1084,32 @@
 
               <label>Concentración *</label>
 
-              <input
-                type="text"
-                placeholder="Ej. 50 mg"
-                [ngModel]="formulario().concentracion"
-                (ngModelChange)="actualizarFormulario('concentracion', $event)"
-              />
+              <div class="input-group-inline">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Ej. 50"
+                  [ngModel]="formulario().concentracion"
+                  (ngModelChange)="actualizarFormulario('concentracion', +$event)"
+                />
+                <select
+                  [ngModel]="formulario().concentracion_unidad"
+                  (ngModelChange)="actualizarFormulario('concentracion_unidad', $event)"
+                >
+                  <option value="mg">mg</option>
+                  <option value="g">g</option>
+                  <option value="mcg">mcg</option>
+                  <option value="mL">mL</option>
+                  <option value="L">L</option>
+                  <option value="%">%</option>
+                  <option value="mg/mL">mg/mL</option>
+                  <option value="mg/g">mg/g</option>
+                  <option value="mcg/mL">mcg/mL</option>
+                  <option value="UI">UI</option>
+                  <option value="UI/mL">UI/mL</option>
+                </select>
+              </div>
 
             </div>
 
@@ -1090,12 +1118,35 @@
 
               <label>Presentación *</label>
 
-              <input
-                type="text"
-                placeholder="Ej. Tabletas"
+              <select
                 [ngModel]="formulario().presentacion"
                 (ngModelChange)="actualizarFormulario('presentacion', $event)"
-              />
+              >
+                <option value="">Selecciona una presentación</option>
+                <option>Tableta</option>
+                <option>Cápsula</option>
+                <option>Comprimido</option>
+                <option>Jarabe</option>
+                <option>Suspensión</option>
+                <option>Solución</option>
+                <option>Gotas</option>
+                <option>Crema</option>
+                <option>Gel</option>
+                <option>Pomada</option>
+                <option>Ungüento</option>
+                <option>Spray</option>
+                <option>Aerosol</option>
+                <option>Inyectable</option>
+                <option>Ampolla</option>
+                <option>Vial</option>
+                <option>Frasco</option>
+                <option>Sobre</option>
+                <option>Polvo</option>
+                <option>Granulado</option>
+                <option>Parche</option>
+                <option>Champú</option>
+                <option>Pipeta</option>
+              </select>
 
             </div>
 
@@ -1104,12 +1155,27 @@
 
               <label>Categoría *</label>
 
-              <input
-                type="text"
-                placeholder="Ej. Antibióticos"
+              <select
                 [ngModel]="formulario().categoria"
                 (ngModelChange)="actualizarFormulario('categoria', $event)"
-              />
+              >
+                <option value="">Selecciona una categoría</option>
+                <option>Analgésico</option>
+                <option>Antibiótico</option>
+                <option>Antiinflamatorio</option>
+                <option>Antiparasitario</option>
+                <option>Antiséptico</option>
+                <option>Antifúngico</option>
+                <option>Antiviral</option>
+                <option>Vacuna</option>
+                <option>Cardiovascular</option>
+                <option>Gastrointestinal</option>
+                <option>Dermatológico</option>
+                <option>Oftálmico</option>
+                <option>Otológico</option>
+                <option>Suplemento</option>
+                <option>Otro</option>
+              </select>
 
             </div>
 
@@ -1127,6 +1193,17 @@
 
             </div>
 
+          </div>
+
+          <div class="form-grid medication-visibility-grid">
+            <label class="checkbox-field">
+              <input type="checkbox" [ngModel]="formulario().visible_en_formulaciones" (ngModelChange)="actualizarFormulario('visible_en_formulaciones', $event)" />
+              <span>Mostrar en formulaciones</span>
+            </label>
+            <label class="checkbox-field">
+              <input type="checkbox" [ngModel]="formulario().visible_en_evoluciones" (ngModelChange)="actualizarFormulario('visible_en_evoluciones', $event)" />
+              <span>Mostrar en evoluciones / atención de citas</span>
+            </label>
           </div>
 
         </section>
@@ -1201,26 +1278,6 @@
                 [ngModel]="formulario().stockMinimo"
                 (ngModelChange)="actualizarFormulario('stockMinimo', $event)"
               />
-
-            </div>
-
-
-            <div class="form-group">
-
-              <label>Unidad</label>
-
-              <select
-                [ngModel]="formulario().unidad"
-                (ngModelChange)="actualizarFormulario('unidad', $event)"
-              >
-                <option value="Unidades">Unidades</option>
-                <option value="Tabletas">Tabletas</option>
-                <option value="Cápsulas">Cápsulas</option>
-                <option value="Frascos">Frascos</option>
-                <option value="Ampollas">Ampollas</option>
-                <option value="Tubos">Tubos</option>
-                <option value="Sobres">Sobres</option>
-              </select>
 
             </div>
 
@@ -1404,7 +1461,7 @@
           </strong>
 
           <small>
-            {{ medicamento.unidad }}
+            {{ medicamento.presentacion }}
           </small>
 
         </div>
@@ -1412,30 +1469,15 @@
 
         <div class="form-grid">
 
-          <div class="form-group full">
-
-            <label>Tipo de movimiento</label>
-
-            <select
-              [ngModel]="formularioMovimiento().tipo"
-              (ngModelChange)="actualizarMovimiento('tipo', $event)"
-            >
-
-              <option value="Entrada">
-                Entrada
-              </option>
-
-              <option value="Salida">
-                Salida
-              </option>
-
-              <option value="Ajuste">
-                Ajuste
-              </option>
-
-            </select>
-
-          </div>
+          @if (formularioMovimiento().tipo !== 'Salida') {
+            <div class="form-group full">
+              <label>Tipo de movimiento</label>
+              <select [ngModel]="formularioMovimiento().tipo" (ngModelChange)="actualizarMovimiento('tipo', $event)">
+                <option value="Entrada">Entrada</option>
+                <option value="Ajuste">Ajuste</option>
+              </select>
+            </div>
+          }
 
 
           <div class="form-group full">
@@ -1471,6 +1513,25 @@
 
           </div>
 
+
+          @if (formularioMovimiento().tipo === 'Salida') {
+            <div class="form-group full">
+              <label>Persona que compra *</label>
+              <input type="text" placeholder="Nombre completo" [ngModel]="formularioMovimiento().comprador_nombre" (ngModelChange)="actualizarMovimiento('comprador_nombre', $event)" />
+            </div>
+            <div class="form-group">
+              <label>Identificación</label>
+              <input type="text" placeholder="CC / NIT" [ngModel]="formularioMovimiento().comprador_identificacion" (ngModelChange)="actualizarMovimiento('comprador_identificacion', $event)" />
+            </div>
+            <div class="form-group">
+              <label>Celular</label>
+              <input type="text" placeholder="3001234567" [ngModel]="formularioMovimiento().comprador_celular" (ngModelChange)="actualizarMovimiento('comprador_celular', $event)" />
+            </div>
+            <div class="form-group full sale-total-field">
+              <label>Total de la salida</label>
+              <strong>{{ formatearMoneda((formularioMovimiento().cantidad || 0) * medicamento.precioVenta) }}</strong>
+            </div>
+          }
 
           <div class="form-group full">
 

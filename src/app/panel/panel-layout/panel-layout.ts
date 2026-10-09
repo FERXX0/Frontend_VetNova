@@ -151,8 +151,8 @@ export class PanelLayoutComponent {
   {
     codigo: 'facturacion',
     nombre: 'Facturación',
-    icono: 'facturacion',
-    proximamente: true   // sin cambios, este sí es cascarón
+    ruta: '/panel/facturacion',
+    icono: 'facturacion'
   }
 ];
 

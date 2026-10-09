@@ -1,9 +1,14 @@
 export interface MedicamentoFormulacion {
   id?: string;
+  medicamento_id?: string | null;
   nombre: string;
   concentracion: string;
   presentacion?: string | null;
   cantidad: number;
+  dosis_cantidad?: number | null;
+  dosis_unidad?: string | null;
+  frecuencia_horas?: number | null;
+  duracion_dias?: number | null;
   unidad: string;
   frecuencia: string;
   duracion: string;

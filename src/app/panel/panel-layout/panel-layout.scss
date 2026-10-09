@@ -22,14 +22,25 @@
   // ---------- Sidebar ----------
   &__sidebar {
     width: 16rem;
+    min-width: 16rem;
+    max-width: 16rem;
+    height: 100vh;
+    max-height: 100vh;
+    flex: 0 0 16rem;
     flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    overflow: hidden;
     background: var(--vn-white, #ffffff);
     border-right: 1px solid var(--vn-border, #e5e9ec);
     display: flex;
     flex-direction: column;
     padding: 1.5rem 1rem;
     box-shadow: 1px 0 5px rgba(16, 38, 58, 0.02);
-    z-index: 999;
+
+    // No debe quedar por encima de los modales.
+    z-index: 1;
+
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
     @media (max-width: 900px) {
@@ -38,10 +49,12 @@
       bottom: 0;
       left: 0;
       width: 16rem;
+      z-index: 999;
       transform: translateX(-100%);
       box-shadow: 4px 0 20px rgba(16, 38, 58, 0.15);
     }
   }
+
 
   &--sidebar-open {
     .panel-layout__sidebar {

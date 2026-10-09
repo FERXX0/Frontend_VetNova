@@ -15,12 +15,19 @@ import { EmpresaService } from '../../core/services/empresa.service';
 import { FormulacionService } from '../../core/services/formulacion.service';
 import { PacienteService } from '../../core/services/paciente.service';
 import { AlcanceApi } from '../../core/utils/alcance-api';
+import { FarmaciaService } from '../../core/services/farmacia.service';
+import { Medicamento } from '../../core/models/farmacia.model';
 
 interface FormularioMedicamento {
+  medicamento_id: string;
   nombre: string;
   concentracion: string;
   presentacion: string;
   cantidad: number;
+  dosis_cantidad: number;
+  dosis_unidad: string;
+  frecuencia_horas: number | null;
+  duracion_dias: number;
   unidad: string;
   frecuencia: string;
   duracion: string;
@@ -47,6 +54,7 @@ export class FormulacionesComponent implements OnInit {
   private readonly formulacionService = inject(FormulacionService);
   private readonly pacienteService = inject(PacienteService);
   private readonly empresaService = inject(EmpresaService);
+  private readonly farmaciaService = inject(FarmaciaService);
 
   readonly esSuperUsuario = computed(() => this.router.url.startsWith('/super-usuario'));
 
@@ -63,6 +71,7 @@ export class FormulacionesComponent implements OnInit {
 
   readonly pacientes = signal<Paciente[]>([]);
   readonly profesionales = signal<Profesional[]>([]);
+  readonly medicamentosDisponibles = signal<Medicamento[]>([]);
 
   readonly busqueda = signal('');
   readonly filtroEstado = signal('Todos');
@@ -168,6 +177,11 @@ export class FormulacionesComponent implements OnInit {
       next: (data) => this.profesionales.set(data),
       error: (err) => console.error('Error cargando profesionales:', err),
     });
+
+    this.farmaciaService.obtenerMedicamentos(alcance, { estado: 'Activo', per_page: 100 }).subscribe({
+      next: (resp) => this.medicamentosDisponibles.set((resp.data || []).filter((med) => med.stock > 0)),
+      error: (err) => console.error('Error cargando medicamentos:', err),
+    });
   }
 
   alBuscar(texto: string): void {
@@ -220,9 +234,14 @@ export class FormulacionesComponent implements OnInit {
       concentracion: '',
       presentacion: '',
       cantidad: 1,
-      unidad: 'tableta',
-      frecuencia: '',
-      duracion: '',
+      medicamento_id: '',
+      unidad: 'Tableta',
+      dosis_cantidad: 1,
+      dosis_unidad: 'dosis',
+      frecuencia_horas: 8,
+      duracion_dias: 1,
+      frecuencia: 'Cada 8 horas',
+      duracion: '1 días',
       via: 'Oral',
       indicaciones: '',
     };
@@ -287,10 +306,15 @@ export class FormulacionesComponent implements OnInit {
     const med = this.medicamentosTemporales()[index];
 
     this.medicamentoFormulario.set({
+      medicamento_id: med.medicamento_id ?? '',
       nombre: med.nombre,
       concentracion: med.concentracion,
       presentacion: med.presentacion ?? '',
       cantidad: med.cantidad,
+      dosis_cantidad: med.dosis_cantidad ?? med.cantidad,
+      dosis_unidad: med.dosis_unidad ?? 'dosis',
+      frecuencia_horas: med.frecuencia_horas ?? 8,
+      duracion_dias: med.duracion_dias ?? 1,
       unidad: med.unidad,
       frecuencia: med.frecuencia,
       duracion: med.duracion,
@@ -307,8 +331,21 @@ export class FormulacionesComponent implements OnInit {
 
   actualizarMedicamento(
     campo: keyof FormularioMedicamento,
-    valor: string | number
+    valor: string | number | null
   ): void {
+    if (campo === 'medicamento_id') {
+      const inventario = this.medicamentosDisponibles().find((item) => item.id === valor);
+      this.medicamentoFormulario.update((actual) => ({
+        ...actual,
+        medicamento_id: String(valor ?? ''),
+        nombre: inventario?.nombre ?? '',
+        concentracion: inventario ? `${inventario.concentracion} ${inventario.concentracion_unidad}` : '',
+        presentacion: inventario?.presentacion ?? '',
+        unidad: inventario?.presentacion ?? 'Tableta',
+      }));
+      return;
+    }
+
     this.medicamentoFormulario.update((actual) => ({
       ...actual,
       [campo]: valor,
@@ -317,38 +354,33 @@ export class FormulacionesComponent implements OnInit {
 
   guardarMedicamento(): void {
     const m = this.medicamentoFormulario();
+    const inventario = this.medicamentosDisponibles().find((item) => item.id === m.medicamento_id);
 
-    if (
-      !m.nombre.trim() ||
-      !m.concentracion.trim() ||
-      !m.frecuencia.trim() ||
-      !m.duracion.trim()
-    ) {
+    if (!inventario || !m.dosis_cantidad || !m.duracion_dias || !m.frecuencia_horas || !m.via) {
       return;
     }
 
+    const cantidad = Number((m.dosis_cantidad * (24 / m.frecuencia_horas) * m.duracion_dias).toFixed(2));
     const nuevoMed: MedicamentoFormulacion = {
-      nombre: m.nombre.trim(),
-      concentracion: m.concentracion.trim(),
-      presentacion: m.presentacion.trim() || null,
-      cantidad: Number(m.cantidad) || 1,
-      unidad: m.unidad,
-      frecuencia: m.frecuencia.trim(),
-      duracion: m.duracion.trim(),
+      medicamento_id: inventario.id,
+      nombre: inventario.nombre,
+      concentracion: `${inventario.concentracion} ${inventario.concentracion_unidad}`, 
+      presentacion: inventario.presentacion || null,
+      cantidad,
+      dosis_cantidad: m.dosis_cantidad,
+      dosis_unidad: m.dosis_unidad,
+      frecuencia_horas: m.frecuencia_horas,
+      duracion_dias: m.duracion_dias,
+      unidad: inventario.presentacion,
+      frecuencia: `Cada ${m.frecuencia_horas} horas`,
+      duracion: `${m.duracion_dias} días`,
       via: m.via,
       indicaciones: m.indicaciones.trim() || null,
     };
 
-    const existeIndice = this.medicamentosTemporales().findIndex(
-      (item) =>
-        item.nombre.toLowerCase() === nuevoMed.nombre.toLowerCase() &&
-        item.concentracion === nuevoMed.concentracion
-    );
-
+    const existeIndice = this.medicamentosTemporales().findIndex((item) => item.medicamento_id === nuevoMed.medicamento_id);
     if (existeIndice >= 0) {
-      this.medicamentosTemporales.update((meds) =>
-        meds.map((item, index) => (index === existeIndice ? nuevoMed : item))
-      );
+      this.medicamentosTemporales.update((meds) => meds.map((item, index) => index === existeIndice ? nuevoMed : item));
     } else {
       this.medicamentosTemporales.update((meds) => [...meds, nuevoMed]);
     }

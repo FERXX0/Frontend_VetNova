@@ -5,6 +5,12 @@ export interface MovimientoMedicamento {
   fecha: string;
   motivo: string;
   responsable: string;
+  factura_id?: string | null;
+  precio_unitario?: number | null;
+  total?: number | null;
+  comprador_nombre?: string | null;
+  comprador_identificacion?: string | null;
+  comprador_celular?: string | null;
 }
 
 export interface Medicamento {
@@ -14,7 +20,8 @@ export interface Medicamento {
   nombre: string;
   principioActivo: string;
   principio_activo?: string;
-  concentracion: string;
+  concentracion: number;
+  concentracion_unidad: string;
   presentacion: string;
   categoria: string;
   laboratorio: string;
@@ -24,7 +31,8 @@ export interface Medicamento {
   stock: number;
   stockMinimo: number;
   stock_minimo?: number;
-  unidad: string;
+  visible_en_formulaciones: boolean;
+  visible_en_evoluciones: boolean;
   ubicacion: string;
   precioCompra: number;
   precio_compra?: number;
@@ -37,7 +45,8 @@ export interface Medicamento {
 export interface FormularioMedicamento {
   nombre: string;
   principioActivo: string;
-  concentracion: string;
+  concentracion: number;
+  concentracion_unidad: string;
   presentacion: string;
   categoria: string;
   laboratorio: string;
@@ -45,7 +54,8 @@ export interface FormularioMedicamento {
   fechaVencimiento: string;
   stock: number;
   stockMinimo: number;
-  unidad: string;
+  visible_en_formulaciones: boolean;
+  visible_en_evoluciones: boolean;
   ubicacion: string;
   precioCompra: number;
   precioVenta: number;
@@ -57,6 +67,9 @@ export interface FormularioMovimiento {
   motivo: string;
   responsable: string;
   fecha?: string;
+  comprador_nombre?: string;
+  comprador_identificacion?: string;
+  comprador_celular?: string;
 }
 
 export interface ResumenFarmacia {

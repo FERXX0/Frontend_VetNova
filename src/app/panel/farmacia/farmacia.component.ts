@@ -116,7 +116,8 @@ export class FarmaciaComponent implements OnInit, OnChanges {
     return {
       nombre: '',
       principioActivo: '',
-      concentracion: '',
+      concentracion: 0,
+      concentracion_unidad: 'mg',
       presentacion: '',
       categoria: '',
       laboratorio: '',
@@ -124,7 +125,8 @@ export class FarmaciaComponent implements OnInit, OnChanges {
       fechaVencimiento: '',
       stock: 0,
       stockMinimo: 0,
-      unidad: 'Unidades',
+      visible_en_formulaciones: true,
+      visible_en_evoluciones: true,
       ubicacion: '',
       precioCompra: 0,
       precioVenta: 0,
@@ -137,6 +139,9 @@ export class FarmaciaComponent implements OnInit, OnChanges {
       cantidad: 1,
       motivo: '',
       responsable: '',
+      comprador_nombre: '',
+      comprador_identificacion: '',
+      comprador_celular: '',
     };
   }
 
@@ -171,7 +176,8 @@ export class FarmaciaComponent implements OnInit, OnChanges {
     this.formulario.set({
       nombre: medicamento.nombre,
       principioActivo: medicamento.principioActivo || medicamento.principio_activo || '',
-      concentracion: medicamento.concentracion,
+      concentracion: Number(medicamento.concentracion),
+      concentracion_unidad: medicamento.concentracion_unidad || 'mg',
       presentacion: medicamento.presentacion,
       categoria: medicamento.categoria,
       laboratorio: medicamento.laboratorio || '',
@@ -179,7 +185,8 @@ export class FarmaciaComponent implements OnInit, OnChanges {
       fechaVencimiento: medicamento.fechaVencimiento || medicamento.fecha_vencimiento || '',
       stock: medicamento.stock,
       stockMinimo: medicamento.stockMinimo ?? medicamento.stock_minimo ?? 0,
-      unidad: medicamento.unidad || 'Unidades',
+      visible_en_formulaciones: medicamento.visible_en_formulaciones ?? true,
+      visible_en_evoluciones: medicamento.visible_en_evoluciones ?? true,
       ubicacion: medicamento.ubicacion || '',
       precioCompra: medicamento.precioCompra ?? medicamento.precio_compra ?? 0,
       precioVenta: medicamento.precioVenta ?? medicamento.precio_venta ?? 0,
@@ -193,7 +200,7 @@ export class FarmaciaComponent implements OnInit, OnChanges {
     this.modalFormularioAbierto.set(false);
   }
 
-  actualizarFormulario(campo: keyof FormularioMedicamento, valor: string | number): void {
+  actualizarFormulario(campo: keyof FormularioMedicamento, valor: string | number | boolean): void {
     this.formulario.update((actual) => ({
       ...actual,
       [campo]: valor,
@@ -206,7 +213,7 @@ export class FarmaciaComponent implements OnInit, OnChanges {
     if (
       !formulario.nombre.trim() ||
       !formulario.principioActivo.trim() ||
-      !formulario.concentracion.trim() ||
+      formulario.concentracion <= 0 ||
       !formulario.presentacion.trim() ||
       !formulario.categoria.trim() ||
       !formulario.fechaVencimiento
@@ -267,7 +274,8 @@ export class FarmaciaComponent implements OnInit, OnChanges {
       !medicamento ||
       formulario.cantidad <= 0 ||
       !formulario.motivo.trim() ||
-      !formulario.responsable.trim()
+      !formulario.responsable.trim() ||
+      (formulario.tipo === 'Salida' && !formulario.comprador_nombre?.trim())
     ) {
       return;
     }

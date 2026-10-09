@@ -1016,70 +1016,36 @@
 
           <label>Medicamento *</label>
 
-          <input
-            type="text"
-            placeholder="Nombre del medicamento"
-            [ngModel]="medicamentoFormulario().nombre"
-            (ngModelChange)="actualizarMedicamento('nombre', $event)"
-          />
-
-        </div>
-
-        <div class="form-group">
-
-          <label>Concentración *</label>
-
-          <input
-            type="text"
-            placeholder="Ej. 50 mg"
-            [ngModel]="medicamentoFormulario().concentracion"
-            (ngModelChange)="actualizarMedicamento('concentracion', $event)"
-          />
-
-        </div>
-
-        <div class="form-group">
-
-          <label>Presentación</label>
-
-          <input
-            type="text"
-            placeholder="Ej. Tabletas"
-            [ngModel]="medicamentoFormulario().presentacion"
-            (ngModelChange)="actualizarMedicamento('presentacion', $event)"
-          />
-
-        </div>
-
-        <div class="form-group">
-
-          <label>Cantidad</label>
-
-          <input
-            type="number"
-            min="1"
-            [ngModel]="medicamentoFormulario().cantidad"
-            (ngModelChange)="actualizarMedicamento('cantidad', $event)"
-          />
-
-        </div>
-
-        <div class="form-group">
-
-          <label>Unidad</label>
-
           <select
-            [ngModel]="medicamentoFormulario().unidad"
-            (ngModelChange)="actualizarMedicamento('unidad', $event)"
+            [ngModel]="medicamentoFormulario().medicamento_id"
+            (ngModelChange)="actualizarMedicamento('medicamento_id', $event)"
           >
-            <option value="tableta">Tableta</option>
-            <option value="cápsula">Cápsula</option>
-            <option value="ml">ml</option>
-            <option value="gota">Gota</option>
-            <option value="aplicación">Aplicación</option>
-            <option value="dosis">Dosis</option>
+            <option value="">Seleccionar medicamento de Farmacia</option>
+            @for (med of medicamentosDisponibles(); track med.id) {
+              <option [value]="med.id">{{ med.nombre }} · {{ med.concentracion }} · Stock: {{ med.stock }}</option>
+            }
           </select>
 
+        </div>
+
+        <div class="form-group">
+          <label>Concentración</label>
+          <input type="text" [value]="medicamentoFormulario().concentracion" readonly />
+        </div>
+
+        <div class="form-group">
+          <label>Presentación</label>
+          <input type="text" [value]="medicamentoFormulario().presentacion" readonly />
+        </div>
+
+        <div class="form-group">
+          <label>Dosis *</label>
+          <input type="number" min="0.001" step="0.001" [ngModel]="medicamentoFormulario().dosis_cantidad" (ngModelChange)="actualizarMedicamento('dosis_cantidad', $event)" />
+        </div>
+
+        <div class="form-group">
+          <label>Unidad de dosis *</label>
+          <input type="text" [ngModel]="medicamentoFormulario().dosis_unidad" (ngModelChange)="actualizarMedicamento('dosis_unidad', $event)" />
         </div>
 
         <div class="form-group">
@@ -1087,16 +1053,14 @@
           <label>Frecuencia *</label>
 
           <select
-            [ngModel]="medicamentoFormulario().frecuencia"
-            (ngModelChange)="actualizarMedicamento('frecuencia', $event)"
+            [ngModel]="medicamentoFormulario().frecuencia_horas"
+            (ngModelChange)="actualizarMedicamento('frecuencia_horas', $event ? +$event : null); actualizarMedicamento('frecuencia', $event ? 'Cada ' + $event + ' horas' : 'Dosis única')"
           >
-            <option value="">Seleccionar</option>
-            <option value="Dosis única">Dosis única</option>
-            <option value="Cada 4 horas">Cada 4 horas</option>
-            <option value="Cada 6 horas">Cada 6 horas</option>
-            <option value="Cada 8 horas">Cada 8 horas</option>
-            <option value="Cada 12 horas">Cada 12 horas</option>
-            <option value="Cada 24 horas">Cada 24 horas</option>
+            <option [ngValue]="4">Cada 4 horas</option>
+            <option [ngValue]="6">Cada 6 horas</option>
+            <option [ngValue]="8">Cada 8 horas</option>
+            <option [ngValue]="12">Cada 12 horas</option>
+            <option [ngValue]="24">Cada 24 horas</option>
           </select>
 
         </div>
@@ -1106,10 +1070,10 @@
           <label>Duración *</label>
 
           <input
-            type="text"
-            placeholder="Ej. 7 días"
-            [ngModel]="medicamentoFormulario().duracion"
-            (ngModelChange)="actualizarMedicamento('duracion', $event)"
+            type="number"
+            min="1"
+            [ngModel]="medicamentoFormulario().duracion_dias"
+            (ngModelChange)="actualizarMedicamento('duracion_dias', $event); actualizarMedicamento('duracion', $event + ' días')"
           />
 
         </div>
@@ -1164,10 +1128,11 @@
         type="button"
         class="btn-primary"
         [disabled]="
-          !medicamentoFormulario().nombre ||
-          !medicamentoFormulario().concentracion ||
-          !medicamentoFormulario().frecuencia ||
-          !medicamentoFormulario().duracion
+          !medicamentoFormulario().medicamento_id ||
+          !medicamentoFormulario().dosis_cantidad ||
+          !medicamentoFormulario().dosis_unidad ||
+          !medicamentoFormulario().frecuencia_horas ||
+          !medicamentoFormulario().duracion_dias
         "
         (click)="guardarMedicamento()"
       >

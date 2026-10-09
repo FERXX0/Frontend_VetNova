@@ -266,8 +266,8 @@
         <div class="modules-provisioning">
           <div class="modules-provisioning__header">
             <div>
-              <h3>Catálogo de Módulos y Aprovisionamiento para {{ empresa()!.nombre }}</h3>
-              <p>Activa o desactiva las funcionalidades que esta empresa tiene autorizadas según su modelo de negocio o plan contratado.</p>
+              <h3>Catálogo de módulos de {{ empresa()!.nombre }}</h3>
+              <p>Los módulos incluidos en el plan permanecen habilitados. Los que no están en el plan pueden contratarse como adiciones.</p>
             </div>
           </div>
 
@@ -294,10 +294,11 @@
                       }
                     }
                   </div>
-                  <label class="switch">
+                  <label class="switch" [title]="moduloIncluidoEnPlan(mod.codigo) ? 'Incluido en el plan' : 'Administrar como adición'">
                     <input
                       type="checkbox"
-                      [checked]="moduloEstaHabilitado(mod.codigo)"
+                      [checked]="moduloDisponible(mod.codigo)"
+                      [disabled]="moduloIncluidoEnPlan(mod.codigo) || guardandoModuloCodigo() === mod.codigo"
                       (change)="toggleModulo(mod)"
                     />
                     <span class="slider round"></span>
@@ -308,10 +309,12 @@
                   <h4>{{ mod.nombre }}</h4>
                   <p>Código técnico: <code>{{ mod.codigo }}</code></p>
                   <div class="module-card__status">
-                    @if (moduloEstaHabilitado(mod.codigo)) {
-                      <span class="pill pill--success">Habilitado para este Tenant</span>
+                    @if (moduloIncluidoEnPlan(mod.codigo)) {
+                      <span class="pill pill--success">Incluido en el plan</span>
+                    } @else if (moduloEsAdicion(mod.codigo)) {
+                      <span class="pill pill--success">Adición habilitada</span>
                     } @else {
-                      <span class="pill pill--muted">Inactivo en este Tenant</span>
+                      <span class="pill pill--muted">No incluido · disponible como adición</span>
                     }
                   </div>
                 </div>

@@ -43,6 +43,7 @@ import { UsuariosEmpresaComponent } from './panel/usuarios-empresa/usuarios-empr
 
 import { LaboratorioComponent } from './panel/laboratorio/laboratorio.component';
 import { FormulacionesComponent } from './panel/formulaciones/formulaciones.component';
+import { FacturacionComponent } from './panel/facturacion/facturacion.component';
 
 // ==========================================================
 // COMPARTIDOS
@@ -195,6 +196,11 @@ export const routes: Routes = [
       {
         path: 'farmacia',
         component: FarmaciaComponent
+      },
+
+      {
+        path: 'facturacion',
+        component: FacturacionComponent
       },
 
       {
@@ -422,6 +428,18 @@ export const routes: Routes = [
         component: FarmaciaComponent,
         data: {
           modulo: 'farmacia'
+        }
+      },
+
+      // ----------------------------------------------------
+      // FACTURACIÓN
+      // ----------------------------------------------------
+
+      {
+        path: 'facturacion',
+        component: FacturacionComponent,
+        data: {
+          modulo: 'facturacion'
         }
       },
 

@@ -1,3 +1,101 @@
-<div class="facturacion">
-  <h1>Facturacion</h1>
+<div class="facturacion-page">
+  <header class="facturacion-page__header">
+    <div>
+      <span class="eyebrow">GESTIÓN COMERCIAL</span>
+      <h1>Facturación</h1>
+      <p>Consulta las ventas generadas desde la salida de medicamentos de farmacia.</p>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="facturacion-alert">{{ error() }}</div>
+  }
+
+  <section class="facturacion-card">
+    <div class="facturacion-card__header">
+      <div>
+        <h2>Ventas de medicamentos</h2>
+        <span>{{ facturas().length }} registro(s) en esta página</span>
+      </div>
+    </div>
+
+    @if (cargando()) {
+      <div class="facturacion-empty">Cargando facturación…</div>
+    } @else if (facturas().length === 0) {
+      <div class="facturacion-empty">Aún no se han registrado ventas de medicamentos.</div>
+    } @else {
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>NÚMERO</th>
+              <th>FECHA</th>
+              <th>COMPRADOR</th>
+              <th>DETALLE</th>
+              <th>TOTAL</th>
+              <th>ESTADO</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (factura of facturas(); track factura.id) {
+              <tr>
+                <td><strong>{{ factura.numero }}</strong></td>
+                <td>{{ factura.fecha | date:'dd/MM/yyyy' }}</td>
+                <td>
+                  <strong>{{ factura.tercero_nombre }}</strong>
+                  @if (factura.tercero_identificacion) { <small>{{ factura.tercero_identificacion }}</small> }
+                </td>
+                <td>{{ factura.detalles.length }} producto(s)</td>
+                <td><strong>{{ formatearMoneda(factura.total) }}</strong></td>
+                <td><span class="status">{{ factura.estado }}</span></td>
+                <td>
+                  <button type="button" class="btn-detail" (click)="verFactura(factura)">Ver detalle</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  @if (totalPaginas() > 1) {
+    <div class="facturacion-pagination">
+      <button type="button" [disabled]="pagina() <= 1" (click)="cargar(pagina() - 1)">Anterior</button>
+      <span>Página {{ pagina() }} de {{ totalPaginas() }}</span>
+      <button type="button" [disabled]="pagina() >= totalPaginas()" (click)="cargar(pagina() + 1)">Siguiente</button>
+    </div>
+  }
+
+  @if (facturaSeleccionada(); as factura) {
+    <div class="facturacion-modal-backdrop" (click)="cerrarDetalle()">
+      <section class="facturacion-modal" (click)="$event.stopPropagation()">
+        <header>
+          <div>
+            <span class="eyebrow">FACTURA DE VENTA</span>
+            <h2>{{ factura.numero }}</h2>
+          </div>
+          <button type="button" (click)="cerrarDetalle()">×</button>
+        </header>
+        <div class="facturacion-modal__cliente">
+          <strong>{{ factura.tercero_nombre }}</strong>
+          <span>{{ factura.tercero_identificacion || 'Sin identificación' }}</span>
+          <span>{{ factura.tercero_celular || 'Sin celular' }}</span>
+        </div>
+        <div class="facturacion-detalles">
+          @for (detalle of factura.detalles; track detalle.id) {
+            <div>
+              <span>{{ detalle.descripcion }} × {{ detalle.cantidad }}</span>
+              <strong>{{ formatearMoneda(detalle.total) }}</strong>
+            </div>
+          }
+        </div>
+        <footer>
+          <span>Total</span>
+          <strong>{{ formatearMoneda(factura.total) }}</strong>
+        </footer>
+      </section>
+    </div>
+  }
 </div>

@@ -724,3 +724,542 @@
     }
   }
 }
+/* Atención clínica desde una cita */
+.modal-panel--atencion {
+  width: min(1100px, 96vw);
+  max-height: 92vh;
+  overflow: hidden;
+}
+
+.modal-panel--atencion .modal-form {
+  max-height: calc(92vh - 150px);
+  overflow-y: auto;
+}
+
+.modal-eyebrow {
+  display: block;
+  margin-bottom: .25rem;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: .65;
+}
+
+.atencion-info {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: .75rem;
+  background: rgba(0,0,0,.025);
+}
+
+.atencion-info div { display: grid; gap: .2rem; }
+.atencion-info strong { font-size: .72rem; opacity: .6; text-transform: uppercase; }
+.atencion-info span { font-weight: 600; }
+
+.atencion-seccion {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: .75rem;
+}
+
+.atencion-seccion h3 { margin: 0 0 1rem; font-size: 1rem; }
+.atencion-seccion__cabecera { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.atencion-vacio { margin: 0; opacity: .65; }
+
+.medicamento-atencion-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) repeat(5, minmax(100px, 1fr)) auto;
+  gap: .65rem;
+  align-items: end;
+  padding: .85rem 0;
+  border-top: 1px solid rgba(0,0,0,.07);
+}
+
+.medicamento-atencion-row:first-of-type { border-top: 0; }
+.medicamento-selector { min-width: 0; }
+.medicamento-cantidad-calculada { display: grid; gap: .2rem; min-width: 90px; }
+.medicamento-cantidad-calculada span { font-size: .7rem; opacity: .6; text-transform: uppercase; }
+.medicamento-cantidad-calculada strong { white-space: nowrap; }
+
+.cita-esperando-recepcion { font-size: .75rem; opacity: .6; }
+.cita-atendida-icono { font-size: 1.25rem; font-weight: 800; }
+
+@media (max-width: 900px) {
+  .atencion-info { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .medicamento-atencion-row { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 600px) {
+  .atencion-info { grid-template-columns: 1fr; }
+  .medicamento-atencion-row { grid-template-columns: 1fr; }
+}
+
+/* Ajustes visuales de la atención para conservar el lenguaje visual de VetNova. */
+.atencion-historial {
+  background: var(--vn-surface, #f6f9fa);
+}
+
+.historial-agenda-lista {
+  display: grid;
+  gap: .65rem;
+}
+
+.historial-agenda-item {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 1rem;
+  padding: .8rem;
+  border: 1px solid var(--vn-border, #e5e9ec);
+  border-radius: .65rem;
+  background: var(--vn-white, #fff);
+}
+
+.historial-agenda-item__fecha,
+.historial-agenda-item__detalle {
+  display: grid;
+  gap: .2rem;
+}
+
+.historial-agenda-item__fecha span,
+.historial-agenda-item__detalle small {
+  color: var(--vn-text-muted, #8a97a1);
+  font-size: .76rem;
+}
+
+@media (max-width: 700px) {
+  .historial-agenda-item {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   AJUSTES FINALES DEL MODAL DE ATENCIÓN CLÍNICA
+   Encabezado y acciones fijos; desplazamiento solo del contenido.
+   ========================================================= */
+
+.modal-backdrop:has(.modal-panel--atencion) {
+  z-index: 10000;
+  padding: 1rem;
+}
+
+.modal-panel--atencion {
+  display: flex;
+  flex-direction: column;
+  width: min(1100px, calc(100vw - 2rem));
+  max-width: 1100px;
+  height: min(900px, 92vh);
+  max-height: 92vh;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: var(--vn-white, #ffffff);
+  border: 1px solid var(--vn-border, #e5e9ec);
+  border-radius: 1rem;
+  box-shadow: 0 24px 60px rgba(16, 38, 58, 0.24);
+}
+
+.modal-panel--atencion > .modal-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0;
+  padding: 1.25rem 1.6rem 1.1rem;
+  border-bottom: 1px solid var(--vn-border, #e5e9ec);
+  background: var(--vn-white, #ffffff);
+}
+
+.modal-panel--atencion > .modal-header > div {
+  min-width: 0;
+}
+
+.modal-panel--atencion .modal-eyebrow {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--vn-teal-dark, #0e7c86);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 1;
+}
+
+.modal-panel--atencion .modal-header h2 {
+  margin: 0 0 0.35rem;
+  color: var(--vn-navy, #10263a);
+  font-size: 1.35rem;
+  font-weight: 750;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.modal-panel--atencion .modal-header p {
+  margin: 0;
+  color: var(--vn-text-muted, #81909b);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.modal-panel--atencion > .modal-form,
+.modal-panel--atencion > .atencion-form {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 1.25rem 1.6rem;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.modal-panel--atencion > .modal-acciones {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem 1.6rem;
+  border-top: 1px solid var(--vn-border, #e5e9ec);
+  background: var(--vn-white, #ffffff);
+  box-shadow: 0 -5px 15px rgba(16, 38, 58, 0.035);
+}
+
+/* Campos uniformes y compatibles con el tema del sistema. */
+.modal-panel--atencion .form-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+  margin-bottom: 1rem;
+}
+
+.modal-panel--atencion .form-campo label {
+  display: block;
+  margin: 0;
+  color: var(--vn-text-dark, #1c2b36);
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.modal-panel--atencion .form-campo input,
+.modal-panel--atencion .form-campo select,
+.modal-panel--atencion .form-campo textarea,
+.modal-panel--atencion .medicamento-atencion-row input,
+.modal-panel--atencion .medicamento-atencion-row select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--vn-border, #dce4e9);
+  border-radius: 0.65rem;
+  background: var(--vn-white, #ffffff);
+  color: var(--vn-text-dark, #1c2b36);
+  font-family: inherit;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.modal-panel--atencion .form-campo input,
+.modal-panel--atencion .form-campo select,
+.modal-panel--atencion .medicamento-atencion-row input,
+.modal-panel--atencion .medicamento-atencion-row select {
+  min-height: 44px;
+}
+
+.modal-panel--atencion .form-campo textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.modal-panel--atencion .form-campo input:hover,
+.modal-panel--atencion .form-campo select:hover,
+.modal-panel--atencion .form-campo textarea:hover,
+.modal-panel--atencion .medicamento-atencion-row input:hover,
+.modal-panel--atencion .medicamento-atencion-row select:hover {
+  border-color: #b7c9d2;
+}
+
+.modal-panel--atencion .form-campo input:focus,
+.modal-panel--atencion .form-campo select:focus,
+.modal-panel--atencion .form-campo textarea:focus,
+.modal-panel--atencion .medicamento-atencion-row input:focus,
+.modal-panel--atencion .medicamento-atencion-row select:focus {
+  outline: none;
+  border-color: var(--vn-teal, #1aa7a0);
+  box-shadow: 0 0 0 3px rgba(26, 167, 160, 0.12);
+}
+
+.modal-panel--atencion .form-campo input:disabled,
+.modal-panel--atencion .form-campo select:disabled,
+.modal-panel--atencion .form-campo textarea:disabled {
+  background: var(--vn-surface, #f6f9fa);
+  color: var(--vn-text-muted, #8a97a1);
+  cursor: not-allowed;
+}
+
+.modal-panel--atencion .form-fila,
+.modal-panel--atencion .form-fila--3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 1rem;
+}
+
+.modal-panel--atencion .form-fila:not(.form-fila--3) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.modal-panel--atencion .form-fila > *,
+.modal-panel--atencion .form-campo {
+  min-width: 0;
+}
+
+/* Resumen de cita más legible y consistente con VetNova. */
+.modal-panel--atencion .atencion-info {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem 1.1rem;
+  padding: 1.15rem;
+  margin: 0 0 1.35rem;
+  border: 1px solid var(--vn-border, #e5e9ec);
+  border-radius: 0.85rem;
+  background: var(--vn-surface, #f6f9fa);
+}
+
+.modal-panel--atencion .atencion-info > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.modal-panel--atencion .atencion-info strong {
+  color: var(--vn-text-muted, #81909b);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.modal-panel--atencion .atencion-info span {
+  max-width: 100%;
+  color: var(--vn-navy, #10263a);
+  font-size: 0.88rem;
+  font-weight: 650;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.modal-panel--atencion .atencion-seccion {
+  min-width: 0;
+  margin: 1.2rem 0;
+  padding: 1.15rem;
+  border: 1px solid var(--vn-border, #e5e9ec);
+  border-radius: 0.85rem;
+  background: var(--vn-white, #ffffff);
+  box-shadow: 0 2px 7px rgba(16, 38, 58, 0.025);
+}
+
+.modal-panel--atencion .atencion-seccion h3 {
+  margin: 0 0 1rem;
+  color: var(--vn-navy, #10263a);
+  font-size: 0.98rem;
+  font-weight: 750;
+}
+
+.modal-panel--atencion .atencion-seccion__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.modal-panel--atencion .atencion-seccion__cabecera h3 {
+  margin: 0;
+}
+
+.modal-panel--atencion .atencion-historial {
+  background: var(--vn-surface, #f6f9fa);
+}
+
+.modal-panel--atencion .atencion-vacio {
+  margin: 0;
+  color: var(--vn-text-muted, #81909b);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.modal-panel--atencion .historial-agenda-lista {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.modal-panel--atencion .historial-agenda-item {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.85rem;
+  border: 1px solid var(--vn-border, #e5e9ec);
+  border-radius: 0.7rem;
+  background: var(--vn-white, #ffffff);
+}
+
+.modal-panel--atencion .historial-agenda-item__fecha,
+.modal-panel--atencion .historial-agenda-item__detalle {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.modal-panel--atencion .historial-agenda-item__fecha span,
+.modal-panel--atencion .historial-agenda-item__detalle small {
+  color: var(--vn-text-muted, #8a97a1);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.modal-panel--atencion .medicamento-atencion-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 2fr) repeat(5, minmax(90px, 1fr)) auto;
+  gap: 0.65rem;
+  align-items: end;
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--vn-border, #e5e9ec);
+}
+
+.modal-panel--atencion .medicamento-atencion-row:first-of-type {
+  border-top: 0;
+}
+
+.modal-panel--atencion .medicamento-selector,
+.modal-panel--atencion .medicamento-cantidad-calculada {
+  min-width: 0;
+}
+
+.modal-panel--atencion .medicamento-cantidad-calculada {
+  display: grid;
+  gap: 0.25rem;
+  padding-bottom: 0.65rem;
+}
+
+.modal-panel--atencion .medicamento-cantidad-calculada span {
+  color: var(--vn-text-muted, #8a97a1);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.modal-panel--atencion .medicamento-cantidad-calculada strong {
+  color: var(--vn-teal-dark, #0e7c86);
+  white-space: nowrap;
+}
+
+.modal-panel--atencion .modal-acciones .btn-cancelar,
+.modal-panel--atencion .modal-acciones .btn-guardar {
+  min-height: 42px;
+  padding: 0.7rem 1.15rem;
+  border-radius: 0.65rem;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.modal-panel--atencion .modal-acciones .btn-cancelar {
+  border: 1px solid var(--vn-border, #e5e9ec);
+  background: var(--vn-white, #ffffff);
+  color: var(--vn-text-dark, #1c2b36);
+}
+
+.modal-panel--atencion .modal-acciones .btn-cancelar:hover {
+  background: var(--vn-surface, #f6f9fa);
+  border-color: #b7c9d2;
+}
+
+.modal-panel--atencion .modal-acciones .btn-guardar {
+  border: none;
+  background: linear-gradient(90deg, var(--vn-teal, #1aa7a0), var(--vn-teal-dark, #0e7c86));
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(14, 124, 134, 0.15);
+}
+
+.modal-panel--atencion .modal-acciones .btn-guardar:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.modal-panel--atencion .modal-acciones .btn-guardar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .modal-panel--atencion .atencion-info {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .modal-panel--atencion .medicamento-atencion-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .modal-panel--atencion .form-fila,
+  .modal-panel--atencion .form-fila--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .modal-panel--atencion .historial-agenda-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-backdrop:has(.modal-panel--atencion) {
+    padding: 0.35rem;
+  }
+
+  .modal-panel--atencion {
+    width: calc(100vw - 0.7rem);
+    height: 95dvh;
+    max-height: 95dvh;
+    border-radius: 0.85rem;
+  }
+
+  .modal-panel--atencion > .modal-header {
+    padding: 1rem;
+  }
+
+  .modal-panel--atencion > .modal-form,
+  .modal-panel--atencion > .atencion-form {
+    padding: 1rem;
+  }
+
+  .modal-panel--atencion > .modal-acciones {
+    padding: 0.85rem 1rem;
+  }
+
+  .modal-panel--atencion .atencion-info,
+  .modal-panel--atencion .medicamento-atencion-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
