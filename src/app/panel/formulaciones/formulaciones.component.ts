@@ -129,7 +129,7 @@ export class FormulacionesComponent implements OnInit {
   cargarEmpresas(): void {
     this.empresaService.listarOpciones().subscribe({
       next: (data) => this.empresas.set(data),
-      error: (err) => console.error('Error cargando empresas:', err),
+      error: () => this.empresas.set([]),
     });
   }
 
@@ -162,25 +162,31 @@ export class FormulacionesComponent implements OnInit {
           this.total.set(resp.total);
           this.cargando.set(false);
         },
-        error: (err) => {
-          console.error('Error cargando formulaciones:', err);
+        error: () => {
+          this.formulaciones.set([]);
           this.cargando.set(false);
         },
       });
 
     this.formulacionService.resumen(alcance).subscribe({
       next: (data) => this.resumen.set(data),
-      error: (err) => console.error('Error cargando resumen:', err),
+      error: () =>
+        this.resumen.set({
+          total: 0,
+          activas: 0,
+          finalizadas: 0,
+          total_medicamentos: 0,
+        }),
     });
 
     this.pacienteService.listar({ per_page: 100 }, alcance).subscribe({
       next: (resp) => this.pacientes.set(resp.data),
-      error: (err) => console.error('Error cargando pacientes:', err),
+      error: () => this.pacientes.set([]),
     });
 
     this.formulacionService.profesionales(alcance).subscribe({
       next: (data) => this.profesionales.set(data),
-      error: (err) => console.error('Error cargando profesionales:', err),
+      error: () => this.profesionales.set([]),
     });
 
     this.cargarMedicamentosDisponibles(alcance);
@@ -192,7 +198,7 @@ export class FormulacionesComponent implements OnInit {
       .subscribe({
         next: (resp) =>
           this.medicamentosDisponibles.set((resp.data || []).filter((med) => med.stock > 0)),
-        error: (err) => console.error('Error cargando medicamentos:', err),
+        error: () => this.medicamentosDisponibles.set([]),
       });
   }
 

@@ -193,13 +193,7 @@ export class PanelDashboardComponent implements OnInit {
 
             this.loadingCitas.set(false);
           },
-
-          error: (err: any) => {
-
-            console.warn(
-              'Error obteniendo citas',
-              err
-            );
+          error: () => {
 
             this.resetearDatosCitas();
 
@@ -207,13 +201,7 @@ export class PanelDashboardComponent implements OnInit {
           }
 
         });
-
-      } catch (e) {
-
-        console.warn(
-          'CitaService no disponible',
-          e
-        );
+      } catch {
 
         this.resetearDatosCitas();
 
@@ -257,26 +245,14 @@ export class PanelDashboardComponent implements OnInit {
 
           this.loadingPacientes.set(false);
         },
-
-        error: (err: any) => {
-
-          console.warn(
-            'Error obteniendo pacientes',
-            err
-          );
+        error: () => {
 
           this.pacientesCount.set(0);
           this.loadingPacientes.set(false);
         }
 
       });
-
-    } catch (e) {
-
-      console.warn(
-        'PacienteService no disponible',
-        e
-      );
+    } catch {
 
       this.pacientesCount.set(0);
       this.loadingPacientes.set(false);

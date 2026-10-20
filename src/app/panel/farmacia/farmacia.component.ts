@@ -116,7 +116,7 @@ export class FarmaciaComponent implements OnInit {
   cargarEmpresas(): void {
     this.empresaService.listarOpciones().subscribe({
       next: (data) => this.empresas.set(data),
-      error: (err) => console.error('Error cargando empresas:', err),
+      error: () => this.empresas.set([]),
     });
   }
 

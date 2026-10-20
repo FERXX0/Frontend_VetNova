@@ -1,8 +1,7 @@
-import { inject } from '@angular/core';
+﻿import { inject } from '@angular/core';
 import {
   ActivatedRouteSnapshot,
   CanActivateChildFn,
-  CanActivateFn,
   Router,
   UrlTree,
 } from '@angular/router';
@@ -28,7 +27,9 @@ const RUTAS_POR_MODULO: Record<string, string> = {
  * en route.data['modulo']. Si no lo tiene, lo envía al primer módulo que sí
  * tenga o, si no tiene ninguno, a /panel/sin-modulos.
  */
-export const moduloGuard: CanActivateFn = (route: ActivatedRouteSnapshot): boolean | UrlTree => {
+export const moduloChildGuard: CanActivateChildFn = (
+  route: ActivatedRouteSnapshot
+): boolean | UrlTree => {
   const session = inject(SessionService);
   const router = inject(Router);
 
@@ -64,5 +65,3 @@ export const moduloGuard: CanActivateFn = (route: ActivatedRouteSnapshot): boole
     alternativo ? RUTAS_POR_MODULO[alternativo.codigo] : '/panel/sin-modulos',
   ]);
 };
-
-export const moduloChildGuard: CanActivateChildFn = (route, state) => moduloGuard(route, state);

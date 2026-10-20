@@ -123,12 +123,6 @@ export class SuperUsuarioLayoutComponent {
       icono: 'pacientes'
     },
     {
-      codigo: 'reportes',
-      nombre: 'Reportes',
-      ruta: '/super-usuario/reportes',
-      icono: 'reportes'
-    },
-    {
       codigo: 'historias_clinicas',
       nombre: 'Historias Clínicas',
       ruta: '/super-usuario/historias-clinicas',
@@ -237,7 +231,6 @@ export class SuperUsuarioLayoutComponent {
     '/super-usuario/planes': 'Planes y Precios',
     '/super-usuario/agenda': 'Agenda Médica',
     '/super-usuario/pacientes': 'Pacientes',
-    '/super-usuario/reportes': 'Reportes',
     '/super-usuario/historias-clinicas': 'Historias Clínicas',
     '/super-usuario/esquema-v-d': 'Vacunación y Desparasitación',
     '/super-usuario/hospitalizacion': 'Hospitalización',
@@ -247,13 +240,10 @@ export class SuperUsuarioLayoutComponent {
     '/super-usuario/farmacia': 'Farmacia',
     '/super-usuario/servicios': 'Servicios',
     '/super-usuario/perfil': 'Mi Perfil',
-    '/super-usuario/monitoreo': 'Monitoreo',
-    '/super-usuario/soporte': 'Soporte',
 
     '/panel/dashboard': 'Inicio',
     '/panel/agenda': 'Agenda Médica',
     '/panel/pacientes': 'Pacientes',
-    '/panel/reportes': 'Reportes',
     '/panel/historias-clinicas': 'Historias Clínicas',
     '/panel/esquema-v-d': 'Vacunación y Desparasitación',
     '/panel/hospitalizacion': 'Hospitalización',

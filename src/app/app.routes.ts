@@ -13,9 +13,6 @@ import { DashboardComponent } from './super-usuario/dashboard/dashboard';
 import { EmpresasComponent } from './super-usuario/empresas/empresas';
 import { EmpresaDetalleComponent } from './super-usuario/empresas/empresa-detalle/empresa-detalle';
 import { UsuariosAdminComponent } from './super-usuario/usuarios/usuarios';
-import { MonitoreoComponent } from './super-usuario/monitoreo/monitoreo';
-import { SoporteComponent } from './super-usuario/soporte/soporte';
-import { ReportesAdminComponent } from './super-usuario/reportes-admin/reportes-admin';
 import { ConfiguracionGlobalComponent } from './super-usuario/configuracion-global/configuracion-global';
 import { PlanesComponent } from './super-usuario/planes/planes';
 
@@ -38,7 +35,6 @@ import { PacienteDetalleComponent } from './panel/pacientes/paciente-detalle/pac
 import { ServiciosComponent } from './panel/servicios/servicios.component';
 
 import { UsuariosEmpresaComponent } from './panel/usuarios-empresa/usuarios-empresa.component';
-// import { ReportesEmpresaComponent } from './panel/reportes-empresa/reportes-empresa';
 
 import { LaboratorioComponent } from './panel/laboratorio/laboratorio.component';
 import { FormulacionesComponent } from './panel/formulaciones/formulaciones.component';
@@ -201,21 +197,6 @@ export const routes: Routes = [
       },
 
       {
-        path: 'monitoreo',
-        component: MonitoreoComponent
-      },
-
-      {
-        path: 'soporte',
-        component: SoporteComponent
-      },
-
-      {
-        path: 'reportes',
-        component: ReportesAdminComponent
-      },
-
-      {
         path: 'configuracion',
         component: ConfiguracionGlobalComponent,
         data: { roles: ['super_admin', 'soporte'] }
@@ -333,18 +314,6 @@ export const routes: Routes = [
           modulo: 'usuarios'
         }
       },
-
-      // ----------------------------------------------------
-      // REPORTES DE LA EMPRESA
-      // ----------------------------------------------------
-
-      // {
-      //   path: 'reportes',
-      //   component: ReportesEmpresaComponent,
-      //   data: {
-      //     modulo: 'reportes'
-      //   }
-      // },
 
       // ----------------------------------------------------
       // HISTORIAS CLÍNICAS

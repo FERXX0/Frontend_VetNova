@@ -88,12 +88,6 @@ export class PanelLayoutComponent {
     icono: 'usuarios'
   },
   {
-    codigo: 'reportes',
-    nombre: 'Reportes',
-    icono: 'reportes',
-    proximamente: true   // <-- se agrega: su ruta real está comentada y el componente no está terminado
-  },
-  {
     codigo: 'historias_clinicas',
     nombre: 'Historias Clínicas',
     ruta: '/panel/historias-clinicas',   // <-- se agrega

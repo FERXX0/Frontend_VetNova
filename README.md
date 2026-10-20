@@ -1,59 +1,71 @@
-# Vetnovafront
+﻿# VetNova - Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.21.
+VetNova es un sistema multitenant para la gestión integral de clínicas veterinarias, diseñado para administrar empresas, sedes, historias clínicas, citas, vacunaciones, hospitalización, procedimientos, farmacia, laboratorio y facturación.
 
-## Development server
+## Tecnologías
 
-To start a local development server, run:
+- **Angular 21**
+- **Standalone Components**
+- **Angular Signals**
+- **RxJS**
+- **SCSS**
+
+## Requisitos
+
+- **Node.js** (v20 o superior recomendado)
+- **npm** (o el gestor de paquetes configurado en el proyecto)
+
+## Instalación
+
+Instala las dependencias del proyecto ejecutando:
+
+```bash
+npm install
+```
+
+## Servidor de desarrollo
+
+Para iniciar el servidor de desarrollo local, ejecuta:
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+o bien:
 
 ```bash
-ng generate component component-name
+npm start
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Navega a `http://localhost:4200/` en tu navegador. La aplicación se recargará automáticamente al modificar los archivos de origen.
 
-```bash
-ng generate --help
-```
+## Compilación
 
-## Building
-
-To build the project run:
+Para compilar el proyecto para producción:
 
 ```bash
 ng build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Los artefactos compilados se almacenan en el directorio `dist/`.
 
-## Running unit tests
+## Configuración de la URL del Backend
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+La URL base de la API REST se encuentra definida en los archivos de entorno del proyecto:
 
-```bash
-ng test
-```
+- **Desarrollo (`src/environments/environment.ts`)**:
+  ```typescript
+  export const environment = {
+    production: false,
+    apiUrl: 'http://127.0.0.1:8000/api',
+  };
+  ```
+- **Producción (`src/environments/environment.prod.ts`)**:
+  ```typescript
+  export const environment = {
+    production: true,
+    apiUrl: 'https://api.vetnova.com/api',
+  };
+  ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+En compilaciones de producción (`ng build`), Angular CLI sustituye automáticamente `src/environments/environment.ts` por `src/environments/environment.prod.ts` según la regla de `fileReplacements` configurada en `angular.json`. Para apuntar a un backend local o remoto específico en desarrollo, ajusta la propiedad `apiUrl` en `src/environments/environment.ts`.

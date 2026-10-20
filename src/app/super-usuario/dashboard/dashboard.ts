@@ -346,15 +346,7 @@ export class DashboardComponent implements OnInit {
         );
 
       },
-
-      error: (error: unknown) => {
-
-        console.error(
-          'Error cargando resumen del dashboard:',
-          error
-        );
-
-      }
+      error: () => {}
 
     });
   }
