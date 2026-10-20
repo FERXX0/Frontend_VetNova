@@ -1,58 +1,17 @@
 import { inject } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivateChildFn, CanActivateFn, Router } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  CanActivateChildFn,
+  CanActivateFn,
+  Router,
+  UrlTree,
+} from '@angular/router';
 import { SessionService } from '../services/session.service';
-import { EsquemaVDComponent } from '../../panel/esquema-v-d/esquema-v-d.component';
 
-
-/**
- * Valida que el usuario autenticado tenga asignado en `usuario.modulos`
- * el módulo especificado en `route.data['modulo']`.
- * 
- * Si no tiene el módulo:
- * 1. Si no tiene NINGÚN módulo asignado (usuario.modulos = []), redirige a `/panel/sin-modulos` (evita bucles infinitos).
- * 2. Si tiene otros módulos, redirige al primero que tenga disponible.
- */
-export const moduloGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
-  const session = inject(SessionService);
-  const router = inject(Router);
-
-  if (!session.estaAutenticado()) {
-    router.navigate(['/login']);
-    return false;
-  }
-
-  const usuario = session.obtenerUsuario();
-  if (!usuario) {
-    router.navigate(['/login']);
-    return false;
-  }
-
-  // Superadministrador tiene acceso global irrestricto
-  if (usuario.es_super_administrador) {
-    return true;
-  }
-
-  const moduloRequerido = route.data['modulo'] as string | undefined;
-
-  // Si la ruta no especifica un módulo concreto (ej. layout contenedor o perfil),
-  // se permite si tiene sesión
-  if (!moduloRequerido) {
-    return true;
-  }
-
-  const modulos = usuario.modulos || [];
-
-  // Caso borde: usuario sin ningún módulo asignado
-  if (modulos.length === 0) {
-    router.navigate(['/panel/sin-modulos']);
-    return false;
-  }
-
-  const MODULO_RUTAS: Record<string, string> = {
+const RUTAS_POR_MODULO: Record<string, string> = {
   citas: '/panel/agenda',
   clientes_pacientes: '/panel/pacientes',
   usuarios: '/panel/usuarios',
-  reportes: '/panel/reportes',
   historias_clinicas: '/panel/historias-clinicas',
   esquema_v_d: '/panel/esquema-v-d',
   hospitalizacion: '/panel/hospitalizacion',
@@ -61,28 +20,49 @@ export const moduloGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   formulaciones: '/panel/formulaciones',
   farmacia: '/panel/farmacia',
   servicios: '/panel/servicios',
+  facturacion: '/panel/facturacion',
 };
 
-  // Verificar si tiene el módulo requerido
-  const tieneModulo = modulos.some((m) => m.codigo === moduloRequerido && m.activo !== false);
+/**
+ * Valida que el usuario de la veterinaria tenga asignado el módulo indicado
+ * en route.data['modulo']. Si no lo tiene, lo envía al primer módulo que sí
+ * tenga o, si no tiene ninguno, a /panel/sin-modulos.
+ */
+export const moduloGuard: CanActivateFn = (route: ActivatedRouteSnapshot): boolean | UrlTree => {
+  const session = inject(SessionService);
+  const router = inject(Router);
 
-  if (tieneModulo) {
+  if (!session.estaAutenticado()) {
+    return router.createUrlTree(['/login']);
+  }
+
+  if (session.esPersonalPlataforma()) {
+    return router.createUrlTree(['/super-usuario/dashboard']);
+  }
+
+  const usuario = session.obtenerUsuario();
+
+  if (!usuario) {
+    return router.createUrlTree(['/login']);
+  }
+
+  const moduloRequerido = route.data['modulo'] as string | undefined;
+
+  if (!moduloRequerido) {
     return true;
   }
 
-  // Si no tiene el módulo solicitado, buscar la primera ruta disponible
-  for (const mod of modulos) {
-    if (MODULO_RUTAS[mod.codigo]) {
-      router.navigate([MODULO_RUTAS[mod.codigo]]);
-      return false;
-    }
+  const modulosActivos = (usuario.modulos ?? []).filter((modulo) => modulo.activo !== false);
+
+  if (modulosActivos.some((modulo) => modulo.codigo === moduloRequerido)) {
+    return true;
   }
 
-  // Si ninguno de sus módulos coincide con una ruta implementada
-  router.navigate(['/panel/sin-modulos']);
-  return false;
+  const alternativo = modulosActivos.find((modulo) => RUTAS_POR_MODULO[modulo.codigo]);
+
+  return router.createUrlTree([
+    alternativo ? RUTAS_POR_MODULO[alternativo.codigo] : '/panel/sin-modulos',
+  ]);
 };
 
-export const moduloChildGuard: CanActivateChildFn = (route, state) => {
-  return moduloGuard(route, state);
-};
+export const moduloChildGuard: CanActivateChildFn = (route, state) => moduloGuard(route, state);

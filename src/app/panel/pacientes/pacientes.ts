@@ -24,6 +24,11 @@ export class PacientesComponent implements OnInit {
   // Esta misma pantalla se usa en /super-usuario/pacientes y en /panel/pacientes.
   readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
 
+  /** Ruta base del listado según el árbol de rutas desde el que se muestra la pantalla. */
+  readonly rutaBase = this.router.url.startsWith('/super-usuario')
+    ? '/super-usuario/pacientes'
+    : '/panel/pacientes';
+
   empresasDisponibles = signal<EmpresaOpcion[]>([]);
   filtroEmpresa = signal<string>('todas');
 

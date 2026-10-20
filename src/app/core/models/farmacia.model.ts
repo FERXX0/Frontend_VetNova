@@ -1,3 +1,5 @@
+import { EvolucionFormulacion, FormulacionFila } from './formulacion.model';
+
 export interface MovimientoMedicamento {
   id: string;
   tipo: 'Entrada' | 'Salida' | 'Ajuste';
@@ -11,11 +13,20 @@ export interface MovimientoMedicamento {
   comprador_nombre?: string | null;
   comprador_identificacion?: string | null;
   comprador_celular?: string | null;
+  paciente_id?: string | null;
+  formulacion_id?: string | null;
+  formulacion_numero?: string | null;
+  lote?: string | null;
+  fecha_vencimiento?: string | null;
+  proveedor?: string | null;
+  precio_compra?: number | null;
+  stock_resultante?: number | null;
 }
 
 export interface Medicamento {
   id: string;
   empresa_id?: string;
+  empresa_nombre?: string | null;
   codigo: string;
   nombre: string;
   principioActivo: string;
@@ -70,6 +81,12 @@ export interface FormularioMovimiento {
   comprador_nombre?: string;
   comprador_identificacion?: string;
   comprador_celular?: string;
+  paciente_id?: string | null;
+  lote?: string;
+  fecha_vencimiento?: string;
+  proveedor?: string;
+  precio_compra?: number;
+  actualizar_datos_medicamento?: boolean;
 }
 
 export interface ResumenFarmacia {
@@ -79,4 +96,35 @@ export interface ResumenFarmacia {
   proximos_vencer: number;
   valor_inventario: number;
   categorias: string[];
+}
+
+export interface FormulacionRegistro extends FormulacionFila {
+  evoluciones: EvolucionFormulacion[];
+}
+
+export interface MovimientoPacienteFarmacia extends MovimientoMedicamento {
+  medicamento_codigo?: string;
+  medicamento_nombre?: string;
+  presentacion?: string;
+}
+
+export interface RegistroPacienteFarmacia {
+  paciente: {
+    id: string;
+    nombre: string;
+    especie: string;
+    raza?: string;
+    propietario?: {
+      nombre: string;
+      celular?: string;
+    };
+  };
+  resumen: {
+    formulaciones: number;
+    medicamentos_dispensados: number;
+    medicamentos_pendientes: number;
+    movimientos: number;
+  };
+  formulaciones: FormulacionRegistro[];
+  movimientos: MovimientoPacienteFarmacia[];
 }

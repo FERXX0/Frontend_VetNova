@@ -16,27 +16,27 @@
     }
   </header>
 
-  <!-- Métricas Rápidas del Día -->
+  <!-- Métricas Rápidas del Periodo -->
   <div class="agenda-page__stats">
     <div class="stat-box">
-      <span class="stat-box__label">Citas del Día</span>
-      <strong class="stat-box__val">{{ statsDia().total }}</strong>
+      <span class="stat-box__label">Citas del Periodo</span>
+      <strong class="stat-box__val">{{ statsPeriodo().total }}</strong>
     </div>
     <div class="stat-box stat-box--confirmadas">
       <span class="stat-box__label">Confirmadas</span>
-      <strong class="stat-box__val">{{ statsDia().confirmadas }}</strong>
+      <strong class="stat-box__val">{{ statsPeriodo().confirmadas }}</strong>
     </div>
     <div class="stat-box stat-box--pendientes">
       <span class="stat-box__label">Pendientes</span>
-      <strong class="stat-box__val">{{ statsDia().pendientes }}</strong>
+      <strong class="stat-box__val">{{ statsPeriodo().pendientes }}</strong>
     </div>
     <div class="stat-box stat-box--atendidas">
       <span class="stat-box__label">Atendidas</span>
-      <strong class="stat-box__val">{{ statsDia().atendidas }}</strong>
+      <strong class="stat-box__val">{{ statsPeriodo().atendidas }}</strong>
     </div>
   </div>
 
-  <!-- Filtros exclusivos de Super Usuario: Empresa y Profesional -->
+  <!-- Selector de empresa (solo super-usuario) -->
   @if (esVistaSuperUsuario()) {
     <div class="agenda-page__filtros-admin">
       <select
@@ -49,13 +49,17 @@
           <option [value]="empresa.id">{{ empresa.nombre }}</option>
         }
       </select>
+    </div>
+  }
 
+  <!-- Selector de profesional (todos los roles) -->
+  @if (profesionales().length > 0) {
+    <div class="agenda-page__filtros-admin">
       <select
         class="agenda-page__filtro-select"
         [value]="filtroProfesional()"
-        (change)="filtroProfesional.set($any($event.target).value)"
+        (change)="alCambiarProfesional($any($event.target).value)"
       >
-        <option value="todos">Todos los profesionales</option>
         @for (p of profesionales(); track p.id) {
           <option [value]="p.id">{{ p.nombre }}</option>
         }
@@ -66,7 +70,7 @@
   <!-- Barra de Navegación de Fechas y Filtros -->
   <div class="agenda-page__nav-bar">
     <div class="fecha-selector">
-      <button type="button" class="btn-nav" (click)="cambiarDia(-1)" title="Día anterior">
+      <button type="button" class="btn-nav" (click)="navegar(-1)" title="Anterior">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -74,7 +78,7 @@
 
       <button type="button" class="btn-hoy" (click)="irAHoy()">Hoy</button>
 
-      <button type="button" class="btn-nav" (click)="cambiarDia(1)" title="Día siguiente">
+      <button type="button" class="btn-nav" (click)="navegar(1)" title="Siguiente">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -82,8 +86,30 @@
 
       <div class="fecha-picker-wrap">
         <input type="date" [value]="fechaSeleccionada()" (change)="onFechaInput($event)" class="fecha-picker-input" />
-        <span class="fecha-texto">{{ fechaLegible() }}</span>
+        <span class="fecha-texto">{{ etiquetaPeriodo() }}</span>
       </div>
+    </div>
+
+    <!-- Control segmentado de periodo -->
+    <div class="agenda-page__periodo-control">
+      <button
+        type="button"
+        class="filtro-badge"
+        [class.filtro-badge--activo]="periodo() === 'dia'"
+        (click)="cambiarPeriodo('dia')"
+      >Día</button>
+      <button
+        type="button"
+        class="filtro-badge"
+        [class.filtro-badge--activo]="periodo() === 'semana'"
+        (click)="cambiarPeriodo('semana')"
+      >Semana</button>
+      <button
+        type="button"
+        class="filtro-badge"
+        [class.filtro-badge--activo]="periodo() === 'mes'"
+        (click)="cambiarPeriodo('mes')"
+      >Mes</button>
     </div>
 
     <!-- Filtro por estado -->
@@ -109,142 +135,191 @@
     </div>
   </div>
 
-  <!-- Vista Horaria (Timeline) -->
-  <div class="timeline-card">
-    <div class="timeline">
-      @for (hora of franjasHorarias; track hora) {
-        <div class="timeline__fila">
-          <div class="timeline__hora">
-            <span>{{ hora }}</span>
-          </div>
+  <!-- Aviso: sin profesionales disponibles -->
+  @if (profesionales().length === 0 && !cargando()) {
+    <div class="agenda-aviso">No hay profesionales disponibles para la agenda.</div>
+  }
 
-          <div class="timeline__contenido">
-            @for (cita of citasEnFranja(hora); track cita.id) {
-              <div class="cita-card" [class]="'cita-card--' + cita.estado">
-                <div class="cita-card__tiempo">
-                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
-                    <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                  </svg>
-                  <span>{{ cita.hora_inicio }} - {{ cita.hora_fin || '...' }}</span>
-                </div>
+  <!-- Template reutilizable: card de cita -->
+  <ng-template #tarjetaCita let-cita>
+    <div class="cita-card" [class]="'cita-card--' + cita.estado">
+      <div class="cita-card__tiempo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span>{{ cita.hora_inicio }} - {{ cita.hora_fin || '...' }}</span>
+      </div>
 
-                <div class="cita-card__principal">
-                  <div class="cita-card__paciente">
-                    <span class="cita-card__avatar-emoji">
-                      @switch (cita.paciente_especie?.toLowerCase()) {
-                        @case ('canino') { 🐕 }
-                        @case ('felino') { 🐈 }
-                        @default { 🐾 }
-                      }
-                    </span>
-                    <strong>{{ cita.paciente_nombre }}</strong>
-                    <span class="badge-tipo-consulta">{{ cita.tipo_consulta }}</span>
-                    @if (cita.servicio_nombre) {
-                      <span class="badge-servicio">{{ cita.servicio_nombre }}</span>
-                    }
-                  </div>
+      <div class="cita-card__principal">
+        <div class="cita-card__paciente">
+          <span class="cita-card__avatar-emoji">
+            @switch (cita.paciente_especie?.toLowerCase()) {
+              @case ('canino') { 🐕 }
+              @case ('felino') { 🐈 }
+              @default { 🐾 }
+            }
+          </span>
+          <strong>{{ cita.paciente_nombre }}</strong>
+          <span class="badge-tipo-consulta">{{ cita.tipo_consulta }}</span>
+          @if (cita.servicio_nombre) {
+            <span class="badge-servicio">{{ cita.servicio_nombre }}</span>
+          }
+        </div>
 
-                  <p class="cita-card__motivo">{{ cita.motivo }}</p>
+        <p class="cita-card__motivo">{{ cita.motivo }}</p>
 
-                  <div class="cita-card__meta">
-                    <span class="cita-card__veterinario">
-                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.6"/><circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M20 8v6M23 11h-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-                      {{ cita.veterinario_nombre }}
-                    </span>
+        <div class="cita-card__meta">
+          <span class="cita-card__veterinario">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.6"/><circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M20 8v6M23 11h-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            {{ cita.veterinario_nombre }}
+          </span>
 
-                    <span class="cita-card__propietario">
-                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.6"/></svg>
-                      {{ cita.propietario_nombre }} ({{ cita.propietario_celular || 'Sin celular' }})
-                    </span>
-                  </div>
-                </div>
+          <span class="cita-card__propietario">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.6"/></svg>
+            {{ cita.propietario_nombre }} ({{ cita.propietario_celular || 'Sin celular' }})
+          </span>
+        </div>
+      </div>
 
-                <div class="cita-card__estado-acciones">
-                  <span class="badge-estado-cita" [class]="'badge-estado-cita--' + cita.estado">
-                    {{ cita.estado }}
-                  </span>
+      <div class="cita-card__estado-acciones">
+        <span class="badge-estado-cita" [class]="'badge-estado-cita--' + cita.estado">
+          {{ cita.estado }}
+        </span>
 
-                  <div class="cita-card__botones">
-                    @if (cita.estado === 'pendiente' && !esVeterinario()) {
-                      <button
-                        type="button"
-                        class="btn-mini btn-mini--confirmar"
-                        title="Confirmar cita"
-                        (click)="cambiarEstadoCita(cita, 'confirmada')"
-                      >
-                        ✓ Confirmar
-                      </button>
-                    }
-                    @if (cita.estado === 'confirmada' && esRecepcionista()) {
-                      <button
-                        type="button"
-                        class="btn-mini btn-mini--atender"
-                        title="Registrar llegada del paciente"
-                        (click)="marcarLlegada(cita)"
-                      >
-                        ✓ <span class="sr-only">Registrar llegada</span> Cumplir cita
-                      </button>
-                    }
-                    @if (cita.estado === 'confirmada' && !esRecepcionista()) {
-                      <span class="cita-esperando-recepcion">Esperando llegada</span>
-                    }
-                    @if (cita.estado === 'cumplida' && esRecepcionista()) {
-                      <span class="cita-esperando-recepcion">Paciente en clínica</span>
-                    }
-                    @if (cita.estado === 'cumplida' && !esRecepcionista()) {
-                      <button
-                        type="button"
-                        class="btn-mini btn-mini--atender"
-                        title="Abrir historia clínica y finalizar atención"
-                        (click)="abrirAtencion(cita)"
-                      >
-                        ✓ Finalizar historia
-                      </button>
-                    }
-                    @if (cita.estado === 'atendida') {
-                      <span class="cita-atendida-icono" title="Atención registrada">✓</span>
-                    }
-                    @if (!esVeterinario()) {
-                      <button
-                        type="button"
-                        class="btn-mini-icon"
-                        title="Editar cita"
-                      (click)="abrirModalEditar(cita)"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-                      </button>
-                    }
-                    @if (!esVeterinario()) {
-                      <button
-                        type="button"
-                        class="btn-mini-icon btn-mini-icon--eliminar"
-                      title="Cancelar / Eliminar"
-                      (click)="eliminarCita(cita)"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                      </button>
-                    }
-                  </div>
-                </div>
+        <div class="cita-card__botones">
+          @if (cita.estado === 'pendiente' && !esVeterinario()) {
+            <button
+              type="button"
+              class="btn-mini btn-mini--confirmar"
+              title="Confirmar cita"
+              (click)="cambiarEstadoCita(cita, 'confirmada')"
+            >
+              ✓ Confirmar
+            </button>
+          }
+          @if (cita.estado === 'confirmada' && esRecepcionista()) {
+            <button
+              type="button"
+              class="btn-mini btn-mini--atender"
+              title="Registrar llegada del paciente"
+              (click)="marcarLlegada(cita)"
+            >
+              ✓ <span class="sr-only">Registrar llegada</span> Cumplir cita
+            </button>
+          }
+          @if (cita.estado === 'confirmada' && !esRecepcionista()) {
+            <span class="cita-esperando-recepcion">Esperando llegada</span>
+          }
+          @if (cita.estado === 'cumplida' && esRecepcionista()) {
+            <span class="cita-esperando-recepcion">Paciente en clínica</span>
+          }
+          @if (cita.estado === 'cumplida' && !esRecepcionista()) {
+            <button
+              type="button"
+              class="btn-mini btn-mini--atender"
+              title="Abrir historia clínica y finalizar atención"
+              (click)="abrirAtencion(cita)"
+            >
+              ✓ Finalizar historia
+            </button>
+          }
+          @if (cita.estado === 'atendida') {
+            <span class="cita-atendida-icono" title="Atención registrada">✓</span>
+          }
+          @if (!esVeterinario()) {
+            <button
+              type="button"
+              class="btn-mini-icon"
+              title="Editar cita"
+            (click)="abrirModalEditar(cita)"
+          >
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            </button>
+          }
+          @if (!esVeterinario()) {
+            <button
+              type="button"
+              class="btn-mini-icon btn-mini-icon--eliminar"
+            title="Cancelar / Eliminar"
+            (click)="eliminarCita(cita)"
+          >
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </ng-template>
+
+  <!-- Vista Día: Timeline por franjas -->
+  @if (periodo() === 'dia') {
+    @if (profesionales().length > 0) {
+      <div class="timeline-card">
+        <div class="timeline">
+          @for (hora of franjasHorarias; track hora) {
+            <div class="timeline__fila">
+              <div class="timeline__hora">
+                <span>{{ hora }}</span>
               </div>
-            }
 
-            @if (citasEnFranja(hora).length === 0 && puedeAgendar()) {
-              <button
-                type="button"
-                class="timeline__slot-vacio"
-                (click)="abrirModalCrear(hora)"
-                title="Agendar cita a las {{ hora }}"
-              >
-                + Disponible
-              </button>
-            }
-          </div>
+              <div class="timeline__contenido">
+                @for (cita of citasEnFranja(hora); track cita.id) {
+                  <ng-container *ngTemplateOutlet="tarjetaCita; context: { $implicit: cita }"></ng-container>
+                }
+
+                @if (citasEnFranja(hora).length === 0 && puedeAgendar() && !franjaPasada(hora)) {
+                  <button
+                    type="button"
+                    class="timeline__slot-vacio"
+                    (click)="abrirModalCrear(hora)"
+                    title="Agendar cita a las {{ hora }}"
+                  >
+                    + Disponible
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Vista Semana / Mes: listado agrupado por día -->
+  @if (periodo() === 'semana' || periodo() === 'mes') {
+    @if (profesionales().length > 0) {
+      @if (citasPorDia().length === 0 && !cargando()) {
+        <div class="agenda-aviso">Este profesional no tiene citas en el periodo seleccionado.</div>
+      } @else {
+        <div class="agenda-lista-dias">
+          @for (grupo of citasPorDia(); track grupo.fecha) {
+            <section class="agenda-dia">
+              <div class="agenda-dia__cabecera">
+                <span class="agenda-dia__etiqueta">{{ grupo.etiqueta }}</span>
+                <span class="agenda-dia__conteo">{{ grupo.citas.length }} cita{{ grupo.citas.length !== 1 ? 's' : '' }}</span>
+              </div>
+              <div class="agenda-dia__grilla">
+                @for (cita of grupo.citas; track cita.id) {
+                  <ng-container *ngTemplateOutlet="tarjetaCita; context: { $implicit: cita }"></ng-container>
+                }
+              </div>
+            </section>
+          }
         </div>
       }
-    </div>
-  </div>
+    }
+  }
+
+  <!-- Indicador de carga -->
+  @if (cargando()) {
+    <div class="agenda-aviso">Cargando citas…</div>
+  }
+
+  <!-- Error global -->
+  @if (error()) {
+    <div class="alerta-form-error" style="margin-top:1rem">{{ error() }}</div>
+  }
 
   <!-- Modal Agendar / Editar Cita -->
   @if (modalAbierto()) {
@@ -273,13 +348,24 @@
           }
 
           <div class="form-campo">
-            <label for="paciente_id">Paciente / Mascota *</label>
-            <select id="paciente_id" formControlName="paciente_id">
-              <option value="" disabled>Selecciona un paciente</option>
-              @for (p of pacientes(); track p.id) {
-                <option [value]="p.id">{{ p.nombre }} ({{ p.especie }} - Propietario: {{ p.propietario.nombre }})</option>
-              }
-            </select>
+            <label>Paciente / Mascota *</label>
+            @if (pacienteElegido(); as pac) {
+              <div class="paciente-chip">
+                <span class="material-symbols-rounded">pets</span>
+                <span>{{ pac.nombre }}@if (pac.propietario_nombre) { - Propietario: {{ pac.propietario_nombre }} }</span>
+                <button type="button" (click)="quitarPaciente()" aria-label="Quitar paciente">
+                  <span class="material-symbols-rounded">close</span>
+                </button>
+              </div>
+            } @else if (esVistaSuperUsuario() && !form.get('empresa_id')?.value) {
+              <small class="form-hint">Selecciona primero la empresa para buscar pacientes.</small>
+            } @else {
+              <app-buscador-paciente
+                [alcance]="alcancePacientesForm()"
+                placeholder="Buscar paciente por nombre o propietario..."
+                (pacienteSeleccionado)="alSeleccionarPaciente($event)"
+              />
+            }
             @if (form.get('paciente_id')?.invalid && form.get('paciente_id')?.touched) {
               <span class="error-texto">Debes seleccionar un paciente.</span>
             }
@@ -324,7 +410,7 @@
           <div class="form-fila form-fila--3">
             <div class="form-campo">
               <label for="fecha">Fecha *</label>
-              <input id="fecha" type="date" formControlName="fecha" />
+              <input id="fecha" type="date" formControlName="fecha" [attr.min]="fechaMinimaFormulario()" />
             </div>
 
             <div class="form-campo">
@@ -337,6 +423,9 @@
               <input id="hora_fin" type="time" formControlName="hora_fin" />
             </div>
           </div>
+          @if (horarioPasado()) {
+            <span class="error-texto">No se puede agendar una cita en una fecha u hora que ya pasó.</span>
+          }
 
           <div class="form-campo">
             <label for="motivo">Motivo de la Cita *</label>
@@ -597,4 +686,3 @@
       </div>
     </div>
   }
->

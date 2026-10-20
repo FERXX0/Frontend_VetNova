@@ -17,6 +17,10 @@ export class PacienteDetalleComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly pacienteService = inject(PacienteService);
 
+  readonly rutaListado = this.router.url.startsWith('/super-usuario')
+    ? '/super-usuario/pacientes'
+    : '/panel/pacientes';
+
   paciente = signal<Paciente | null>(null);
   cargando = signal(true);
   error = signal<string | null>(null);

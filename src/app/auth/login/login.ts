@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { SessionService } from '../../core/services/session.service';
 
 @Component({
   selector: 'app-login',
@@ -28,6 +29,7 @@ export class LoginComponent {
     private fb: FormBuilder,
     private router: Router,
     private authService: AuthService,
+    private session: SessionService,
   ) {
     // El campo se llama "usuario" para no tocar el HTML/mockup existente,
     // pero en este backend el usuario se identifica por su correo: se
@@ -65,22 +67,9 @@ export class LoginComponent {
     const { usuario, contrasena } = this.form.value;
 
     this.authService.login({ correo: usuario, contrasena }).subscribe({
-            next: (respuesta) => {
+            next: () => {
         this.isSubmitting.set(false);
-
-        if (
-          respuesta.usuario.es_super_administrador ||
-          respuesta.usuario.rol?.codigo === 'soporte'
-        ) {
-          this.router.navigate(['/super-usuario/dashboard']);
-        } else {
-          const modulos = respuesta.usuario.modulos || [];
-          if (modulos.length === 0) {
-            this.router.navigate(['/panel/sin-modulos']);
-          } else {
-            this.router.navigate(['/panel/dashboard']);
-          }
-        }
+        this.router.navigateByUrl(this.session.rutaInicio());
       },
       error: (error) => {
         this.isSubmitting.set(false);

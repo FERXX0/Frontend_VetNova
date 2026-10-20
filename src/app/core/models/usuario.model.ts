@@ -39,6 +39,7 @@ export interface UsuarioPayload {
   celular?: string | null;
   fecha_nacimiento?: string | null;
   correo: string;
+  modulos?: string[];
   contrasena?: string;
   activo?: boolean;
 }

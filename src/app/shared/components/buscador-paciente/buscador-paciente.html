@@ -1,0 +1,40 @@
+<div class="buscador-paciente">
+  <div class="buscador-input-wrap">
+    <span class="material-symbols-rounded">search</span>
+
+    <input
+      type="text"
+      [placeholder]="placeholder"
+      [value]="termino()"
+      (input)="alEscribir($any($event.target).value)"
+      (blur)="cerrarLista()"
+      autocomplete="off"
+    />
+
+    @if (cargando()) {
+      <span class="buscador-spinner material-symbols-rounded">progress_activity</span>
+    }
+  </div>
+
+  @if (abierto() && resultados().length > 0) {
+    <ul class="buscador-lista" role="listbox">
+      @for (paciente of resultados(); track paciente.id) {
+        <li
+          class="buscador-item"
+          role="option"
+          (mousedown)="seleccionar(paciente)"
+        >
+          <span class="buscador-nombre">{{ paciente.nombre }}</span>
+          <span class="buscador-detalle">
+            {{ paciente.especie }}{{ paciente.raza ? ' · ' + paciente.raza : '' }}
+            {{ paciente.propietario.nombre ? '— ' + paciente.propietario.nombre : '' }}
+          </span>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (abierto() && !cargando() && termino().trim() && resultados().length === 0) {
+    <div class="buscador-vacio">Sin resultados para "{{ termino() }}"</div>
+  }
+</div>

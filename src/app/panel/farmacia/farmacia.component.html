@@ -13,17 +13,68 @@
       </p>
     </div>
 
-    <button
-      class="btn-primary"
-      type="button"
-      (click)="abrirNuevoMedicamento()"
-    >
-      <span class="material-symbols-rounded">add</span>
-      Nuevo medicamento
-    </button>
+    @if (vista() === 'inventario') {
+      <button
+        class="btn-primary"
+        type="button"
+        [disabled]="!puedeCrearMedicamento()"
+        [attr.title]="puedeCrearMedicamento() ? null : 'Selecciona una empresa para crear medicamentos'"
+        (click)="abrirNuevoMedicamento()"
+      >
+        <span class="material-symbols-rounded">add</span>
+        Nuevo medicamento
+      </button>
+    }
 
   </header>
 
+  @if (esSuperUsuario()) {
+    <div class="selector-empresa">
+      <label for="selectEmpresaFarmacia">Empresa:</label>
+      <select
+        id="selectEmpresaFarmacia"
+        [ngModel]="empresaIdSeleccionada()"
+        (ngModelChange)="alCambiarEmpresa($event)"
+      >
+        <option value="">Todas las empresas de la plataforma</option>
+        @for (emp of empresas(); track emp.id) {
+          <option [value]="emp.id">{{ emp.nombre }}</option>
+        }
+      </select>
+    </div>
+  }
+
+  <nav class="vista-tabs">
+    <button
+      type="button"
+      [class.active]="vista() === 'inventario'"
+      (click)="cambiarVista('inventario')"
+    >
+      <span class="material-symbols-rounded">inventory_2</span>
+      Inventario
+    </button>
+    <button
+      type="button"
+      [class.active]="vista() === 'dispensacion'"
+      (click)="cambiarVista('dispensacion')"
+    >
+      <span class="material-symbols-rounded">medication_liquid</span>
+      Dispensación
+      @if (pendientesDispensar() > 0) {
+        <span class="tab-contador">{{ pendientesDispensar() }}</span>
+      }
+    </button>
+    <button
+      type="button"
+      [class.active]="vista() === 'registro'"
+      (click)="cambiarVista('registro')"
+    >
+      <span class="material-symbols-rounded">person_search</span>
+      Registro de pacientes
+    </button>
+  </nav>
+
+  @if (vista() === 'inventario') {
 
   <!-- ESTADÍSTICAS -->
   <section class="stats-grid">
@@ -291,6 +342,10 @@
                       {{ medicamento.nombre }}
                     </strong>
 
+                    @if (esSuperUsuario() && !empresaIdSeleccionada() && medicamento.empresa_nombre) {
+                      <span class="empresa-tag">{{ medicamento.empresa_nombre }}</span>
+                    }
+
                     <span>
                       {{ medicamento.concentracion }} {{ medicamento.concentracion_unidad }}
                       ·
@@ -488,6 +543,8 @@
                   <button
                     type="button"
                     class="btn-primary"
+                    [disabled]="!puedeCrearMedicamento()"
+                    [attr.title]="puedeCrearMedicamento() ? null : 'Selecciona una empresa para crear medicamentos'"
                     (click)="abrirNuevoMedicamento()"
                   >
                     Nuevo medicamento
@@ -532,6 +589,12 @@
     }
 
   </section>
+
+  } @else if (vista() === 'dispensacion') {
+    <app-farmacia-dispensacion [alcance]="alcanceActual()" (dispensado)="alDispensar()" />
+  } @else if (vista() === 'registro') {
+    <app-farmacia-registro-paciente [alcance]="alcanceActual()" />
+  }
 
 </section>
 
@@ -824,6 +887,21 @@
                       <small>Total: {{ formatearMoneda(movimiento.total) }}</small>
                     }
 
+                    @if (movimiento.tipo === 'Entrada') {
+                      @if (movimiento.lote) {
+                        <small>Lote: {{ movimiento.lote }}</small>
+                      }
+                      @if (movimiento.fecha_vencimiento) {
+                        <small>Vencimiento: {{ movimiento.fecha_vencimiento | date:'dd/MM/yyyy' }}</small>
+                      }
+                      @if (movimiento.proveedor) {
+                        <small>Proveedor: {{ movimiento.proveedor }}</small>
+                      }
+                      @if (movimiento.precio_compra !== null && movimiento.precio_compra !== undefined) {
+                        <small>Costo unit.: {{ formatearMoneda(movimiento.precio_compra) }}</small>
+                      }
+                    }
+
                   </div>
 
 
@@ -853,6 +931,10 @@
                     <span>
                       {{ movimiento.fecha | date:'dd/MM/yyyy' }}
                     </span>
+
+                    @if (movimiento.stock_resultante !== null && movimiento.stock_resultante !== undefined) {
+                      <small>Saldo: {{ movimiento.stock_resultante }}</small>
+                    }
 
                   </div>
 
@@ -1466,6 +1548,12 @@
 
         </div>
 
+        <div class="movement-result-stock">
+          <span>Existencia resultante</span>
+          <strong>{{ stockResultante(medicamento) }}</strong>
+          <small>{{ medicamento.presentacion }}</small>
+        </div>
+
 
         <div class="form-grid">
 
@@ -1492,10 +1580,14 @@
 
             <input
               type="number"
-              min="1"
+              [attr.min]="formularioMovimiento().tipo === 'Ajuste' ? 0 : 1"
               [ngModel]="formularioMovimiento().cantidad"
               (ngModelChange)="actualizarMovimiento('cantidad', $event)"
             />
+
+            @if (formularioMovimiento().tipo === 'Salida' && formularioMovimiento().cantidad > medicamento.stock) {
+              <span class="field-error">La cantidad supera la existencia actual ({{ medicamento.stock }}).</span>
+            }
 
           </div>
 
@@ -1513,8 +1605,59 @@
 
           </div>
 
+          @if (formularioMovimiento().tipo === 'Entrada') {
+            <div class="form-group">
+              <label>Lote</label>
+              <input type="text" placeholder="Ej. L-2026-01" [ngModel]="formularioMovimiento().lote" (ngModelChange)="actualizarMovimiento('lote', $event)" />
+            </div>
+
+            <div class="form-group">
+              <label>Fecha de vencimiento</label>
+              <input type="date" [min]="hoyIso" [ngModel]="formularioMovimiento().fecha_vencimiento" (ngModelChange)="actualizarMovimiento('fecha_vencimiento', $event)" />
+              @if (formularioMovimiento().fecha_vencimiento && formularioMovimiento().fecha_vencimiento! < hoyIso) {
+                <span class="field-error">La fecha debe ser igual o posterior a hoy.</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label>Proveedor</label>
+              <input type="text" placeholder="Nombre del proveedor" [ngModel]="formularioMovimiento().proveedor" (ngModelChange)="actualizarMovimiento('proveedor', $event)" />
+            </div>
+
+            <div class="form-group">
+              <label>Precio de compra unitario</label>
+              <input type="number" min="0" step="0.01" placeholder="0.00" [ngModel]="formularioMovimiento().precio_compra" (ngModelChange)="actualizarMovimiento('precio_compra', $event)" />
+            </div>
+
+            <div class="form-group full checkbox-line">
+              <label class="checkbox-label">
+                <input type="checkbox" [ngModel]="formularioMovimiento().actualizar_datos_medicamento" (ngModelChange)="actualizarBanderaMovimiento($event)" />
+                <span>Actualizar lote, vencimiento, proveedor y costo en la ficha del medicamento</span>
+              </label>
+            </div>
+          }
+
 
           @if (formularioMovimiento().tipo === 'Salida') {
+            <div class="form-group full">
+              <label>Paciente relacionado (opcional)</label>
+              @if (pacienteMovimiento(); as pac) {
+                <div class="paciente-chip">
+                  <span class="material-symbols-rounded">pets</span>
+                  <span>{{ pac.nombre }}</span>
+                  <button type="button" (click)="quitarPacienteMovimiento()">
+                    <span class="material-symbols-rounded">close</span>
+                  </button>
+                </div>
+              } @else {
+                <app-buscador-paciente
+                  [alcance]="alcanceDe(medicamentoSeleccionado())"
+                  placeholder="Buscar paciente asociado a la salida..."
+                  (pacienteSeleccionado)="alSeleccionarPacienteMovimiento($event)"
+                />
+              }
+            </div>
+
             <div class="form-group full">
               <label>Persona que compra *</label>
               <input type="text" placeholder="Nombre completo" [ngModel]="formularioMovimiento().comprador_nombre" (ngModelChange)="actualizarMovimiento('comprador_nombre', $event)" />
@@ -1534,16 +1677,8 @@
           }
 
           <div class="form-group full">
-
-            <label>Responsable *</label>
-
-            <input
-              type="text"
-              placeholder="Persona responsable"
-              [ngModel]="formularioMovimiento().responsable"
-              (ngModelChange)="actualizarMovimiento('responsable', $event)"
-            />
-
+            <label>Responsable</label>
+            <div class="readonly-field">{{ responsableActual() }}</div>
           </div>
 
         </div>
@@ -1565,11 +1700,7 @@
         <button
           type="button"
           class="btn-primary"
-          [disabled]="
-            formularioMovimiento().cantidad <= 0 ||
-            !formularioMovimiento().motivo ||
-            !formularioMovimiento().responsable
-          "
+          [disabled]="movimientoInvalido(medicamento)"
           (click)="guardarMovimiento()"
         >
 

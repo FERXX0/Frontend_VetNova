@@ -1,4 +1,4 @@
-<section class="formulaciones-page">
+﻿<section class="formulaciones-page">
 
   <!-- HEADER -->
   <header class="page-header">
@@ -254,16 +254,6 @@
                   </span>
                 </button>
 
-                <button
-                  type="button"
-                  title="Editar"
-                  (click)="editarFormulacion(formulacion)"
-                >
-                  <span class="material-symbols-rounded">
-                    edit
-                  </span>
-                </button>
-
               </div>
 
             </td>
@@ -466,6 +456,16 @@
             </h3>
           </div>
 
+          <button
+            *ngIf="formulacion.estado === 'Activa'"
+            class="btn-secondary"
+            type="button"
+            (click)="abrirAgregarMedicamento(formulacion)"
+          >
+            <span class="material-symbols-rounded">add</span>
+            Agregar medicamento
+          </button>
+
         </div>
 
         <div class="medications-list">
@@ -534,9 +534,65 @@
 
             </div>
 
+            <div class="medication-side">
+
+              <span class="dispense-badge" [class.dispensed]="medicamento.dispensado">
+                {{ medicamento.dispensado ? 'Dispensado' : (formulacion.estado === 'Activa' ? 'Pendiente' : 'No dispensado') }}
+              </span>
+
+              <span class="dispense-info" *ngIf="medicamento.dispensado && medicamento.dispensado_en">
+                {{ medicamento.dispensado_en | date:'dd/MM/yyyy HH:mm' }}
+                <ng-container *ngIf="medicamento.dispensado_por_nombre"> · {{ medicamento.dispensado_por_nombre }}</ng-container>
+              </span>
+
+              <button
+                *ngIf="!medicamento.dispensado && formulacion.estado === 'Activa'"
+                class="btn-danger-outline btn-compact"
+                type="button"
+                (click)="retirarMedicamento(formulacion, medicamento)"
+              >
+                <span class="material-symbols-rounded">remove_circle</span>
+                Retirar
+              </button>
+
+            </div>
+
           </article>
 
         </div>
+
+      </section>
+
+      <!-- EVOLUCIONES -->
+      <section class="detail-section">
+
+        <div class="section-title">
+          <div class="title-with-icon">
+            <span class="material-symbols-rounded">history</span>
+            <h3>
+              Evoluciones
+              <span>{{ evoluciones().length }}</span>
+            </h3>
+          </div>
+        </div>
+
+        <p class="evolution-empty" *ngIf="cargandoEvoluciones()">Cargando evoluciones...</p>
+
+        <p class="evolution-empty" *ngIf="!cargandoEvoluciones() && evoluciones().length === 0">
+          Aún no hay evoluciones registradas.
+        </p>
+
+        <ol class="evolution-list" *ngIf="evoluciones().length > 0">
+          <li class="evolution-item" *ngFor="let evolucion of evoluciones()">
+            <span class="evolution-icon">
+              <span class="material-symbols-rounded">{{ iconoEvolucion(evolucion.tipo) }}</span>
+            </span>
+            <div class="evolution-content">
+              <p>{{ evolucion.descripcion }}</p>
+              <small>{{ evolucion.usuario_nombre }} · {{ evolucion.creado_en | date:'dd/MM/yyyy HH:mm' }}</small>
+            </div>
+          </li>
+        </ol>
 
       </section>
 
@@ -585,24 +641,6 @@
           Cancelar
         </button>
 
-        <button
-          class="btn-secondary"
-          type="button"
-          (click)="editarFormulacion(formulacion)"
-        >
-          <span class="material-symbols-rounded">edit</span>
-          Editar
-        </button>
-
-        <button
-          class="btn-danger"
-          type="button"
-          (click)="eliminarFormulacion(formulacion)"
-        >
-          <span class="material-symbols-rounded">delete</span>
-          Eliminar
-        </button>
-
       </div>
 
     </div>
@@ -631,13 +669,11 @@
       <div>
 
         <span class="eyebrow">
-          {{ modoEdicion() ? 'EDITAR' : 'NUEVA' }}
+          NUEVA
         </span>
 
         <h2>
-          {{ modoEdicion()
-            ? 'Editar formulación'
-            : 'Nueva formulación' }}
+          Nueva formulación
         </h2>
 
         <p>
@@ -686,7 +722,6 @@
             <select
               [ngModel]="formulario().paciente_id"
               (ngModelChange)="actualizarFormulario('paciente_id', $event)"
-              [disabled]="modoEdicion()"
             >
               <option value="">Seleccione un paciente</option>
               <option *ngFor="let p of pacientes()" [value]="p.id">
@@ -957,9 +992,7 @@
           save
         </span>
 
-        {{ modoEdicion()
-          ? 'Guardar cambios'
-          : 'Guardar formulación' }}
+        Guardar formulación
 
       </button>
 
@@ -976,7 +1009,7 @@
 <div
   class="modal-backdrop modal-nested"
   *ngIf="modalMedicamentoAbierto()"
-  (click)="modalMedicamentoAbierto.set(false)"
+  (click)="cerrarModalMedicamento()"
 >
 
   <div
@@ -1001,7 +1034,7 @@
       <button
         class="modal-close"
         type="button"
-        (click)="modalMedicamentoAbierto.set(false)"
+        (click)="cerrarModalMedicamento()"
       >
         <span class="material-symbols-rounded">close</span>
       </button>
@@ -1009,6 +1042,11 @@
     </div>
 
     <div class="modal-body">
+
+      <div class="alert alert-error" *ngIf="errorMedicamento()">
+        <span class="material-symbols-rounded">error</span>
+        <span>{{ errorMedicamento() }}</span>
+      </div>
 
       <div class="form-grid">
 
@@ -1119,7 +1157,7 @@
       <button
         type="button"
         class="btn-secondary"
-        (click)="modalMedicamentoAbierto.set(false)"
+        (click)="cerrarModalMedicamento()"
       >
         Cancelar
       </button>
@@ -1128,6 +1166,7 @@
         type="button"
         class="btn-primary"
         [disabled]="
+          guardandoMedicamento() ||
           !medicamentoFormulario().medicamento_id ||
           !medicamentoFormulario().dosis_cantidad ||
           !medicamentoFormulario().dosis_unidad ||

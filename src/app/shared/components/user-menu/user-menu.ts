@@ -35,9 +35,7 @@ export class UserMenuComponent {
     return nombre.substring(0, 2).toUpperCase();
   });
 
-  readonly perfilRuta = computed(() => {
-    return this.session.esPersonalPlataforma() ? '/super-usuario/perfil' : '/panel/perfil';
-  });
+  readonly perfilRuta = computed(() => this.session.rutaPerfil());
 
   toggleDropdown(): void {
     this.abierto.update((v) => !v);

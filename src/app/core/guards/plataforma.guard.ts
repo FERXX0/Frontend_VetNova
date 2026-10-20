@@ -1,32 +1,39 @@
 import { inject } from '@angular/core';
-import { CanActivateChildFn, CanActivateFn, Router } from '@angular/router';
+import { CanActivateChildFn, CanActivateFn, Router, UrlTree } from '@angular/router';
 import { SessionService } from '../services/session.service';
 
 const ROLES_POR_DEFECTO = ['super_admin', 'soporte'];
 
 /**
- * Permite el acceso al área de plataforma solo al personal de VetNova
- * (super_admin y soporte).
+ * Permite el acceso al área de plataforma solo al personal de VetNova.
+ * Cualquier otro usuario autenticado es devuelto a su propia vista.
  */
-export const plataformaGuard: CanActivateFn = () => {
+export const plataformaGuard: CanActivateFn = (): boolean | UrlTree => {
   const session = inject(SessionService);
   const router = inject(Router);
+
+  if (!session.estaAutenticado()) {
+    return router.createUrlTree(['/login']);
+  }
 
   if (session.esPersonalPlataforma()) {
     return true;
   }
 
-  router.navigate(['/login']);
-  return false;
+  return router.createUrlTree([session.rutaInicio()]);
 };
 
 /**
  * Restringe cada ruta hija según data.roles.
- * Si la ruta no declara roles, solo entra super_admin.
+ * Si la ruta no declara roles, se permiten super_admin y soporte.
  */
-export const plataformaChildGuard: CanActivateChildFn = (childRoute) => {
+export const plataformaChildGuard: CanActivateChildFn = (childRoute): boolean | UrlTree => {
   const session = inject(SessionService);
   const router = inject(Router);
+
+  if (!session.esPersonalPlataforma()) {
+    return router.createUrlTree([session.rutaInicio()]);
+  }
 
   const permitidos: string[] = childRoute.data?.['roles'] ?? ROLES_POR_DEFECTO;
   const codigo = session.codigoRol();
@@ -35,8 +42,5 @@ export const plataformaChildGuard: CanActivateChildFn = (childRoute) => {
     return true;
   }
 
-  router.navigate([
-    session.esPersonalPlataforma() ? '/super-usuario/dashboard' : '/login',
-  ]);
-  return false;
+  return router.createUrlTree(['/super-usuario/dashboard']);
 };

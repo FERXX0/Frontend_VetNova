@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+﻿import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -6,6 +6,8 @@ import { PaginacionLaravel } from '../models/empresa.model';
 import { Profesional } from '../models/cita.model';
 import { AlcanceApi, urlRecurso } from '../utils/alcance-api';
 import {
+  AgregarMedicamentoPayload,
+  EvolucionFormulacion,
   FormulacionFila,
   FormulacionPayload,
   ResumenFormulaciones,
@@ -53,19 +55,8 @@ export class FormulacionService {
     return this.http.get<FormulacionFila>(`${this.url(alcance)}/${id}`);
   }
 
-  crear(
-    payload: FormulacionPayload,
-    alcance?: AlcanceApi
-  ): Observable<FormulacionFila> {
+  crear(payload: FormulacionPayload, alcance?: AlcanceApi): Observable<FormulacionFila> {
     return this.http.post<FormulacionFila>(this.url(alcance), payload);
-  }
-
-  actualizar(
-    id: string,
-    payload: FormulacionPayload,
-    alcance?: AlcanceApi
-  ): Observable<FormulacionFila> {
-    return this.http.put<FormulacionFila>(`${this.url(alcance)}/${id}`, payload);
   }
 
   cambiarEstado(
@@ -73,12 +64,26 @@ export class FormulacionService {
     estado: 'Finalizada' | 'Cancelada',
     alcance?: AlcanceApi
   ): Observable<FormulacionFila> {
-    return this.http.patch<FormulacionFila>(`${this.url(alcance)}/${id}/estado`, {
-      estado,
-    });
+    return this.http.patch<FormulacionFila>(`${this.url(alcance)}/${id}/estado`, { estado });
   }
 
-  eliminar(id: string, alcance?: AlcanceApi): Observable<void> {
-    return this.http.delete<void>(`${this.url(alcance)}/${id}`);
+  evoluciones(id: string, alcance?: AlcanceApi): Observable<EvolucionFormulacion[]> {
+    return this.http.get<EvolucionFormulacion[]>(`${this.url(alcance)}/${id}/evoluciones`);
+  }
+
+  agregarMedicamento(
+    id: string,
+    payload: AgregarMedicamentoPayload,
+    alcance?: AlcanceApi
+  ): Observable<FormulacionFila> {
+    return this.http.post<FormulacionFila>(`${this.url(alcance)}/${id}/medicamentos`, payload);
+  }
+
+  retirarMedicamento(
+    id: string,
+    lineaId: string,
+    alcance?: AlcanceApi
+  ): Observable<FormulacionFila> {
+    return this.http.delete<FormulacionFila>(`${this.url(alcance)}/${id}/medicamentos/${lineaId}`);
   }
 }

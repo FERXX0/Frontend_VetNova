@@ -20,9 +20,9 @@ export class PerfilComponent implements OnInit {
   readonly usuario = this.session.usuario;
   readonly esSuperAdmin = computed(() => !!this.usuario()?.es_super_administrador);
 
-  readonly rutaVolver = computed(() => {
-    return this.esSuperAdmin() ? '/super-usuario/dashboard' : '/panel';
-  });
+  readonly rutaVolver = computed(() =>
+    this.session.esPersonalPlataforma() ? '/super-usuario/dashboard' : '/panel/dashboard'
+  );
 
   readonly iniciales = computed(() => {
     const nombre = this.usuario()?.nombre?.trim();

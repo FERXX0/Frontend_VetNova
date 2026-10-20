@@ -116,6 +116,12 @@
     padding: 0.85rem 1.25rem;
   }
 
+  &__periodo-control {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
   &__filtros-estado {
     display: flex;
     flex-wrap: wrap;
@@ -725,16 +731,6 @@
   }
 }
 /* Atención clínica desde una cita */
-.modal-panel--atencion {
-  width: min(1100px, 96vw);
-  max-height: 92vh;
-  overflow: hidden;
-}
-
-.modal-panel--atencion .modal-form {
-  max-height: calc(92vh - 150px);
-  overflow-y: auto;
-}
 
 .modal-eyebrow {
   display: block;
@@ -847,15 +843,19 @@
 .modal-backdrop:has(.modal-panel--atencion) {
   z-index: 10000;
   padding: 1rem;
+  align-items: center;
+  overflow: hidden;
 }
 
 .modal-panel--atencion {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   width: min(1100px, calc(100vw - 2rem));
   max-width: 1100px;
-  height: min(900px, 92vh);
-  max-height: 92vh;
+  height: min(900px, calc(100vh - 2rem));
+  height: min(900px, calc(100dvh - 2rem));
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
   min-height: 0;
   padding: 0;
   overflow: hidden;
@@ -867,7 +867,6 @@
 }
 
 .modal-panel--atencion > .modal-header {
-  flex: 0 0 auto;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -911,7 +910,6 @@
 
 .modal-panel--atencion > .modal-form,
 .modal-panel--atencion > .atencion-form {
-  flex: 1 1 auto;
   min-height: 0;
   max-height: none;
   width: 100%;
@@ -926,7 +924,6 @@
 .modal-panel--atencion > .modal-acciones {
   position: relative;
   z-index: 2;
-  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -937,6 +934,13 @@
   border-top: 1px solid var(--vn-border, #e5e9ec);
   background: var(--vn-white, #ffffff);
   box-shadow: 0 -5px 15px rgba(16, 38, 58, 0.035);
+}
+
+@media (max-height: 760px) {
+  .modal-panel--atencion > .modal-header { padding: 0.8rem 1.2rem 0.7rem; }
+  .modal-panel--atencion > .modal-form,
+  .modal-panel--atencion > .atencion-form { padding: 0.9rem 1.2rem; }
+  .modal-panel--atencion > .modal-acciones { padding: 0.7rem 1.2rem; }
 }
 
 /* Campos uniformes y compatibles con el tema del sistema. */
@@ -1261,5 +1265,119 @@
   .modal-panel--atencion .atencion-info,
   .modal-panel--atencion .medicamento-atencion-row {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.paciente-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.75rem;
+  background: rgba(26, 167, 160, 0.1);
+  border: 1.5px solid rgba(26, 167, 160, 0.35);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--vn-teal-dark, #0e7c86);
+
+  > .material-symbols-rounded {
+    font-size: 1rem;
+  }
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.3rem;
+    height: 1.3rem;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--vn-teal-dark, #0e7c86);
+    cursor: pointer;
+    padding: 0;
+
+    .material-symbols-rounded {
+      font-size: 0.9rem;
+    }
+
+    &:hover {
+      background: rgba(26, 167, 160, 0.18);
+    }
+  }
+}
+
+
+// ---------- Agenda por Período (Semana / Mes) y Avisos ----------
+.agenda-aviso {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  background: var(--vn-white, #ffffff);
+  border: 1px dashed var(--vn-border, #e5e9ec);
+  border-radius: 0.85rem;
+  color: var(--vn-text-muted, #8a97a1);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.agenda-lista-dias {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.agenda-dia {
+  background: var(--vn-white, #ffffff);
+  border: 1px solid var(--vn-border, #e5e9ec);
+  border-radius: 0.85rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 4px rgba(16, 38, 58, 0.05);
+
+  &__cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid var(--vn-border, #e5e9ec);
+  }
+
+  &__etiqueta {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--vn-navy, #10263a);
+    text-transform: capitalize;
+  }
+
+  &__conteo {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--vn-teal-dark, #0e7c86);
+    background: rgba(26, 167, 160, 0.12);
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+  }
+
+  &__grilla {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+
+    .cita-card {
+      flex-direction: column;
+      align-items: flex-start;
+      height: 100%;
+      box-sizing: border-box;
+
+      &__principal {
+        width: 100%;
+      }
+
+      &__estado-acciones {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+      }
+    }
   }
 }

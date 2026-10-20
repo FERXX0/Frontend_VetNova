@@ -330,16 +330,14 @@
           <div class="tab-section-header">
             <div>
               <h3>Plan Activo de la Empresa</h3>
-              <p>Plan vigente y su historial de cambios.</p>
-              <button type="button" class="btn-secondary" (click)="abrirModalSuscripcion()">Asignar otro plan</button>
+              <p>Plan vigente y su historial de cambios. Los planes se asignan desde Configuración Global.</p>
             </div>
           </div>
 
           @if (suscripciones().length === 0) {
             <div class="empty-box">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="8" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 8V6a4 4 0 0 1 8 0v2" stroke="currentColor" stroke-width="1.6"/></svg>
-              <p>Esta empresa no tiene suscripciones activas registradas.</p>
-              <button type="button" class="btn-secondary" (click)="abrirModalSuscripcion()">Asignar Plan Inicial</button>
+              <p>Esta empresa no tiene un plan asignado. Se asigna desde Configuración Global.</p>
             </div>
           } @else {
             <div class="table-card">
@@ -658,77 +656,6 @@
     </div>
   }
 
-  <!-- MODAL NUEVA SUSCRIPCIÓN -->
-  @if (modalSuscripcionAbierto()) {
-    <div class="modal-backdrop" (click)="cerrarModalSuscripcion()">
-      <div class="modal-card" (click)="$event.stopPropagation()">
-        <div class="modal-card__header">
-          <h2>Asignar Suscripción a {{ empresa()?.nombre }}</h2>
-          <button type="button" class="btn-close" (click)="cerrarModalSuscripcion()">✕</button>
-        </div>
-
-        <form [formGroup]="formSuscripcion" (ngSubmit)="guardarSuscripcion()">
-          <div class="form-group">
-            <label for="s_plan">Plan de Servicio *</label>
-            <select id="s_plan" formControlName="plan_id" (change)="onPlanSuscripcionCambiado()">
-              <option value="" disabled>Selecciona un plan…</option>
-              @for (plan of planes(); track plan.id) {
-                <option [value]="plan.id">{{ plan.nombre }} — {{ formatearMoneda(plan.precio_mensual, plan.moneda) }}/mes</option>
-              }
-            </select>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="s_estado">Estado</label>
-              <select id="s_estado" formControlName="estado">
-                <option value="activa">Activa</option>
-                <option value="prueba">Prueba</option>
-                <option value="vencida">Vencida</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="s_periodo">Periodo</label>
-              <select id="s_periodo" formControlName="periodo">
-                <option value="mensual">Mensual</option>
-                <option value="trimestral">Trimestral</option>
-                <option value="semestral">Semestral</option>
-                <option value="anual">Anual</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="s_ciclo_facturacion">Ciclo de facturación</label>
-              <select id="s_ciclo_facturacion" formControlName="ciclo_facturacion">
-                <option value="mensual">Mensual</option>
-                <option value="anual">Anual</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="s_monto">Monto Facturado</label>
-              <input id="s_monto" type="number" formControlName="monto" />
-            </div>
-            <div class="form-group">
-              <label for="s_moneda">Moneda</label>
-              <input id="s_moneda" type="text" formControlName="moneda" />
-            </div>
-          </div>
-
-          <div class="modal-card__actions">
-            <button type="button" class="btn-secondary" (click)="cerrarModalSuscripcion()">Cancelar</button>
-            <button type="submit" class="btn-primary" [disabled]="guardandoSuscripcion()">
-              {{ guardandoSuscripcion() ? 'Registrando…' : 'Crear Suscripción' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  }
 
   <!-- MODAL AGENDAR CITA -->
   @if (modalCitaAbierto()) {

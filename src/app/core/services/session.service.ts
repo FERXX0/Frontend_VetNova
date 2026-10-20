@@ -60,8 +60,24 @@ export class SessionService {
   }
 
   esPersonalPlataforma(): boolean {
-    const codigo = this.codigoRol();
-    return codigo === 'super_admin' || codigo === 'soporte';
+    const usuario = this.usuario();
+    const codigo = usuario?.rol?.codigo;
+
+    return !!usuario?.es_super_administrador && (codigo === 'super_admin' || codigo === 'soporte');
+  }
+
+  rutaInicio(): string {
+    if (this.esPersonalPlataforma()) {
+      return '/super-usuario/dashboard';
+    }
+
+    const modulosActivos = (this.usuario()?.modulos ?? []).filter((modulo) => modulo.activo !== false);
+
+    return modulosActivos.length > 0 ? '/panel/dashboard' : '/panel/sin-modulos';
+  }
+
+  rutaPerfil(): string {
+    return this.esPersonalPlataforma() ? '/super-usuario/perfil' : '/panel/perfil';
   }
 
   private leerUsuario(): UsuarioAutenticado | null {

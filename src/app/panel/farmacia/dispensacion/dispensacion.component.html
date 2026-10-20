@@ -1,0 +1,181 @@
+<div class="dispensacion-view">
+
+  <!-- FILTROS -->
+  <div class="disp-filtros">
+    <div class="disp-search">
+      <span class="material-symbols-rounded">search</span>
+      <input
+        type="text"
+        placeholder="Buscar por paciente o número de formulación..."
+        [ngModel]="buscar()"
+        (ngModelChange)="buscar.set($event); aplicarFiltros()"
+      />
+    </div>
+
+    <div class="disp-filter-tabs">
+      <button
+        type="button"
+        [class.active]="filtroDispensacion() === 'pendientes'"
+        (click)="filtroDispensacion.set('pendientes'); aplicarFiltros()"
+      >Pendientes</button>
+      <button
+        type="button"
+        [class.active]="filtroDispensacion() === 'completas'"
+        (click)="filtroDispensacion.set('completas'); aplicarFiltros()"
+      >Completas</button>
+      <button
+        type="button"
+        [class.active]="filtroDispensacion() === 'todas'"
+        (click)="filtroDispensacion.set('todas'); aplicarFiltros()"
+      >Todas</button>
+    </div>
+  </div>
+
+  <!-- AVISO ROL -->
+  @if (!esFarmacia) {
+    <div class="disp-aviso">
+      <span class="material-symbols-rounded">info</span>
+      Solo el personal de farmacia puede dispensar medicamentos. Esta vista es solo informativa.
+    </div>
+  }
+
+  <!-- ESTADO -->
+  @if (cargando()) {
+    <div class="disp-estado">Cargando formulaciones...</div>
+  } @else if (error()) {
+    <div class="disp-estado error">{{ error() }}</div>
+  } @else if (formulaciones().length === 0) {
+    <div class="disp-vacio">
+      <span class="material-symbols-rounded">medication_liquid</span>
+      <p>No hay formulaciones {{ filtroDispensacion() === 'pendientes' ? 'pendientes de dispensar' : filtroDispensacion() === 'completas' ? 'completamente dispensadas' : '' }}.</p>
+    </div>
+  } @else {
+
+    <!-- LISTA -->
+    <div class="disp-lista">
+      @for (f of formulaciones(); track f.id) {
+        <article class="disp-card" (click)="abrirDetalle(f)">
+          <div class="disp-card-header">
+            <div>
+              <span class="disp-numero">{{ f.numero }}</span>
+              <span class="disp-paciente">{{ f.paciente?.nombre ?? '—' }}</span>
+            </div>
+            <span
+              class="disp-badge"
+              [class.pendiente]="(f.medicamentos_pendientes ?? 0) > 0"
+              [class.completa]="(f.medicamentos_pendientes ?? 0) === 0"
+            >
+              {{
+                (f.medicamentos_pendientes ?? 0) === 0
+                  ? 'Dispensada'
+                  : (f.medicamentos_pendientes) + ' pendiente(s)'
+              }}
+            </span>
+          </div>
+
+          <div class="disp-card-meta">
+            <span>{{ f.total_medicamentos ?? 0 }} medicamento(s)</span>
+            <span>·</span>
+            <span>{{ f.fecha | date:'dd/MM/yyyy' }}</span>
+            @if (f.veterinario_nombre) {
+              <span>· {{ f.veterinario_nombre }}</span>
+            }
+          </div>
+        </article>
+      }
+    </div>
+
+    <!-- PAGINACIÓN -->
+    @if (totalPaginas() > 1) {
+      <div class="disp-paginacion">
+        <button
+          type="button"
+          [disabled]="paginaActual() <= 1"
+          (click)="cambiarPagina(paginaActual() - 1)"
+        >Anterior</button>
+        <span>Página {{ paginaActual() }} de {{ totalPaginas() }}</span>
+        <button
+          type="button"
+          [disabled]="paginaActual() >= totalPaginas()"
+          (click)="cambiarPagina(paginaActual() + 1)"
+        >Siguiente</button>
+      </div>
+    }
+
+  }
+
+</div>
+
+
+<!-- MODAL DETALLE FORMULACIÓN -->
+@if (formulacionDetalle(); as f) {
+  <div class="disp-modal-backdrop" (click)="cerrarDetalle()">
+    <div class="disp-modal" (click)="$event.stopPropagation()">
+
+      <div class="disp-modal-header">
+        <div>
+          <span class="eyebrow">FORMULACIÓN</span>
+          <h2>{{ f.numero }}</h2>
+          <p>{{ f.paciente?.nombre ?? '—' }} · {{ f.fecha | date:'dd/MM/yyyy' }}</p>
+        </div>
+        <button type="button" class="disp-close" (click)="cerrarDetalle()">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+
+      <div class="disp-modal-body">
+
+        <!-- PENDIENTES -->
+        @if (pendientesDe(f).length > 0) {
+          <h3 class="disp-section-title">Pendientes de dispensar</h3>
+          <div class="disp-medicamentos">
+            @for (m of pendientesDe(f); track m.id) {
+              <div class="disp-med-row pending">
+                <div class="disp-med-info">
+                  <strong>{{ m.nombre }}</strong>
+                  <span>{{ m.concentracion }} · {{ m.presentacion }}</span>
+                  <span>Cantidad: {{ m.cantidad }} · {{ m.via }}</span>
+                </div>
+                @if (esFarmacia && f.estado === 'Activa') {
+                  <button
+                    type="button"
+                    class="disp-btn-dispensar"
+                    [disabled]="dispensandoLineaId() === m.id"
+                    (click)="dispensar(f, m)"
+                  >
+                    <span class="material-symbols-rounded">check_circle</span>
+                    {{ dispensandoLineaId() === m.id ? 'Dispensando...' : 'Dispensar' }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- DISPENSADOS -->
+        @if (dispensadosDe(f).length > 0) {
+          <h3 class="disp-section-title">Ya dispensados</h3>
+          <div class="disp-medicamentos">
+            @for (m of dispensadosDe(f); track m.id) {
+              <div class="disp-med-row dispensed">
+                <div class="disp-med-info">
+                  <strong>{{ m.nombre }}</strong>
+                  <span>{{ m.concentracion }} · {{ m.presentacion }}</span>
+                  <span>Dispensado el {{ m.dispensado_en | date:'dd/MM/yyyy HH:mm' }}</span>
+                  @if (m.dispensado_por_nombre) {
+                    <span>por {{ m.dispensado_por_nombre }}</span>
+                  }
+                </div>
+                <span class="disp-ok">
+                  <span class="material-symbols-rounded">check</span>
+                </span>
+              </div>
+            }
+          </div>
+        }
+
+      </div>
+
+    </div>
+  </div>
+}

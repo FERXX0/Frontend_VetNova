@@ -10,7 +10,7 @@ import { PacienteService } from '../../../core/services/paciente.service';
 import { ModuloEmpresaService, ModuloEmpresaRegistro } from '../../../core/services/modulo-empresa.service';
 import { UsuarioService } from '../../../core/services/usuario.service';
 import { Empresa, EmpresaPayload, EstadoEmpresa } from '../../../core/models/empresa.model';
-import { Suscripcion, SuscripcionPayload, Plan, EstadoSuscripcion, PeriodoSuscripcion } from '../../../core/models/suscripcion.model';
+import { Suscripcion } from '../../../core/models/suscripcion.model';
 import { Cita, CitaPayload, EstadoCita, Profesional, TipoConsulta } from '../../../core/models/cita.model';
 import { Paciente, PacientePayload, EstadoPaciente } from '../../../core/models/paciente.model';
 import { Modulo } from '../../../core/models/auth.model';
@@ -98,10 +98,6 @@ export class EmpresaDetalleComponent implements OnInit {
 
   // ---------- Suscripciones ----------
   suscripciones = signal<Suscripcion[]>([]);
-  planes = signal<Plan[]>([]);
-  modalSuscripcionAbierto = signal(false);
-  guardandoSuscripcion = signal(false);
-  formSuscripcion: FormGroup;
 
   // ---------- Citas / Agenda de esta empresa ----------
   fechaCitas = signal(this.formatoFechaIso(new Date()));
@@ -152,16 +148,6 @@ export class EmpresaDetalleComponent implements OnInit {
       contrasena: [''],
     });
 
-    this.formSuscripcion = this.fb.group({
-      plan_id: ['', Validators.required],
-      estado: ['activa', Validators.required],
-      periodo: ['mensual', Validators.required],
-      ciclo_facturacion: ['mensual', Validators.required],
-      monto: [0, [Validators.required, Validators.min(0)]],
-      moneda: ['COP', Validators.required],
-      inicia_en: [new Date().toISOString().slice(0, 16), Validators.required],
-      finaliza_en: [''],
-    });
 
     this.formCita = this.fb.group({
       paciente_id: ['', Validators.required],
@@ -249,11 +235,6 @@ export class EmpresaDetalleComponent implements OnInit {
   }
 
   cargarCatalogos(): void {
-    this.catalogoService.planes().subscribe({
-      next: (planes) => this.planes.set(planes),
-      error: () => {},
-    });
-
     this.catalogoService.modulos().subscribe({
       next: (mods) => {
         if (mods && mods.length > 0) {
@@ -489,58 +470,6 @@ export class EmpresaDetalleComponent implements OnInit {
     });
   }
 
-  // ---------- Suscripciones ----------
-  abrirModalSuscripcion(): void {
-    this.formSuscripcion.reset({
-      plan_id: '',
-      estado: 'activa',
-      periodo: 'mensual',
-      ciclo_facturacion: 'mensual',
-      monto: 0,
-      moneda: 'COP',
-      inicia_en: new Date().toISOString().slice(0, 16),
-      finaliza_en: '',
-    });
-    this.modalSuscripcionAbierto.set(true);
-  }
-
-  cerrarModalSuscripcion(): void {
-    this.modalSuscripcionAbierto.set(false);
-  }
-
-  onPlanSuscripcionCambiado(): void {
-    const planId = this.formSuscripcion.get('plan_id')?.value;
-    const plan = this.planes().find((p) => p.id === planId);
-    if (!plan) return;
-
-    this.formSuscripcion.patchValue({
-      moneda: plan.moneda,
-      monto: Number(plan.precio_mensual || 0),
-    });
-  }
-
-  guardarSuscripcion(): void {
-    if (this.formSuscripcion.invalid) {
-      this.formSuscripcion.markAllAsTouched();
-      return;
-    }
-    this.guardandoSuscripcion.set(true);
-    const payload: SuscripcionPayload = this.formSuscripcion.value;
-
-    this.suscripcionService.crear(this.empresaId(), payload).subscribe({
-      next: (nueva) => {
-        this.suscripciones.update((lista) => [nueva, ...lista]);
-        this.modulosPlan.set(nueva.plan?.modulos || []);
-        this.cargarModulosEmpresa();
-        this.guardandoSuscripcion.set(false);
-        this.modalSuscripcionAbierto.set(false);
-      },
-      error: (err) => {
-        this.guardandoSuscripcion.set(false);
-        window.alert(err?.error?.message ?? 'No se pudo guardar la suscripción.');
-      },
-    });
-  }
 
   // ---------- Citas ----------
   cambiarFechaCitas(offsetDias: number): void {

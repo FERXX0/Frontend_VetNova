@@ -1,0 +1,165 @@
+<div class="reg-view">
+
+  <!-- BUSCADOR -->
+  <div class="reg-buscador-wrap">
+    @if (paciente()) {
+      <div class="reg-paciente-chip">
+        <span class="material-symbols-rounded">pets</span>
+        <span>{{ paciente()!.nombre }}</span>
+        <button type="button" (click)="limpiarPaciente()">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+    } @else {
+      <app-buscador-paciente
+        [alcance]="alcance"
+        placeholder="Buscar paciente por nombre o propietario..."
+        (pacienteSeleccionado)="alSeleccionarPaciente($event)"
+      />
+    }
+  </div>
+
+  <!-- ESTADO -->
+  @if (!paciente()) {
+    <div class="reg-vacio">
+      <span class="material-symbols-rounded">person_search</span>
+      <p>Busca un paciente para ver su registro en farmacia.</p>
+    </div>
+  } @else if (cargando()) {
+    <div class="reg-estado">Cargando registro...</div>
+  } @else if (error()) {
+    <div class="reg-estado error">{{ error() }}</div>
+  } @else if (registro(); as reg) {
+
+    <!-- RESUMEN -->
+    @if (reg.resumen; as res) {
+      <section class="reg-resumen-grid">
+        <div class="reg-resumen-card">
+          <span>Formulaciones</span>
+          <strong>{{ res.formulaciones }}</strong>
+        </div>
+        <div class="reg-resumen-card">
+          <span>Dispensados</span>
+          <strong>{{ res.medicamentos_dispensados }}</strong>
+        </div>
+        <div class="reg-resumen-card">
+          <span>Pendientes</span>
+          <strong>{{ res.medicamentos_pendientes }}</strong>
+        </div>
+        <div class="reg-resumen-card">
+          <span>Movimientos</span>
+          <strong>{{ res.movimientos }}</strong>
+        </div>
+      </section>
+    }
+
+    <!-- FORMULACIONES -->
+    <section class="reg-section">
+      <h3 class="reg-section-title">
+        <span class="material-symbols-rounded">medication_liquid</span>
+        Formulaciones ({{ reg.formulaciones.length }})
+      </h3>
+
+      @if (reg.formulaciones.length === 0) {
+        <p class="reg-empty-text">Sin formulaciones registradas.</p>
+      } @else {
+        <div class="reg-formulaciones">
+          @for (f of reg.formulaciones; track f.id) {
+            <article class="reg-formulacion-card">
+              <div class="reg-form-header">
+                <span class="reg-form-numero">{{ f.numero }}</span>
+                <span class="reg-form-fecha">{{ f.fecha | date:'dd/MM/yyyy' }}</span>
+              </div>
+
+              <div class="reg-form-medicamentos">
+                @for (m of f.medicamentos; track m.id) {
+                  <div class="reg-med-row" [class.dispensado]="m.dispensado">
+                    <span class="material-symbols-rounded reg-med-icon">
+                      {{ m.dispensado ? 'check_circle' : 'radio_button_unchecked' }}
+                    </span>
+                    <span class="reg-med-nombre">{{ m.nombre }}</span>
+                    <span class="reg-med-detalle">{{ m.concentracion }} · Cant. {{ m.cantidad }}</span>
+                    @if (m.dispensado_en) {
+                      <span class="reg-med-dispensado">{{ m.dispensado_en | date:'dd/MM/yyyy' }}</span>
+                    }
+                  </div>
+                }
+              </div>
+
+              @if (f.evoluciones.length > 0) {
+                <div class="reg-evoluciones">
+                  <span class="reg-evo-label">Evoluciones ({{ f.evoluciones.length }})</span>
+                  @for (e of f.evoluciones; track e.id) {
+                    <div class="reg-evo-item">
+                      <span class="reg-evo-fecha">{{ e.creado_en | date:'dd/MM/yyyy HH:mm' }}</span>
+                      <span class="reg-evo-tipo">{{ e.tipo }}</span>
+                      <span class="reg-evo-nota">
+                        {{ e.descripcion }}
+                        @if (e.usuario_nombre) {
+                          <em>({{ e.usuario_nombre }})</em>
+                        }
+                      </span>
+                    </div>
+                  }
+                </div>
+              }
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- MOVIMIENTOS -->
+    <section class="reg-section">
+      <h3 class="reg-section-title">
+        <span class="material-symbols-rounded">history</span>
+        Movimientos de inventario ({{ reg.movimientos.length }})
+      </h3>
+
+      @if (reg.movimientos.length === 0) {
+        <p class="reg-empty-text">Sin movimientos asociados a este paciente.</p>
+      } @else {
+        <div class="reg-movimientos">
+          @for (mov of reg.movimientos; track mov.id) {
+            <div class="reg-mov-row">
+              <div
+                class="reg-mov-icon"
+                [class.entry]="mov.tipo === 'Entrada'"
+                [class.exit]="mov.tipo === 'Salida'"
+                [class.adjustment]="mov.tipo === 'Ajuste'"
+              >
+                <span class="material-symbols-rounded">
+                  {{
+                    mov.tipo === 'Entrada'
+                      ? 'south_west'
+                      : mov.tipo === 'Salida'
+                        ? 'north_east'
+                        : 'sync_alt'
+                  }}
+                </span>
+              </div>
+              <div class="reg-mov-info">
+                <strong>{{ mov.medicamento_nombre ?? '—' }}</strong>
+                <span>{{ mov.motivo }}</span>
+                @if (mov.formulacion_numero) {
+                  <span>Formulación: {{ mov.formulacion_numero }}</span>
+                }
+              </div>
+              <div class="reg-mov-qty">
+                <strong
+                  [class.positive]="mov.tipo === 'Entrada'"
+                  [class.negative]="mov.tipo === 'Salida'"
+                >
+                  {{ mov.tipo === 'Entrada' ? '+' : mov.tipo === 'Salida' ? '-' : '' }}{{ mov.cantidad }}
+                </strong>
+                <span>{{ mov.fecha | date:'dd/MM/yyyy' }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+  }
+
+</div>

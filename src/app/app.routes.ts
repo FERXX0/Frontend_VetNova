@@ -12,7 +12,6 @@ import { SuperUsuarioLayoutComponent } from './super-usuario/super-usuario-layou
 import { DashboardComponent } from './super-usuario/dashboard/dashboard';
 import { EmpresasComponent } from './super-usuario/empresas/empresas';
 import { EmpresaDetalleComponent } from './super-usuario/empresas/empresa-detalle/empresa-detalle';
-import { SuscripcionesComponent } from './super-usuario/suscripciones/suscripciones';
 import { UsuariosAdminComponent } from './super-usuario/usuarios/usuarios';
 import { MonitoreoComponent } from './super-usuario/monitoreo/monitoreo';
 import { SoporteComponent } from './super-usuario/soporte/soporte';
@@ -58,7 +57,9 @@ import { SinModulosComponent } from './shared/components/sin-modulos/sin-modulos
 
 import { authGuard } from './core/guards/auth.guard';
 import { plataformaGuard, plataformaChildGuard } from './core/guards/plataforma.guard';
-import { moduloGuard, moduloChildGuard } from './core/guards/modulo.guard';
+import { moduloChildGuard } from './core/guards/modulo.guard';
+import { panelGuard, panelChildGuard } from './core/guards/panel.guard';
+import { inicioGuard, perfilGuard } from './core/guards/redireccion.guard';
 
 export const routes: Routes = [
 
@@ -121,10 +122,6 @@ export const routes: Routes = [
         component: EmpresaDetalleComponent
       },
 
-      {
-        path: 'empresas/:empresaId/suscripciones',
-        component: SuscripcionesComponent
-      },
 
       {
         path: 'usuarios',
@@ -260,11 +257,13 @@ export const routes: Routes = [
     component: PanelLayoutComponent,
 
     canActivate: [
-      authGuard
+      authGuard,
+      panelGuard
     ],
 
     canActivateChild: [
       authGuard,
+      panelChildGuard,
       moduloChildGuard
     ],
 
@@ -480,10 +479,8 @@ export const routes: Routes = [
 
   {
     path: 'perfil',
-    component: PerfilComponent,
-    canActivate: [
-      authGuard
-    ]
+    canActivate: [authGuard, perfilGuard],
+    children: []
   },
 
   // ========================================================
@@ -492,13 +489,15 @@ export const routes: Routes = [
 
   {
     path: '',
-    redirectTo: 'login',
-    pathMatch: 'full'
+    pathMatch: 'full',
+    canActivate: [inicioGuard],
+    children: []
   },
 
   {
     path: '**',
-    redirectTo: 'login'
+    canActivate: [inicioGuard],
+    children: []
   }
 
 ];

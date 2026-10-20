@@ -1,21 +1,50 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, OnInit, SimpleChanges, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AlcanceApi } from '../../core/utils/alcance-api';
 import { FormularioMedicamento, FormularioMovimiento, Medicamento, ResumenFarmacia } from '../../core/models/farmacia.model';
 import { FarmaciaService } from '../../core/services/farmacia.service';
+import { Paciente } from '../../core/models/paciente.model';
+import { EmpresaOpcion } from '../../core/models/empresa.model';
+import { EmpresaService } from '../../core/services/empresa.service';
+import { BuscadorPacienteComponent } from '../../shared/components/buscador-paciente/buscador-paciente';
+import { DispensacionFormulacionesComponent } from './dispensacion/dispensacion.component';
+import { RegistroPacienteFarmaciaComponent } from './registro-paciente/registro-paciente.component';
+import { SessionService } from '../../core/services/session.service';
+import { fechaHoyIso } from '../../core/utils/periodo-suscripcion';
 
 @Component({
   selector: 'app-farmacia',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BuscadorPacienteComponent, DispensacionFormulacionesComponent, RegistroPacienteFarmaciaComponent],
   templateUrl: './farmacia.component.html',
   styleUrl: './farmacia.component.scss',
 })
-export class FarmaciaComponent implements OnInit, OnChanges {
-  @Input() alcance?: AlcanceApi;
-
+export class FarmaciaComponent implements OnInit {
   private farmaciaService = inject(FarmaciaService);
+  private session = inject(SessionService);
+  private router = inject(Router);
+  private empresaService = inject(EmpresaService);
+
+  readonly hoyIso = fechaHoyIso();
+  readonly pendientesDispensar = signal(0);
+
+  readonly responsableActual = computed(() => this.session.usuario()?.nombre ?? '');
+
+  readonly esSuperUsuario = computed(() => this.router.url.startsWith('/super-usuario'));
+  readonly empresas = signal<EmpresaOpcion[]>([]);
+  readonly empresaIdSeleccionada = signal<string>('');
+
+  readonly alcanceActual = computed<AlcanceApi | undefined>(() => {
+    if (!this.esSuperUsuario()) return undefined;
+    const empresaId = this.empresaIdSeleccionada();
+    return { plataforma: true, empresaId: empresaId || undefined };
+  });
+
+  readonly puedeCrearMedicamento = computed(
+    () => !this.esSuperUsuario() || !!this.empresaIdSeleccionada()
+  );
 
   readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
@@ -41,9 +70,17 @@ export class FarmaciaComponent implements OnInit, OnChanges {
 
   readonly modoEdicion = signal(false);
   readonly medicamentoEditandoId = signal<string | null>(null);
+  private readonly empresaEditandoId = signal<string | null>(null);
 
   readonly formulario = signal<FormularioMedicamento>(this.formularioVacio());
   readonly formularioMovimiento = signal<FormularioMovimiento>(this.movimientoVacio());
+
+  readonly vista = signal<'inventario' | 'dispensacion' | 'registro'>(this.vistaInicial());
+  readonly pacienteMovimiento = signal<Paciente | null>(null);
+
+  private vistaInicial(): 'inventario' | 'dispensacion' | 'registro' {
+    return this.session.codigoRol() === 'farmacia' ? 'dispensacion' : 'inventario';
+  }
 
   readonly categorias = computed(() => {
     const backendCats = this.resumen()?.categorias ?? [];
@@ -59,26 +96,94 @@ export class FarmaciaComponent implements OnInit, OnChanges {
 
   readonly medicamentosFiltrados = computed(() => this.medicamentos());
 
-  ngOnInit(): void {
-    this.cargarDatos();
+  alcanceDe(medicamento?: Medicamento | null): AlcanceApi | undefined {
+    return this.alcanceParaEmpresa(medicamento?.empresa_id);
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['alcance'] && !changes['alcance'].firstChange) {
-      this.cargarDatos();
+  private alcanceParaEmpresa(empresaId?: string | null): AlcanceApi | undefined {
+    if (!this.esSuperUsuario()) return undefined;
+    return { plataforma: true, empresaId: empresaId || this.empresaIdSeleccionada() || undefined };
+  }
+
+  ngOnInit(): void {
+    if (this.esSuperUsuario()) {
+      this.cargarEmpresas();
     }
+    this.cargarDatos();
+    this.cargarPendientes();
+  }
+
+  cargarEmpresas(): void {
+    this.empresaService.listarOpciones().subscribe({
+      next: (data) => this.empresas.set(data),
+      error: (err) => console.error('Error cargando empresas:', err),
+    });
+  }
+
+  alCambiarEmpresa(empresaId: string): void {
+    this.empresaIdSeleccionada.set(empresaId);
+    this.paginaActual.set(1);
+    this.filtroCategoria.set('Todas');
+    this.cargarDatos();
+    this.cargarPendientes();
+  }
+
+  cargarPendientes(): void {
+    this.farmaciaService
+      .obtenerFormulaciones(this.alcanceActual(), { dispensacion: 'pendientes', per_page: 1 })
+      .subscribe({
+        next: (resp) => this.pendientesDispensar.set(resp.total),
+        error: () => this.pendientesDispensar.set(0),
+      });
+  }
+
+  alDispensar(): void {
+    this.cargarDatos();
+    this.cargarPendientes();
+  }
+
+  actualizarBanderaMovimiento(valor: boolean): void {
+    this.formularioMovimiento.update((actual) => ({
+      ...actual,
+      actualizar_datos_medicamento: valor,
+    }));
+  }
+
+  stockResultante(medicamento: Medicamento): number {
+    const { tipo, cantidad } = this.formularioMovimiento();
+    const valor = Number(cantidad) || 0;
+
+    if (tipo === 'Entrada') return medicamento.stock + valor;
+    if (tipo === 'Salida') return medicamento.stock - valor;
+
+    return valor;
+  }
+
+  movimientoInvalido(medicamento: Medicamento): boolean {
+    const formulario = this.formularioMovimiento();
+    const cantidad = Number(formulario.cantidad);
+
+    if (!Number.isFinite(cantidad) || !formulario.motivo.trim()) return true;
+    if (formulario.tipo === 'Ajuste') return cantidad < 0;
+    if (cantidad <= 0) return true;
+
+    if (formulario.tipo === 'Salida') {
+      return cantidad > medicamento.stock || !formulario.comprador_nombre?.trim();
+    }
+
+    return false;
   }
 
   cargarDatos(): void {
     this.cargando.set(true);
     this.error.set(null);
 
-    this.farmaciaService.obtenerResumen(this.alcance).subscribe({
+    this.farmaciaService.obtenerResumen(this.alcanceActual()).subscribe({
       next: (res) => this.resumen.set(res),
       error: () => {},
     });
 
-    this.farmaciaService.obtenerMedicamentos(this.alcance, {
+    this.farmaciaService.obtenerMedicamentos(this.alcanceActual(), {
       busqueda: this.busqueda(),
       categoria: this.filtroCategoria(),
       estado: this.filtroEstado(),
@@ -112,6 +217,18 @@ export class FarmaciaComponent implements OnInit, OnChanges {
     }
   }
 
+  cambiarVista(v: 'inventario' | 'dispensacion' | 'registro'): void {
+    this.vista.set(v);
+  }
+
+  alSeleccionarPacienteMovimiento(paciente: Paciente): void {
+    this.pacienteMovimiento.set(paciente);
+  }
+
+  quitarPacienteMovimiento(): void {
+    this.pacienteMovimiento.set(null);
+  }
+
   private formularioVacio(): FormularioMedicamento {
     return {
       nombre: '',
@@ -142,11 +259,12 @@ export class FarmaciaComponent implements OnInit, OnChanges {
       comprador_nombre: '',
       comprador_identificacion: '',
       comprador_celular: '',
+      paciente_id: null,
     };
   }
 
   abrirDetalle(medicamento: Medicamento): void {
-    this.farmaciaService.obtenerDetalle(medicamento.id, this.alcance).subscribe({
+    this.farmaciaService.obtenerDetalle(medicamento.id, this.alcanceDe(medicamento)).subscribe({
       next: (det) => {
         this.medicamentoSeleccionado.set(det);
         this.modalDetalleAbierto.set(true);
@@ -163,8 +281,10 @@ export class FarmaciaComponent implements OnInit, OnChanges {
   }
 
   abrirNuevoMedicamento(): void {
+    if (!this.puedeCrearMedicamento()) return;
     this.modoEdicion.set(false);
     this.medicamentoEditandoId.set(null);
+    this.empresaEditandoId.set(null);
     this.formulario.set(this.formularioVacio());
     this.modalFormularioAbierto.set(true);
   }
@@ -172,6 +292,7 @@ export class FarmaciaComponent implements OnInit, OnChanges {
   editarMedicamento(medicamento: Medicamento): void {
     this.modoEdicion.set(true);
     this.medicamentoEditandoId.set(medicamento.id);
+    this.empresaEditandoId.set(medicamento.empresa_id ?? null);
 
     this.formulario.set({
       nombre: medicamento.nombre,
@@ -224,7 +345,7 @@ export class FarmaciaComponent implements OnInit, OnChanges {
     const id = this.medicamentoEditandoId();
 
     if (this.modoEdicion() && id !== null) {
-      this.farmaciaService.actualizarMedicamento(id, formulario, this.alcance).subscribe({
+      this.farmaciaService.actualizarMedicamento(id, formulario, this.alcanceParaEmpresa(this.empresaEditandoId())).subscribe({
         next: () => {
           this.modalFormularioAbierto.set(false);
           this.cargarDatos();
@@ -234,7 +355,7 @@ export class FarmaciaComponent implements OnInit, OnChanges {
         },
       });
     } else {
-      this.farmaciaService.crearMedicamento(formulario, this.alcance).subscribe({
+      this.farmaciaService.crearMedicamento(formulario, this.alcanceActual()).subscribe({
         next: () => {
           this.modalFormularioAbierto.set(false);
           this.cargarDatos();
@@ -247,10 +368,14 @@ export class FarmaciaComponent implements OnInit, OnChanges {
   }
 
   abrirMovimiento(medicamento: Medicamento, tipo: FormularioMovimiento['tipo'] = 'Entrada'): void {
+    this.pacienteMovimiento.set(null);
     this.medicamentoSeleccionado.set(medicamento);
     this.formularioMovimiento.set({
       ...this.movimientoVacio(),
       tipo,
+      responsable: this.responsableActual(),
+      precio_compra: medicamento.precioCompra,
+      actualizar_datos_medicamento: true,
     });
     this.modalMovimientoAbierto.set(true);
   }
@@ -270,17 +395,23 @@ export class FarmaciaComponent implements OnInit, OnChanges {
     const medicamento = this.medicamentoSeleccionado();
     const formulario = this.formularioMovimiento();
 
-    if (
-      !medicamento ||
-      formulario.cantidad <= 0 ||
-      !formulario.motivo.trim() ||
-      !formulario.responsable.trim() ||
-      (formulario.tipo === 'Salida' && !formulario.comprador_nombre?.trim())
-    ) {
+    if (!medicamento || this.movimientoInvalido(medicamento)) {
       return;
     }
 
-    this.farmaciaService.registrarMovimiento(medicamento.id, formulario, this.alcance).subscribe({
+    const payload: FormularioMovimiento = {
+      ...formulario,
+      paciente_id: this.pacienteMovimiento()?.id ?? null,
+      responsable: this.responsableActual(),
+      lote: formulario.tipo === 'Entrada' ? formulario.lote?.trim() || undefined : undefined,
+      fecha_vencimiento: formulario.tipo === 'Entrada' ? formulario.fecha_vencimiento || undefined : undefined,
+      proveedor: formulario.tipo === 'Entrada' ? formulario.proveedor?.trim() || undefined : undefined,
+      precio_compra: formulario.tipo === 'Entrada' ? formulario.precio_compra : undefined,
+      actualizar_datos_medicamento:
+        formulario.tipo === 'Entrada' ? formulario.actualizar_datos_medicamento : undefined,
+    };
+
+    this.farmaciaService.registrarMovimiento(medicamento.id, payload, this.alcanceDe(medicamento)).subscribe({
       next: (resp) => {
         this.medicamentoSeleccionado.set(resp.medicamento);
         this.modalMovimientoAbierto.set(false);
@@ -293,7 +424,7 @@ export class FarmaciaComponent implements OnInit, OnChanges {
   }
 
   cambiarEstado(medicamento: Medicamento, estado: Medicamento['estado']): void {
-    this.farmaciaService.cambiarEstado(medicamento.id, estado, this.alcance).subscribe({
+    this.farmaciaService.cambiarEstado(medicamento.id, estado, this.alcanceDe(medicamento)).subscribe({
       next: () => {
         this.cargarDatos();
       },
@@ -312,7 +443,7 @@ export class FarmaciaComponent implements OnInit, OnChanges {
       return;
     }
 
-    this.farmaciaService.eliminarMedicamento(medicamento.id, this.alcance).subscribe({
+    this.farmaciaService.eliminarMedicamento(medicamento.id, this.alcanceDe(medicamento)).subscribe({
       next: () => {
         this.modalDetalleAbierto.set(false);
         this.medicamentoSeleccionado.set(null);

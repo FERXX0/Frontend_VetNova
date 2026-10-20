@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, forkJoin, of } from 'rxjs';
+import { forkJoin } from 'rxjs';
 import { EmpresaService } from '../../core/services/empresa.service';
 import { Empresa, EmpresaOpcion } from '../../core/models/empresa.model';
 import { UsuarioService } from '../../core/services/usuario.service';
@@ -12,7 +12,6 @@ import { SessionService } from '../../core/services/session.service';
 import { Rol, Modulo } from '../../core/models/auth.model';
 import { SuscripcionService } from '../../core/services/suscripcion.service';
 import { ModuloEmpresaService } from '../../core/services/modulo-empresa.service';
-import { ModuloUsuarioService } from '../../core/services/modulo-usuario.service';
 
 const ROLES_PLATAFORMA = ['super_admin', 'soporte'];
 
@@ -59,7 +58,6 @@ export class UsuariosEmpresaComponent implements OnInit {
   private readonly session = inject(SessionService);
   private readonly suscripcionService = inject(SuscripcionService);
   private readonly moduloEmpresaService = inject(ModuloEmpresaService);
-  private readonly moduloUsuarioService = inject(ModuloUsuarioService);
 
   // =========================================================
   // CONTEXTO: esta misma pantalla se usa en /super-usuario/usuarios
@@ -80,10 +78,6 @@ export class UsuariosEmpresaComponent implements OnInit {
   modoEdicion = signal(false);
 
   usuarioEditandoId = signal<string | null>(null);
-
-  // Módulos (códigos) que el usuario ya tenía al abrir el modal de edición.
-  // Se usa para calcular qué asignar y qué quitar al guardar. Vacío al crear.
-  private modulosOriginales: string[] = [];
 
   busqueda = signal('');
   filtroRol = signal('Todos');
@@ -332,7 +326,6 @@ export class UsuariosEmpresaComponent implements OnInit {
   abrirNuevoUsuario(): void {
     this.modoEdicion.set(false);
     this.usuarioEditandoId.set(null);
-    this.modulosOriginales = [];
 
     this.formulario.set({
       nombre: '',
@@ -358,7 +351,6 @@ export class UsuariosEmpresaComponent implements OnInit {
   editarUsuario(usuario: UsuarioVeterinaria): void {
     this.modoEdicion.set(true);
     this.usuarioEditandoId.set(usuario.id);
-    this.modulosOriginales = [...usuario.modulos];
 
     this.formulario.set({
       nombre: usuario.nombre,
@@ -488,44 +480,32 @@ export class UsuariosEmpresaComponent implements OnInit {
     };
     if (f.contrasena) payload.contrasena = f.contrasena;
 
+    if (!this.esRolPlataforma(f.rolId)) {
+      const catalogo = this.catalogoModulos();
+      const ids = f.modulos
+        .map((codigo) => catalogo.find((modulo) => modulo.codigo === codigo)?.id)
+        .filter((id): id is string => !!id);
+
+      if (ids.length !== f.modulos.length) {
+        this.mostrarMensaje('No se pudo identificar algún módulo seleccionado. Recarga la página e inténtalo de nuevo.', 'error');
+        return;
+      }
+
+      payload.modulos = ids;
+    }
+
     const peticion = this.modoEdicion()
       ? this.usuarioService.actualizar(empresaId, this.usuarioEditandoId()!, payload)
       : this.usuarioService.crear(empresaId, payload);
 
     peticion.subscribe({
-      next: (usuario) => {
-        const finalizar = () => {
-          this.mostrarMensaje(
-            this.modoEdicion() ? 'Usuario actualizado correctamente.' : 'Usuario creado correctamente.',
-            'success'
-          );
-          this.cerrarModal();
-          if (this.esVistaSuperUsuario()) this.cargarUsuarios();
-        };
-
-        if (this.esRolPlataforma(f.rolId)) {
-          // Los roles de plataforma (super_admin, soporte) no manejan
-          // módulos por usuario: no hay nada que sincronizar.
-          finalizar();
-          return;
-        }
-
-        this.sincronizarModulos(
-          empresaId,
-          usuario.id,
-          this.modulosOriginales,
-          f.modulos
-        ).subscribe({
-          next: () => finalizar(),
-          error: () => {
-            this.mostrarMensaje(
-              'El usuario se guardó, pero algunos módulos no se pudieron sincronizar.',
-              'error'
-            );
-            this.cerrarModal();
-            if (this.esVistaSuperUsuario()) this.cargarUsuarios();
-          },
-        });
+      next: () => {
+        this.mostrarMensaje(
+          this.modoEdicion() ? 'Usuario actualizado correctamente.' : 'Usuario creado correctamente.',
+          'success'
+        );
+        this.cerrarModal();
+        if (this.esVistaSuperUsuario()) this.cargarUsuarios();
       },
       error: (err) => {
         const detalle = err?.error?.errors
@@ -534,47 +514,6 @@ export class UsuariosEmpresaComponent implements OnInit {
         this.mostrarMensaje(detalle || 'No se pudo guardar el usuario.', 'error');
       },
     });
-  }
-
-  /**
-   * Compara los módulos que el usuario tenía antes de abrir el modal contra
-   * los que quedaron marcados en el formulario, y dispara un POST (asignar)
-   * o un DELETE (quitar) por cada módulo que cambió. El backend no acepta
-   * un arreglo, así que va uno por uno, en paralelo.
-   */
-  private sincronizarModulos(
-    empresaId: string,
-    usuarioId: string,
-    codigosOriginales: string[],
-    codigosNuevos: string[]
-  ): Observable<unknown> {
-    const catalogo = this.catalogoModulos();
-    const idPorCodigo = (codigo: string) =>
-      catalogo.find((modulo) => modulo.codigo === codigo)?.id;
-
-    const paraAsignar = codigosNuevos.filter(
-      (codigo) => !codigosOriginales.includes(codigo)
-    );
-    const paraQuitar = codigosOriginales.filter(
-      (codigo) => !codigosNuevos.includes(codigo)
-    );
-
-    const llamadas: Observable<unknown>[] = [
-      ...paraAsignar.map((codigo): Observable<unknown> => {
-        const moduloId = idPorCodigo(codigo);
-        return moduloId
-          ? this.moduloUsuarioService.asignar(empresaId, usuarioId, { modulo_id: moduloId })
-          : of(null);
-      }),
-      ...paraQuitar.map((codigo): Observable<unknown> => {
-        const moduloId = idPorCodigo(codigo);
-        return moduloId
-          ? this.moduloUsuarioService.quitar(empresaId, usuarioId, moduloId)
-          : of(null);
-      }),
-    ];
-
-    return llamadas.length ? forkJoin(llamadas) : of(null);
   }
 
   // =========================================================

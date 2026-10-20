@@ -19,12 +19,19 @@ export class CitaService {
   }
 
   listar(
-    params: { fecha_inicio: string; fecha_fin: string },
+    params: { fecha_inicio: string; fecha_fin: string; veterinario_id?: string; estado?: string },
     alcance?: AlcanceApi
   ): Observable<Cita[]> {
-    const httpParams = new HttpParams()
+    let httpParams = new HttpParams()
       .set('fecha_inicio', params.fecha_inicio)
       .set('fecha_fin', params.fecha_fin);
+
+    if (params.veterinario_id) {
+      httpParams = httpParams.set('veterinario_id', params.veterinario_id);
+    }
+    if (params.estado) {
+      httpParams = httpParams.set('estado', params.estado);
+    }
 
     return this.http.get<Cita[]>(this.url(alcance), { params: httpParams });
   }

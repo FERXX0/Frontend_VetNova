@@ -13,6 +13,10 @@
   </div>
 </div>
 
+@if (mensaje()) {
+  <p class="hint-text">{{ mensaje() }}</p>
+}
+
 <div class="settings-grid">
     <!-- Alta de Empresa -->
   <div class="card setting-card">
@@ -28,6 +32,21 @@
     <p>Registra una nueva veterinaria, asígnale un plan y continúa con la creación de su primer administrador.</p>
     <button type="button" class="btn-primary" (click)="abrirModalAlta()">Registrar Empresa</button>
   </div>
+
+  <div class="card setting-card">
+    <div class="setting-header">
+      <div class="setting-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+          <line x1="2" y1="10" x2="22" y2="10"></line>
+        </svg>
+      </div>
+      <h3>Plan de las Empresas</h3>
+    </div>
+    <p>Asigna o cambia el plan de una empresa registrada, con su periodo y sus fechas de inicio y fin.</p>
+    <button type="button" class="btn-primary" (click)="abrirModalPlan()">Asignar o cambiar plan</button>
+  </div>
+
   <!-- Parámetros del Sistema -->
   <div class="card setting-card">
     <div class="setting-header">
@@ -142,20 +161,48 @@
 
         <h3 class="modal-section-title">Plan</h3>
 
-        <div class="form-group">
-          <label for="alta-plan">Plan a asignar *</label>
+        <div class="form-group" id="alta-plan">
+          <label for="alta-plan-select">Plan a asignar *</label>
           @if (cargandoPlanes()) {
             <p class="hint-text">Cargando planes disponibles…</p>
           } @else if (planes().length === 0) {
             <p class="hint-text">No hay planes activos. Crea uno primero en Planes.</p>
           } @else {
-            <select id="alta-plan" formControlName="plan_id">
+            <select id="alta-plan-select" formControlName="plan_id">
               <option value="" disabled>Selecciona un plan</option>
               @for (plan of planes(); track plan.id) {
                 <option [value]="plan.id">{{ plan.nombre }} — {{ plan.precio_mensual }} {{ plan.moneda }}/mes</option>
               }
             </select>
           }
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="alta-periodo">Periodo *</label>
+            <select id="alta-periodo" formControlName="periodo" (change)="recalcularFin(form)">
+              @for (p of periodos; track p.valor) {
+                <option [value]="p.valor">{{ p.etiqueta }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="alta-inicio">Fecha de inicio *</label>
+            <input id="alta-inicio" type="date" formControlName="inicia_en" (change)="recalcularFin(form)" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="alta-fin">Fecha de fin *</label>
+            <input id="alta-fin" type="date" formControlName="finaliza_en" [min]="form.get('inicia_en')?.value" />
+          </div>
+
+          <div class="form-group">
+            <label>Monto del periodo</label>
+            <p class="hint-text">{{ resumenMonto(form) }}</p>
+          </div>
         </div>
 
         @if (errorFormulario()) {
@@ -166,6 +213,93 @@
           <button type="button" class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
           <button type="submit" class="btn-submit" [disabled]="guardando() || planes().length === 0">
             {{ guardando() ? 'Guardando…' : 'Registrar y continuar con el usuario' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Modal: Asignar o cambiar plan de una empresa -->
+@if (modalPlanAbierto()) {
+  <div class="modal-overlay" (click)="cerrarModalPlan()">
+    <div class="modal-panel" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h2>Asignar o cambiar plan</h2>
+        <button type="button" class="modal-close-btn" (click)="cerrarModalPlan()" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form [formGroup]="formPlan" (ngSubmit)="guardarPlan()" novalidate>
+
+        <div class="form-group">
+          <label for="plan-empresa">Empresa *</label>
+          @if (cargandoEmpresas()) {
+            <p class="hint-text">Cargando empresas…</p>
+          } @else {
+            <select id="plan-empresa" formControlName="empresa_id">
+              <option value="" disabled>Selecciona una empresa</option>
+              @for (empresa of empresas(); track empresa.id) {
+                <option [value]="empresa.id">{{ empresa.nombre }}</option>
+              }
+            </select>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="plan-plan">Plan *</label>
+          @if (cargandoPlanes()) {
+            <p class="hint-text">Cargando planes disponibles…</p>
+          } @else if (planes().length === 0) {
+            <p class="hint-text">No hay planes activos. Crea uno primero en Planes.</p>
+          } @else {
+            <select id="plan-plan" formControlName="plan_id">
+              <option value="" disabled>Selecciona un plan</option>
+              @for (plan of planes(); track plan.id) {
+                <option [value]="plan.id">{{ plan.nombre }} — {{ plan.precio_mensual }} {{ plan.moneda }}/mes</option>
+              }
+            </select>
+          }
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="plan-periodo">Periodo *</label>
+            <select id="plan-periodo" formControlName="periodo" (change)="recalcularFin(formPlan)">
+              @for (p of periodos; track p.valor) {
+                <option [value]="p.valor">{{ p.etiqueta }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="plan-inicio">Fecha de inicio *</label>
+            <input id="plan-inicio" type="date" formControlName="inicia_en" (change)="recalcularFin(formPlan)" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="plan-fin">Fecha de fin *</label>
+            <input id="plan-fin" type="date" formControlName="finaliza_en" [min]="formPlan.get('inicia_en')?.value" />
+          </div>
+
+          <div class="form-group">
+            <label>Monto del periodo</label>
+            <p class="hint-text">{{ resumenMonto(formPlan) }}</p>
+          </div>
+        </div>
+
+        <p class="hint-text">Al asignar un nuevo plan, las suscripciones anteriores de la empresa quedan canceladas.</p>
+
+        @if (errorFormulario()) {
+          <p class="error-msg">{{ errorFormulario() }}</p>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="cerrarModalPlan()">Cancelar</button>
+          <button type="submit" class="btn-submit" [disabled]="guardando() || planes().length === 0">
+            {{ guardando() ? 'Guardando…' : 'Asignar plan' }}
           </button>
         </div>
       </form>

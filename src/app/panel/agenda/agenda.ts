@@ -8,7 +8,6 @@ import { distinctUntilChanged } from 'rxjs';
 import { CitaService } from '../../core/services/cita.service';
 import { EmpresaService } from '../../core/services/empresa.service';
 import { Empresa, EmpresaOpcion } from '../../core/models/empresa.model';
-import { PacienteService } from '../../core/services/paciente.service';
 import { ServicioService } from '../../core/services/servicio.service';
 import { Cita, CitaPayload, EstadoCita, Profesional, TipoConsulta } from '../../core/models/cita.model';
 import { Paciente } from '../../core/models/paciente.model';
@@ -17,17 +16,17 @@ import { AlcanceApi } from '../../core/utils/alcance-api';
 import { SessionService } from '../../core/services/session.service';
 import { AtencionCitaService } from '../../core/services/atencion-cita.service';
 import { AtencionCitaPayload, AtencionCitaResponse, HistorialAgendaItem, MedicamentoAtencion, MedicamentoAtencionPayload } from '../../core/models/atencion-cita.model';
+import { BuscadorPacienteComponent } from '../../shared/components/buscador-paciente/buscador-paciente';
 
 @Component({
   selector: 'app-agenda',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BuscadorPacienteComponent],
   templateUrl: './agenda.html',
   styleUrl: './agenda.scss',
 })
 export class AgendaComponent implements OnInit {
   private readonly citaService = inject(CitaService);
-  private readonly pacienteService = inject(PacienteService);
   private readonly servicioService = inject(ServicioService);
   private readonly empresaService = inject(EmpresaService);
   private readonly router = inject(Router);
@@ -44,18 +43,40 @@ export class AgendaComponent implements OnInit {
   profesionalesFormulario = signal<Profesional[]>([]);
   opcionesProfesionales = computed(() => this.esVistaSuperUsuario() ? this.profesionalesFormulario() : this.profesionales());
   filtroEmpresa = signal<string>('todas');
-  filtroProfesional = signal<string>('todos');
+  filtroProfesional = signal<string>('');
 
   // Fecha seleccionada en formato YYYY-MM-DD
   fechaSeleccionada = signal(this.formatoFechaIso(new Date()));
-  vistaModo = signal<'dia' | 'lista'>('dia');
+  periodo = signal<'dia' | 'semana' | 'mes'>('dia');
   filtroEstado = signal<EstadoCita | 'todos'>('todos');
 
   citas = signal<Cita[]>([]);
-  pacientes = signal<Paciente[]>([]);
+  pacienteElegido = signal<{ id: string; nombre: string; propietario_nombre?: string; propietario_celular?: string } | null>(null);
   servicios = signal<Servicio[]>([]);
   cargando = signal(false);
   error = signal<string | null>(null);
+
+  alSeleccionarPaciente(paciente: Paciente): void {
+    this.pacienteElegido.set({
+      id: paciente.id,
+      nombre: paciente.nombre,
+      propietario_nombre: paciente.propietario?.nombre,
+      propietario_celular: paciente.propietario?.celular,
+    });
+    this.form.patchValue({ paciente_id: paciente.id });
+    this.form.get('paciente_id')?.markAsTouched();
+  }
+
+  quitarPaciente(): void {
+    this.pacienteElegido.set(null);
+    this.form.patchValue({ paciente_id: '' });
+  }
+
+  alcancePacientesForm(): AlcanceApi | undefined {
+    if (!this.esVistaSuperUsuario()) return undefined;
+    const empresaId = this.form.get('empresa_id')?.value;
+    return empresaId ? this.alcanceEscritura(empresaId) : undefined;
+  }
 
   // Franjas horarias de atención (8:00 AM a 6:00 PM)
   readonly franjasHorarias = [
@@ -86,26 +107,48 @@ export class AgendaComponent implements OnInit {
     const fecha = this.fechaSeleccionada();
     const estado = this.filtroEstado();
     const empresa = this.filtroEmpresa();
-    const profesional = this.filtroProfesional();
     return this.citas().filter((c) => {
       const coincideFecha = c.fecha === fecha;
       const coincideEstado = estado === 'todos' || c.estado === estado;
       const coincideEmpresa = empresa === 'todas' || c.empresa_id === empresa;
-      const coincideProfesional = profesional === 'todos' || c.veterinario_id === profesional;
-      return coincideFecha && coincideEstado && coincideEmpresa && coincideProfesional;
+      return coincideFecha && coincideEstado && coincideEmpresa;
     });
   });
 
-  // Estadísticas del día
-  statsDia = computed(() => {
-    const fecha = this.fechaSeleccionada();
-    const todasDelDia = this.citas().filter((c) => c.fecha === fecha);
+  rangoPeriodo = computed(() => this.calcularRango(this.fechaSeleccionada(), this.periodo()));
+
+  citasPorDia = computed(() => {
+    const estado = this.filtroEstado();
+    const empresa = this.filtroEmpresa();
+    const grupos = new Map<string, Cita[]>();
+
+    for (const cita of this.citas()) {
+      if (estado !== 'todos' && cita.estado !== estado) continue;
+      if (empresa !== 'todas' && cita.empresa_id !== empresa) continue;
+      const lista = grupos.get(cita.fecha) ?? [];
+      lista.push(cita);
+      grupos.set(cita.fecha, lista);
+    }
+
+    return Array.from(grupos.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([fecha, citas]) => ({
+        fecha,
+        etiqueta: this.fechaDesdeIso(fecha)
+          .toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+          .replace(',', ''),
+        citas: [...citas].sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio)),
+      }));
+  });
+
+  statsPeriodo = computed(() => {
+    const todas = this.citas();
     return {
-      total: todasDelDia.length,
-      confirmadas: todasDelDia.filter((c) => c.estado === 'confirmada').length,
-      pendientes: todasDelDia.filter((c) => c.estado === 'pendiente').length,
-      cumplidas: todasDelDia.filter((c) => c.estado === 'cumplida').length,
-      atendidas: todasDelDia.filter((c) => c.estado === 'atendida').length,
+      total: todas.length,
+      confirmadas: todas.filter((c) => c.estado === 'confirmada').length,
+      pendientes: todas.filter((c) => c.estado === 'pendiente').length,
+      cumplidas: todas.filter((c) => c.estado === 'cumplida').length,
+      atendidas: todas.filter((c) => c.estado === 'atendida').length,
     };
   });
 
@@ -119,6 +162,30 @@ export class AgendaComponent implements OnInit {
       month: 'long',
       day: 'numeric',
     });
+  });
+
+  etiquetaPeriodo = computed(() => {
+    const periodo = this.periodo();
+    if (periodo === 'dia') return this.fechaLegible();
+
+    const { inicio, fin } = this.rangoPeriodo();
+    const fi = this.fechaDesdeIso(inicio);
+    const ff = this.fechaDesdeIso(fin);
+
+    if (periodo === 'mes') {
+      return fi.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+    }
+
+    const mesFin = ff.toLocaleDateString('es-ES', { month: 'long' });
+    if (fi.getFullYear() !== ff.getFullYear()) {
+      const mesInicio = fi.toLocaleDateString('es-ES', { month: 'long' });
+      return `${fi.getDate()} de ${mesInicio} de ${fi.getFullYear()} - ${ff.getDate()} de ${mesFin} de ${ff.getFullYear()}`;
+    }
+    if (fi.getMonth() !== ff.getMonth()) {
+      const mesInicio = fi.toLocaleDateString('es-ES', { month: 'long' });
+      return `${fi.getDate()} de ${mesInicio} - ${ff.getDate()} de ${mesFin} de ${ff.getFullYear()}`;
+    }
+    return `${fi.getDate()} - ${ff.getDate()} de ${mesFin} de ${ff.getFullYear()}`;
   });
 
   // ---------- Modal Agendar / Editar Cita ----------
@@ -196,23 +263,22 @@ export class AgendaComponent implements OnInit {
 
   ngOnInit(): void {
     if (!this.esVistaSuperUsuario()) {
-      this.cargarPacientes();
       this.cargarServicios();
     }
 
-    this.cargarCitas();
     this.cargarProfesionales();
 
     if (this.esVistaSuperUsuario()) {
       this.empresaService.listarOpciones().subscribe({
         next: (respuesta) => this.empresasDisponibles.set(respuesta || []),
-        error: () => {},
+        error: () => { },
       });
 
       this.form.get('empresa_id')!.valueChanges.pipe(
         distinctUntilChanged(),
         takeUntilDestroyed(this.destroyRef)
       ).subscribe((empresaId) => {
+        this.quitarPaciente();
         this.cargarOpcionesFormulario(empresaId);
       });
     }
@@ -233,18 +299,12 @@ export class AgendaComponent implements OnInit {
 
   private cargarOpcionesFormulario(empresaId?: string | null): void {
     if (!empresaId) {
-      this.pacientes.set([]);
       this.servicios.set([]);
       this.profesionalesFormulario.set([]);
       return;
     }
 
     const alcance = this.alcanceEscritura(empresaId);
-
-    this.pacienteService.listar({ per_page: 100 }, alcance).subscribe({
-      next: (res) => this.pacientes.set(res.data || []),
-      error: () => this.pacientes.set([]),
-    });
 
     this.servicioService.listar(true, alcance).subscribe({
       next: (res) => this.servicios.set(res || []),
@@ -257,18 +317,84 @@ export class AgendaComponent implements OnInit {
     });
   }
 
+  private esPasado(fecha: string, hora: string): boolean {
+    const [anio, mes, dia] = fecha.split('-').map(Number);
+    const [h, m] = hora.split(':').map(Number);
+    const ahora = new Date();
+    ahora.setSeconds(0, 0);
+    return new Date(anio, mes - 1, dia, h, m) < ahora;
+  }
+
+  horarioPasado(): boolean {
+    const v = this.form.getRawValue();
+    if (!v.fecha || !v.hora_inicio) return false;
+    const cita = this.citaEnEdicion();
+    if (cita && cita.fecha === v.fecha && cita.hora_inicio.substring(0, 5) === String(v.hora_inicio).substring(0, 5)) {
+      return false;
+    }
+    return this.esPasado(v.fecha, String(v.hora_inicio));
+  }
+
+  fechaMinimaFormulario(): string {
+    const hoy = this.formatoFechaIso(new Date());
+    const cita = this.citaEnEdicion();
+    return cita && cita.fecha < hoy ? cita.fecha : hoy;
+  }
+
+  franjaPasada(hora: string): boolean {
+    const fecha = this.fechaSeleccionada();
+    const hoy = this.formatoFechaIso(new Date());
+    if (fecha < hoy) return true;
+    return fecha === hoy && parseInt(hora.split(':')[0], 10) < new Date().getHours();
+  }
+
+  private horaMinimaDisponible(fecha: string, horaDeseada: string): string {
+    if (!this.esPasado(fecha, horaDeseada)) return horaDeseada;
+    const ahora = new Date();
+    const minutos = Math.ceil((ahora.getHours() * 60 + ahora.getMinutes() + 1) / 15) * 15;
+    const h = Math.floor(minutos / 60) % 24;
+    const m = minutos % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+
   cargarProfesionales(): void {
     this.citaService.listarProfesionales(this.alcanceListado()).subscribe({
-      next: (res) => this.profesionales.set(res || []),
-      error: () => this.profesionales.set([]),
+      next: (res) => {
+        const lista = res || [];
+        this.profesionales.set(lista);
+
+        const actual = this.filtroProfesional();
+        if (!actual || !lista.some((p) => p.id === actual)) {
+          const propio = this.esVeterinario() ? this.sessionService.usuario()?.id : undefined;
+          const elegido = lista.find((p) => p.id === propio) ?? lista[0];
+          this.filtroProfesional.set(elegido?.id ?? '');
+        }
+
+        this.cargarCitas();
+      },
+      error: () => {
+        this.profesionales.set([]);
+        this.filtroProfesional.set('');
+        this.citas.set([]);
+      },
     });
   }
 
   onFiltroEmpresaChange(empresaId: string): void {
     this.filtroEmpresa.set(empresaId);
-    this.filtroProfesional.set('todos');
-    this.cargarCitas();
+    this.filtroProfesional.set('');
+    this.citas.set([]);
     this.cargarProfesionales();
+  }
+
+  alCambiarProfesional(profesionalId: string): void {
+    this.filtroProfesional.set(profesionalId);
+    this.cargarCitas();
+  }
+
+  cambiarPeriodo(periodo: 'dia' | 'semana' | 'mes'): void {
+    this.periodo.set(periodo);
+    this.cargarCitas();
   }
 
   cargarServicios(): void {
@@ -305,22 +431,23 @@ export class AgendaComponent implements OnInit {
     return `${String(horaFin).padStart(2, '0')}:${String(minFin).padStart(2, '0')}`;
   }
 
-  cargarPacientes(): void {
-    this.pacienteService.listar({ per_page: 100 }).subscribe({
-      next: (res) => {
-        this.pacientes.set(res.data || []);
-      },
-      error: () => {
-        this.pacientes.set([]);
-      },
-    });
-  }
-
   cargarCitas(): void {
     this.cargando.set(true);
     this.error.set(null);
 
-    this.citaService.listarPorFecha(this.fechaSeleccionada(), this.alcanceListado()).subscribe({
+    const profesional = this.filtroProfesional();
+    if (!profesional) {
+      this.citas.set([]);
+      this.cargando.set(false);
+      return;
+    }
+
+    const { inicio, fin } = this.rangoPeriodo();
+
+    this.citaService.listar(
+      { fecha_inicio: inicio, fecha_fin: fin, veterinario_id: profesional },
+      this.alcanceListado()
+    ).subscribe({
       next: (data) => {
         this.citas.set(data || []);
         this.cargando.set(false);
@@ -340,11 +467,20 @@ export class AgendaComponent implements OnInit {
     this.cargarCitas();
   }
 
-  cambiarDia(delta: number): void {
+  navegar(delta: number): void {
     const [anio, mes, dia] = this.fechaSeleccionada().split('-').map(Number);
-    const date = new Date(anio, mes - 1, dia);
-    date.setDate(date.getDate() + delta);
-    this.fechaSeleccionada.set(this.formatoFechaIso(date));
+    const periodo = this.periodo();
+    let destino: Date;
+
+    if (periodo === 'mes') {
+      destino = new Date(anio, mes - 1 + delta, 1);
+      const ultimoDia = new Date(destino.getFullYear(), destino.getMonth() + 1, 0).getDate();
+      destino.setDate(Math.min(dia, ultimoDia));
+    } else {
+      destino = new Date(anio, mes - 1, dia + (periodo === 'semana' ? 7 : 1) * delta);
+    }
+
+    this.fechaSeleccionada.set(this.formatoFechaIso(destino));
     this.cargarCitas();
   }
 
@@ -372,8 +508,13 @@ export class AgendaComponent implements OnInit {
 
     this.citaEnEdicion.set(null);
     this.errorFormulario.set(null);
+    const hoy = this.formatoFechaIso(new Date());
+    const fechaInicial = this.fechaSeleccionada() < hoy ? hoy : this.fechaSeleccionada();
+    const horaInicio = this.horaMinimaDisponible(fechaInicial, horaInicial || '09:00');
+    const horaFin = this.sumarMinutos(horaInicio, 30);
+    this.pacienteElegido.set(null);
+
     if (this.esVistaSuperUsuario()) {
-      this.pacientes.set([]);
       this.servicios.set([]);
       this.profesionalesFormulario.set([]);
       this.form.reset({
@@ -381,9 +522,9 @@ export class AgendaComponent implements OnInit {
         paciente_id: '',
         servicio_id: '',
         veterinario_id: '',
-        fecha: this.fechaSeleccionada(),
-        hora_inicio: horaInicial || '09:00',
-        hora_fin: '09:30',
+        fecha: fechaInicial,
+        hora_inicio: horaInicio,
+        hora_fin: horaFin,
         tipo_consulta: { value: 'general', disabled: true },
         motivo: '',
         estado: 'confirmada',
@@ -392,12 +533,12 @@ export class AgendaComponent implements OnInit {
     } else {
       this.form.reset({
         empresa_id: '',
-        paciente_id: this.pacientes()[0]?.id || '',
+        paciente_id: '',
         servicio_id: '',
         veterinario_id: this.profesionales()[0]?.id ?? '',
-        fecha: this.fechaSeleccionada(),
-        hora_inicio: horaInicial || '09:00',
-        hora_fin: '09:30',
+        fecha: fechaInicial,
+        hora_inicio: horaInicio,
+        hora_fin: horaFin,
         tipo_consulta: { value: 'general', disabled: true },
         motivo: '',
         estado: 'confirmada',
@@ -410,6 +551,12 @@ export class AgendaComponent implements OnInit {
   abrirModalEditar(cita: Cita): void {
     this.citaEnEdicion.set(cita);
     this.errorFormulario.set(null);
+    this.pacienteElegido.set({
+      id: cita.paciente_id,
+      nombre: cita.paciente_nombre,
+      propietario_nombre: cita.propietario_nombre,
+      propietario_celular: cita.propietario_celular,
+    });
     if (this.esVistaSuperUsuario() && cita.empresa_id) {
       this.cargarOpcionesFormulario(cita.empresa_id);
     }
@@ -446,6 +593,11 @@ export class AgendaComponent implements OnInit {
       return;
     }
 
+    if (this.horarioPasado()) {
+      this.errorFormulario.set('No se puede agendar una cita en una fecha u hora que ya pasó.');
+      return;
+    }
+
     if (this.esVistaSuperUsuario() && !this.form.value.empresa_id) {
       this.errorFormulario.set('Selecciona la empresa a la que pertenece la cita.');
       return;
@@ -454,14 +606,14 @@ export class AgendaComponent implements OnInit {
     this.guardando.set(true);
     const formVal = this.form.getRawValue();
     const { empresa_id, ...restoForm } = formVal;
-    const pacienteSeleccionado = this.pacientes().find((p) => p.id === restoForm.paciente_id);
+    const paciente = this.pacienteElegido();
 
     const payload: CitaPayload = {
       ...restoForm,
       servicio_id: restoForm.servicio_id || null,
-      paciente_nombre: pacienteSeleccionado?.nombre || 'Paciente',
-      propietario_nombre: pacienteSeleccionado?.propietario?.nombre || 'Propietario',
-      propietario_celular: pacienteSeleccionado?.propietario?.celular || '',
+      paciente_nombre: paciente?.nombre || 'Paciente',
+      propietario_nombre: paciente?.propietario_nombre || 'Propietario',
+      propietario_celular: paciente?.propietario_celular || '',
     };
 
     const enEdicion = this.citaEnEdicion();
@@ -526,8 +678,8 @@ export class AgendaComponent implements OnInit {
       next: (respuesta) => {
         this.tipoFormatoAtencion.set(respuesta.tipo_formato);
         this.medicamentosDisponibles.set(respuesta.medicamentos || []);
-        this.historialAgendaAtencion.set(respuesta.historial_agenda || []);
         this.inicializarAtencion(cita);
+        this.historialAgendaAtencion.set(respuesta.historial_agenda || []);
         this.modalAtencionAbierto.set(true);
         this.atencionCargando.set(false);
       },
@@ -560,7 +712,6 @@ export class AgendaComponent implements OnInit {
       },
     });
     this.medicamentosAtencion.set([]);
-    this.historialAgendaAtencion.set([]);
   }
 
   cerrarAtencion(): void {
@@ -683,29 +834,11 @@ export class AgendaComponent implements OnInit {
 
     this.atencionCitaService.registrar(cita.id, payload, this.alcanceEscritura(cita.empresa_id)).subscribe({
       next: () => {
-        // La atención clínica se guardó correctamente.
-        // Ahora marcamos la cita como atendida.
-        this.citaService.cambiarEstado(
-          cita.id,
-          'atendida',
-        this.alcanceEscritura(cita.empresa_id)).subscribe({
-          next: () => {
-            this.atencionGuardando.set(false);
-            this.modalAtencionAbierto.set(false);
-            this.atencionCita.set(null);
-            this.historialAgendaAtencion.set([]);
-
-            // Recargar la agenda para reflejar el nuevo estado.
-            this.cargarCitas();
-          },
-          error: (err) => {
-            this.atencionGuardando.set(false);
-            this.atencionError.set(
-              err?.error?.message ||
-              'La atención se guardó, pero no se pudo actualizar el estado de la cita.'
-            );
-          },
-        });
+        this.atencionGuardando.set(false);
+        this.modalAtencionAbierto.set(false);
+        this.atencionCita.set(null);
+        this.historialAgendaAtencion.set([]);
+        this.cargarCitas();
       },
       error: (err) => {
         this.atencionGuardando.set(false);
@@ -715,6 +848,32 @@ export class AgendaComponent implements OnInit {
         );
       },
     });
+  }
+
+  private fechaDesdeIso(fecha: string): Date {
+    const [anio, mes, dia] = fecha.split('-').map(Number);
+    return new Date(anio, mes - 1, dia);
+  }
+
+  private calcularRango(fecha: string, periodo: 'dia' | 'semana' | 'mes'): { inicio: string; fin: string } {
+    const [anio, mes, dia] = fecha.split('-').map(Number);
+
+    if (periodo === 'semana') {
+      const desfase = (new Date(anio, mes - 1, dia).getDay() + 6) % 7;
+      return {
+        inicio: this.formatoFechaIso(new Date(anio, mes - 1, dia - desfase)),
+        fin: this.formatoFechaIso(new Date(anio, mes - 1, dia - desfase + 6)),
+      };
+    }
+
+    if (periodo === 'mes') {
+      return {
+        inicio: this.formatoFechaIso(new Date(anio, mes - 1, 1)),
+        fin: this.formatoFechaIso(new Date(anio, mes, 0)),
+      };
+    }
+
+    return { inicio: fecha, fin: fecha };
   }
 
   private formatoFechaIso(date: Date): string {
