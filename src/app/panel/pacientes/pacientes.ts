@@ -1,3 +1,4 @@
+import { PermisoDirective } from '../../core/directives/permiso.directive';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -11,7 +12,7 @@ import { AlcanceApi } from '../../core/utils/alcance-api';
 @Component({
   selector: 'app-pacientes',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [PermisoDirective, CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './pacientes.html',
   styleUrl: './pacientes.scss',
 })

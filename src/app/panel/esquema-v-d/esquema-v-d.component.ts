@@ -1,3 +1,4 @@
+import { PermisoDirective } from '../../core/directives/permiso.directive';
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -30,7 +31,7 @@ interface FormularioRegistro {
 @Component({
   selector: 'app-esquema-v-d',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [PermisoDirective, CommonModule, FormsModule],
   templateUrl: './esquema-v-d.component.html',
   styleUrl: './esquema-v-d.component.scss',
 })

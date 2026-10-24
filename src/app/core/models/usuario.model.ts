@@ -26,6 +26,8 @@ export interface Usuario {
   activo: boolean;
   es_super_administrador: boolean;
   modulos?: Modulo[];
+  permisos?: { id: string; codigo: string; modulo_id: string }[];
+  permisos_personalizados?: boolean;
   creado_en?: string;
   actualizado_en?: string;
 }
@@ -40,6 +42,8 @@ export interface UsuarioPayload {
   fecha_nacimiento?: string | null;
   correo: string;
   modulos?: string[];
+  permisos?: string[];
+  permisos_personalizados?: boolean;
   contrasena?: string;
   activo?: boolean;
 }

@@ -457,7 +457,7 @@
 
 
             <button
-              type="button"
+ appPermiso="esquema_v_d.crear"              type="button"
               class="btn-primary"
               (click)="abrirNuevoRegistro('vacuna')"
             >
@@ -532,14 +532,14 @@
                   <div class="record-actions">
 
                     <button
-                      type="button"
+ appPermiso="esquema_v_d.editar"                      type="button"
                       (click)="editarVacuna(vacuna)"
                     >
                       Editar
                     </button>
 
                     <button
-                      type="button"
+ appPermiso="esquema_v_d.eliminar"                      type="button"
                       class="danger"
                       (click)="eliminarVacuna(vacuna.id)"
                     >
@@ -581,7 +581,7 @@
 
 
             <button
-              type="button"
+ appPermiso="esquema_v_d.crear"              type="button"
               class="btn-primary"
               (click)="abrirNuevoRegistro('desparasitacion')"
             >
@@ -649,14 +649,14 @@
                   <div class="record-actions">
 
                     <button
-                      type="button"
+ appPermiso="esquema_v_d.editar"                      type="button"
                       (click)="editarDesparasitacion(registro)"
                     >
                       Editar
                     </button>
 
                     <button
-                      type="button"
+ appPermiso="esquema_v_d.eliminar"                      type="button"
                       class="danger"
                       (click)="eliminarDesparasitacion(registro.id)"
                     >
@@ -930,7 +930,7 @@
         </button>
 
         <button
-          type="button"
+ appPermiso="esquema_v_d.editar"          type="button"
           class="btn-primary"
           [disabled]="guardando()"
           (click)="guardarRegistro()"

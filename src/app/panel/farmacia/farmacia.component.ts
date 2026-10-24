@@ -1,3 +1,4 @@
+import { PermisoDirective } from '../../core/directives/permiso.directive';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -17,7 +18,7 @@ import { fechaHoyIso } from '../../core/utils/periodo-suscripcion';
 @Component({
   selector: 'app-farmacia',
   standalone: true,
-  imports: [CommonModule, FormsModule, BuscadorPacienteComponent, DispensacionFormulacionesComponent, RegistroPacienteFarmaciaComponent],
+  imports: [PermisoDirective, CommonModule, FormsModule, BuscadorPacienteComponent, DispensacionFormulacionesComponent, RegistroPacienteFarmaciaComponent],
   templateUrl: './farmacia.component.html',
   styleUrl: './farmacia.component.scss',
 })

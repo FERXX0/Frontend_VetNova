@@ -1,10 +1,12 @@
+import { PermisoDirective } from '../../core/directives/permiso.directive';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { distinctUntilChanged } from 'rxjs';
+import { distinctUntilChanged, interval, Subscription, finalize} from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { CitaService } from '../../core/services/cita.service';
 import { EmpresaService } from '../../core/services/empresa.service';
 import { Empresa, EmpresaOpcion } from '../../core/models/empresa.model';
@@ -15,17 +17,20 @@ import { Servicio } from '../../core/models/servicio.model';
 import { AlcanceApi } from '../../core/utils/alcance-api';
 import { SessionService } from '../../core/services/session.service';
 import { AtencionCitaService } from '../../core/services/atencion-cita.service';
+import { FarmaciaService } from '../../core/services/farmacia.service';
+import { Medicamento } from '../../core/models/farmacia.model';
 import { AtencionCitaPayload, AtencionCitaResponse, HistorialAgendaItem, MedicamentoAtencion, MedicamentoAtencionPayload } from '../../core/models/atencion-cita.model';
 import { BuscadorPacienteComponent } from '../../shared/components/buscador-paciente/buscador-paciente';
 
 @Component({
   selector: 'app-agenda',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, BuscadorPacienteComponent],
+  imports: [PermisoDirective, CommonModule, FormsModule, ReactiveFormsModule, BuscadorPacienteComponent],
   templateUrl: './agenda.html',
   styleUrl: './agenda.scss',
 })
 export class AgendaComponent implements OnInit {
+  private readonly http = inject(HttpClient);
   private readonly citaService = inject(CitaService);
   private readonly servicioService = inject(ServicioService);
   private readonly empresaService = inject(EmpresaService);
@@ -34,9 +39,18 @@ export class AgendaComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly sessionService = inject(SessionService);
   private readonly atencionCitaService = inject(AtencionCitaService);
+  private readonly farmaciaService = inject(FarmaciaService);
+
+  private actualizacionAgenda?: Subscription;
+  private peticionCitas?: Subscription;
+  private secuenciaConsultaCitas = 0;
+  private consultaCitasEnCurso = false;
+
+  readonly ultimaActualizacionAgenda = signal<Date | null>(null);
 
   // Esta misma pantalla se usa en /super-usuario/agenda y en /panel/agenda.
   readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
+  readonly cargandoDiagnosticoAnterior = signal(false);
 
   empresasDisponibles = signal<EmpresaOpcion[]>([]);
   profesionales = signal<Profesional[]>([]);
@@ -78,10 +92,11 @@ export class AgendaComponent implements OnInit {
     return empresaId ? this.alcanceEscritura(empresaId) : undefined;
   }
 
-  // Franjas horarias de atención (8:00 AM a 6:00 PM)
+  // Franjas visibles en la agenda (8:00 a 23:59)
   readonly franjasHorarias = [
     '08:00', '09:00', '10:00', '11:00', '12:00',
     '13:00', '14:00', '15:00', '16:00', '17:00', '18:00',
+    '19:00', '20:00', '21:00', '22:00', '23:00',
   ];
 
   readonly tiposConsulta: { valor: TipoConsulta; etiqueta: string }[] = [
@@ -204,12 +219,363 @@ export class AgendaComponent implements OnInit {
   atencionCita = signal<Cita | null>(null);
   tipoFormatoAtencion = signal<AtencionCitaResponse['tipo_formato']>('general');
   medicamentosDisponibles = signal<MedicamentoAtencion[]>([]);
-  historialAgendaAtencion = signal<HistorialAgendaItem[]>([]);
+  pestanaAtencion = signal('general');
+  readonly pestanasAtencion = [
+    {id:'general', nombre:'Datos generales'}, {id:'anamnesis', nombre:'Anamnesis'},
+    {id:'examen', nombre:'Examen físico'}, {id:'diagnostico', nombre:'Diagnóstico'},
+    {id:'tratamiento', nombre:'Tratamiento'}, {id:'evolucion', nombre:'Evolución'},
+  ];
+  // Cada servicio usa su propio conjunto de secciones; nunca se reutiliza
+  // el formulario completo de Consulta General para servicios no clínicos.
+  tabsServicio(): Array<{id: string; nombre: string}> {
+    const comun = [{id:'general', nombre:'Información'}];
+    switch (this.tipoFormatoAtencion()) {
+      case 'estetica': return [...comun, {id:'ficha', nombre:'Ficha de peluquería'}, {id:'evolucion', nombre:'Entrega'}];
+      case 'vacunacion': return [...comun, {id:'ficha', nombre:'Registro de vacunación'}, {id:'evolucion', nombre:'Indicaciones'}];
+      case 'desparasitacion': return [...comun, {id:'ficha', nombre:'Desparasitación'}, {id:'evolucion', nombre:'Seguimiento'}];
+      case 'control': return [...comun, {id:'ficha', nombre:'Seguimiento'}, {id:'examen', nombre:'Evaluación'}, {id:'diagnostico', nombre:'Diagnóstico'}, {id:'tratamiento', nombre:'Plan'}, {id:'evolucion', nombre:'Evolución'}];
+      case 'cirugia': return [...comun, {id:'ficha', nombre:'Procedimiento'}, {id:'examen', nombre:'Preoperatorio'}, {id:'diagnostico', nombre:'Diagnóstico'}, {id:'tratamiento', nombre:'Postoperatorio'}, {id:'evolucion', nombre:'Evolución'}];
+      case 'urgencia': return [...comun, {id:'ficha', nombre:'Triaje'}, {id:'examen', nombre:'Signos vitales'}, {id:'diagnostico', nombre:'Diagnóstico'}, {id:'tratamiento', nombre:'Estabilización'}, {id:'evolucion', nombre:'Evolución'}];
+      default: return this.pestanasAtencion;
+    }
+  }
+
+  camposFichaServicio(): Array<{clave: string; nombre: string; tipo?: string}> {
+    switch (this.tipoFormatoAtencion()) {
+      case 'estetica': return [
+        {clave:'estetica_estado_piel', nombre:'Estado de piel y pelaje antes del servicio'},
+        {clave:'estetica_comportamiento', nombre:'Comportamiento y manejo del paciente'},
+        {clave:'estetica_novedades', nombre:'Novedades, lesiones o hallazgos durante el servicio'},
+        {clave:'estetica_recomendaciones', nombre:'Recomendaciones al propietario'},
+      ];
+      case 'control': return [
+        {clave:'control_motivo', nombre:'Motivo del control / consulta previa'},
+        {clave:'control_adherencia', nombre:'Cumplimiento del tratamiento anterior'},
+        {clave:'control_respuesta', nombre:'Respuesta clínica y cambios observados'},
+        {clave:'control_hallazgos', nombre:'Hallazgos en el seguimiento'},
+        {clave:'control_proximo', nombre:'Plan de control y fecha sugerida'},
+      ];
+      case 'cirugia': return [
+        {clave:'cirugia_ayuno', nombre:'Ayuno preoperatorio'},
+        {clave:'cirugia_consentimiento', nombre:'Consentimiento informado / referencia'},
+        {clave:'cirugia_riesgo', nombre:'Valoración de riesgo anestésico'},
+        {clave:'cirugia_anestesia', nombre:'Protocolo anestésico y monitoreo'},
+        {clave:'cirugia_hallazgos', nombre:'Hallazgos intraoperatorios'},
+        {clave:'cirugia_complicaciones', nombre:'Complicaciones y manejo'},
+        {clave:'cirugia_recuperacion', nombre:'Estado en recuperación'},
+      ];
+      case 'urgencia': return [
+        {clave:'urgencia_triage', nombre:'Clasificación de triaje'},
+        {clave:'urgencia_inicio', nombre:'Inicio de síntomas y circunstancia de ingreso'},
+        {clave:'urgencia_estado', nombre:'Estado al ingreso / nivel de conciencia'},
+        {clave:'urgencia_abc', nombre:'Evaluación primaria ABC y hallazgos críticos'},
+        {clave:'urgencia_estabilizacion', nombre:'Intervenciones inmediatas y respuesta'},
+        {clave:'urgencia_destino', nombre:'Destino del paciente (observación, hospitalización, remisión o alta)'},
+      ];
+      default: return [];
+    }
+  }
+  requiereDiagnosticoAtencion(): boolean {
+    return !['vacunacion', 'desparasitacion', 'estetica'].includes(this.tipoFormatoAtencion());
+  }
+  readonly camposAnamnesis = [
+    {clave:'anamnesis', nombre:'Enfermedad actual y anamnesis'},
+    {clave:'antecedentes', nombre:'Antecedentes médicos'},
+    {clave:'alimentacion', nombre:'Alimentación y hábitos'},
+    {clave:'medicacion_previa', nombre:'Medicación previa'},
+  ];
+  readonly camposSignos = [
+    {clave:'frecuencia_cardiaca', nombre:'Frecuencia cardíaca (lpm)'},
+    {clave:'frecuencia_respiratoria', nombre:'Frecuencia respiratoria (rpm)'},
+    {clave:'spo2', nombre:'SpO₂ (%)'},
+    {clave:'llenado_capilar', nombre:'Llenado capilar (s)'},
+  ];
+  readonly camposExamen = [
+    {clave:'mucosas', nombre:'Mucosas'}, {clave:'hidratacion', nombre:'Hidratación'},
+    {clave:'condicion_corporal', nombre:'Condición corporal'},
+    {clave:'estado_general', nombre:'Estado general'},
+    {clave:'examen_por_sistemas', nombre:'Exploración por sistemas'},
+  ];
+  profesionalAtencion(): string { return this.sessionService.usuario()?.nombre || this.atencionCita()?.veterinario_nombre || 'Sin identificar'; }
+  nombreTipoAtencion(): string { return this.tiposConsulta.find(t => t.valor === this.atencionCita()?.tipo_consulta)?.etiqueta || this.atencionCita()?.tipo_consulta || ''; }
+  datoClinico(clave: string): string | number | null { return this.atencion().clinicos[clave] ?? ''; }
+  actualizarDatoClinico(clave: string, valor: string | number | null): void {
+    this.atencion.update(a => ({...a, clinicos: {...a.clinicos, [clave]: valor}}));
+  }
+  // Wikidata: API pública de términos, NO catálogo veterinario clínicamente homologado.
+  busquedaDiagnostico = signal('');
+  diagnosticosEncontrados = signal<Array<{id:string;label:string;description:string}>>([]);
+  diagnosticoBuscando = signal(false);
+  diagnosticoError = signal<string | null>(null);
+  diagnosticosRegistrados = signal<Array<{id:string;label:string;description:string}>>([]);
+  diagnosticoPrincipalId = signal<string | null>(null);
+  diagnosticoConsultaRealizada = signal(false);
+  buscarDiagnosticos(): void {
+    const termino = this.busquedaDiagnostico().trim();
+    if (termino.length < 3) {
+      this.diagnosticoError.set('Escribe al menos 3 caracteres.');
+      this.diagnosticosEncontrados.set([]);
+      return;
+    }
+    this.diagnosticoError.set(null);
+    this.diagnosticoConsultaRealizada.set(false);
+    this.diagnosticosEncontrados.set([]);
+    this.diagnosticoBuscando.set(true);
+    const params = new HttpParams()
+      .set('action', 'wbsearchentities').set('search', termino)
+      .set('language', 'es').set('uselang', 'es')
+      .set('type', 'item').set('limit', '20')
+      .set('format', 'json').set('origin', '*');
+    this.http.get<{search?: Array<{id:string;label:string;description?:string}>}>(
+      'https://www.wikidata.org/w/api.php', {params}
+    ).subscribe({
+      next: respuesta => {
+        // No filtrar por palabras como "animal" o "canino": Wikidata puede
+        // devolver enfermedades válidas sin esas palabras en su descripción.
+        this.diagnosticosEncontrados.set((respuesta.search ?? []).map(r => ({
+          id: r.id, label: r.label, description: r.description ?? ''
+        })));
+        this.diagnosticoConsultaRealizada.set(true);
+        this.diagnosticoBuscando.set(false);
+      },
+      error: () => {
+        this.diagnosticoBuscando.set(false);
+        this.diagnosticoError.set('No fue posible consultar Wikidata. Revisa la red o las restricciones del navegador. Puedes registrar el diagnóstico manualmente.');
+      }
+    });
+  }
+  seleccionarDiagnostico(item:{id:string;label:string;description:string}):void {
+    if (!this.diagnosticosRegistrados().some(d => d.id === item.id)) {
+      this.diagnosticosRegistrados.update(actuales => [...actuales, item]);
+      if (!this.diagnosticoPrincipalId()) this.diagnosticoPrincipalId.set(item.id);
+    }
+    this.sincronizarDiagnosticos();
+    this.diagnosticosEncontrados.set([]);
+    this.busquedaDiagnostico.set('');
+    this.diagnosticoConsultaRealizada.set(false);
+  }
+
+  marcarDiagnosticoPrincipal(id: string): void {
+    const existe = this.diagnosticosRegistrados().some(
+      diagnostico => diagnostico.id === id
+    );
+
+    if (!existe) {
+      return;
+    }
+
+    this.diagnosticoPrincipalId.set(id);
+
+    const diagnosticoPrincipal = this.diagnosticosRegistrados().find(
+      diagnostico => diagnostico.id === id
+    );
+
+    if (diagnosticoPrincipal) {
+      this.actualizarAtencion(
+        'diagnostico',
+        diagnosticoPrincipal.label
+      );
+    }
+  }
+
+  eliminarDiagnostico(id: string): void {
+    this.diagnosticosRegistrados.update(actuales => actuales.filter(d => d.id !== id));
+    if (this.diagnosticoPrincipalId() === id) this.diagnosticoPrincipalId.set(null);
+    this.sincronizarDiagnosticos();
+  }
+  private sincronizarDiagnosticos(): void {
+    const lista = this.diagnosticosRegistrados();
+    const principal = lista.find(d => d.id === this.diagnosticoPrincipalId());
+    this.actualizarAtencion('diagnostico', principal?.label ?? '');
+    this.atencion.update(a => ({...a, clinicos: {
+      ...a.clinicos,
+      diagnostico_codigo: principal?.id ?? '',
+      diagnostico_fuente: principal ? 'Wikidata' : '',
+      diagnostico_descripcion: principal?.description ?? '',
+      diagnostico_principal_id: principal?.id ?? '',
+      diagnosticos_registrados: JSON.stringify(lista.map(d => ({
+        ...d, principal: d.id === this.diagnosticoPrincipalId(), fuente: 'Wikidata'
+      })))
+    }}));
+  }
+
+  /**
+ * Agrega diagnósticos provenientes de una atención anterior.
+ * Conserva los diagnósticos que ya estén seleccionados.
+ */
+  private incorporarDiagnosticosAnteriores(
+    anteriores: Array<{
+      id: string;
+      label: string;
+      description: string;
+    }>,
+    principalAnteriorId?: string
+  ): void {
+    const actuales = this.diagnosticosRegistrados();
+    const idsActuales = new Set(actuales.map(d => d.id));
+
+    const nuevos = anteriores.filter(
+      d => d.id && d.label && !idsActuales.has(d.id)
+    );
+
+    this.diagnosticosRegistrados.set([...actuales, ...nuevos]);
+
+    if (!this.diagnosticoPrincipalId()) {
+      const todos = this.diagnosticosRegistrados();
+
+      const principalValido = todos.some(
+        d => d.id === principalAnteriorId
+      );
+
+      const id = principalValido
+        ? principalAnteriorId!
+        : todos[0]?.id;
+
+      if (id) {
+        this.marcarDiagnosticoPrincipal(id);
+      }
+    }
+  }
+
+  /**
+   * Punto de integración con el historial de consultas clínicas.
+   */
+  traerDiagnosticosUltimaEvolucion(): void {
+    this.diagnosticoError.set(
+      'No se pudo traer los diagnósticos de la última evolución. Intenta nuevamente. Si el problema persiste contacta con la empresa de Vetnova.'
+    );
+  }
+
+  // Registro de estética: independiente de las formulaciones médicas.
+  readonly serviciosEstetica = [
+    'Baño', 'Corte de pelo', 'Corte de uñas', 'Limpieza de oídos',
+    'Cepillado / desenredado', 'Limpieza dental estética', 'Baño medicado', 'Otro',
+  ];
+  serviciosEsteticaSeleccionados = signal<string[]>([]);
+  productosCosmeticos = signal<Array<{medicamento_id: string; nombre: string; busqueda: string; cantidad: number | null; unidad: string}>>([]);
+  insumosDisponibles = signal<Medicamento[]>([]);
+  insumosCargando = signal(false);
+  insumosError = signal<string | null>(null);
+  private empresaInsumos: string | null = null;
+  private temporizadorBusquedaInsumos: ReturnType<typeof setTimeout> | null = null;
+  private solicitudBusquedaInsumos?: Subscription;
+  private numeroBusquedaInsumos = 0;
+
+  buscarInsumos(texto: string): Medicamento[] {
+    const termino = texto.trim().toLocaleLowerCase('es');
+    return this.insumosDisponibles().filter(p =>
+      p.nombre.toLocaleLowerCase('es').includes(termino) || p.codigo.toLocaleLowerCase('es').includes(termino)
+    ).slice(0, 30);
+  }
+
+  // El buscador consulta la BD cada vez que cambia el texto, con debounce.
+  cargarInsumosEstetica(empresaId: string): void {
+    this.empresaInsumos = empresaId;
+    this.insumosDisponibles.set([]);
+    this.insumosError.set(null);
+  }
+
+  buscarInsumosEnServidor(texto: string): void {
+    if (this.temporizadorBusquedaInsumos) clearTimeout(this.temporizadorBusquedaInsumos);
+    this.solicitudBusquedaInsumos?.unsubscribe();
+    const numero = ++this.numeroBusquedaInsumos;
+    this.insumosDisponibles.set([]);
+    this.insumosError.set(null);
+    if (!texto.trim()) {
+      this.insumosCargando.set(false);
+      return;
+    }
+    this.insumosCargando.set(true);
+    this.temporizadorBusquedaInsumos = setTimeout(() => {
+      this.solicitudBusquedaInsumos = this.farmaciaService
+        .obtenerInsumosParaCita(this.alcanceEscritura(this.empresaInsumos), texto.trim())
+        .subscribe({
+          next: res => {
+            if (numero !== this.numeroBusquedaInsumos) return;
+            this.insumosDisponibles.set(res.data ?? []);
+            this.insumosCargando.set(false);
+          },
+          error: err => {
+            if (numero !== this.numeroBusquedaInsumos) return;
+            this.insumosCargando.set(false);
+            this.insumosError.set(`No se pudieron consultar los productos (${err.status || 'red'}).`);
+          },
+        });
+    }, 250);
+  }
+  readonly unidadesCosmeticas = ['ml', 'g', 'kg', 'unidades', 'aplicaciones', 'sobres'];
+
+  cambiarServicioEstetica(servicio: string, seleccionado: boolean): void {
+    this.serviciosEsteticaSeleccionados.update(lista => seleccionado
+      ? [...new Set([...lista, servicio])]
+      : lista.filter(item => item !== servicio));
+  }
+
+  agregarProductoCosmetico(): void {
+    this.productosCosmeticos.update(lista => [...lista, {medicamento_id: '', nombre: '', busqueda: '', cantidad: null, unidad: 'unidades'}]);
+  }
+
+  editarProductoCosmetico(indice: number, campo: 'busqueda' | 'cantidad' | 'unidad', valor: string | number | null): void {
+    this.productosCosmeticos.update(lista => lista.map((producto, i) => i === indice
+      ? {...producto, [campo]: campo === 'cantidad' ? (valor === '' || valor === null ? null : Number(valor)) : valor, ...(campo === 'busqueda' ? {medicamento_id: '', nombre: '', cantidad: null} : {})}
+      : producto));
+    if (campo === 'busqueda') this.buscarInsumosEnServidor(String(valor ?? ''));
+  }
+
+  // La presentación identifica el contenido del producto (p. ej. "500 ml").
+  // No confundir con stock, que representa unidades disponibles en inventario.
+  presentacionInsumo(insumo: Medicamento): { cantidad: number | null; unidad: string } {
+    // Primero: la presentación puede contener el contenido neto: "500 ml".
+    const texto = String(insumo.presentacion ?? '').trim();
+    const unidades = '(ml|mililitros?|l|litros?|kg|kilogramos?|gr|gramos?|g|unidades?|unds?|uds?|sobres?|aplicaciones?)';
+    const encontrado = texto.match(new RegExp(String.raw`(\d+(?:[.,]\d+)?)\s*${unidades}\b`, 'i'));
+    const normalizar = (valor: number, unidadOriginal: string): { cantidad: number; unidad: string } | null => {
+      const u = unidadOriginal.trim().toLowerCase();
+      if (/^(ml|mililitro)/.test(u)) return { cantidad: valor, unidad: 'ml' };
+      if (/^(l|litro)/.test(u)) return { cantidad: valor * 1000, unidad: 'ml' };
+      if (/^(kg|kilogramo)/.test(u)) return { cantidad: valor, unidad: 'kg' };
+      if (/^(g|gr|gramo)/.test(u)) return { cantidad: valor, unidad: 'g' };
+      if (/^sobre/.test(u)) return { cantidad: valor, unidad: 'sobres' };
+      if (/^aplicaci/.test(u)) return { cantidad: valor, unidad: 'aplicaciones' };
+      if (/^(unid|und|ud)/.test(u)) return { cantidad: valor, unidad: 'unidades' };
+      return null;
+    };
+    if (encontrado) {
+      const v = Number(encontrado[1].replace(',', '.'));
+      const dato = Number.isFinite(v) && v > 0 ? normalizar(v, encontrado[2]) : null;
+      if (dato) return dato;
+    }
+    // Si "presentacion" es "Frasco", "Botella", etc., utilizar la cantidad
+    // y unidad registradas en los campos de Farmacia.
+    const v = Number(insumo.concentracion);
+    if (Number.isFinite(v) && v > 0 && insumo.concentracion_unidad) {
+      const dato = normalizar(v, insumo.concentracion_unidad);
+      if (dato) return dato;
+    }
+    // No confundir existencias en inventario (stock) con contenido/consumo.
+    return { cantidad: null, unidad: 'unidades' };
+  }
+
+  seleccionarInsumoCosmetico(indice: number, id: string): void {
+    const insumo = this.insumosDisponibles().find(p => String(p.id) === String(id));
+    if (!insumo) return;
+    const presentacion = this.presentacionInsumo(insumo);
+    this.productosCosmeticos.update(lista => lista.map((p, i) => i === indice
+      ? {...p, medicamento_id: String(insumo.id), nombre: insumo.nombre,
+          busqueda: insumo.nombre, cantidad: presentacion.cantidad, unidad: presentacion.unidad}
+      : p));
+  }
+
+  quitarProductoCosmetico(indice: number): void {
+    this.productosCosmeticos.update(lista => lista.filter((_, i) => i !== indice));
+  }
+
   medicamentosAtencion = signal<MedicamentoAtencionPayload[]>([]);
 
   atencion = signal({
     fecha: this.formatoFechaIso(new Date()),
     motivo: '',
+    clinicos: {} as Record<string, string | number | null>,
     peso_kg: null as number | null,
     temperatura_c: null as number | null,
     diagnostico: '',
@@ -243,7 +609,8 @@ export class AgendaComponent implements OnInit {
 
   readonly esRecepcionista = computed(() => this.sessionService.codigoRol() === 'recepcionista');
   readonly esVeterinario = computed(() => this.sessionService.codigoRol() === 'veterinario');
-  readonly puedeAgendar = computed(() => !this.esVeterinario());
+  readonly puedeAgendar = computed(() => this.sessionService.tienePermiso('citas.crear'));
+  readonly puedeAtender = computed(() => this.sessionService.tienePermiso('citas.atender'));
 
   constructor() {
     this.form = this.fb.group({
@@ -255,7 +622,7 @@ export class AgendaComponent implements OnInit {
       hora_inicio: ['09:00', [Validators.required]],
       hora_fin: ['09:30'],
       tipo_consulta: [{ value: 'general', disabled: true }, [Validators.required]],
-      motivo: ['', [Validators.required, Validators.maxLength(200)]],
+      motivo: ['', [Validators.maxLength(200)]],
       estado: ['confirmada', [Validators.required]],
       observaciones: ['', [Validators.maxLength(300)]],
     });
@@ -282,6 +649,19 @@ export class AgendaComponent implements OnInit {
         this.cargarOpcionesFormulario(empresaId);
       });
     }
+
+    // Sincronización automática de la agenda cada 10 segundos.
+    this.actualizacionAgenda = interval(10000)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        // Evitar consultas repetidas mientras hay una petición activa.
+        if (this.consultaCitasEnCurso) return;
+
+        // No interrumpir formularios abiertos.
+        if (this.modalAbierto() || this.modalAtencionAbierto()) return;
+
+        this.cargarCitas(true);
+      });
   }
 
   private alcanceListado(): AlcanceApi | undefined {
@@ -431,34 +811,73 @@ export class AgendaComponent implements OnInit {
     return `${String(horaFin).padStart(2, '0')}:${String(minFin).padStart(2, '0')}`;
   }
 
-  cargarCitas(): void {
-    this.cargando.set(true);
-    this.error.set(null);
-
+  cargarCitas(silencioso = false): void {
     const profesional = this.filtroProfesional();
+
+    // Identificador para descartar respuestas antiguas.
+    const consultaActual = ++this.secuenciaConsultaCitas;
+
+    // Cancelar una consulta anterior si sigue pendiente.
+    this.peticionCitas?.unsubscribe();
+    this.consultaCitasEnCurso = false;
+
     if (!profesional) {
       this.citas.set([]);
       this.cargando.set(false);
       return;
     }
 
+    if (!silencioso) {
+      this.cargando.set(true);
+      this.error.set(null);
+    }
+
     const { inicio, fin } = this.rangoPeriodo();
 
-    this.citaService.listar(
-      { fecha_inicio: inicio, fecha_fin: fin, veterinario_id: profesional },
+    this.consultaCitasEnCurso = true;
+
+    this.peticionCitas = this.citaService.listar(
+      {
+        fecha_inicio: inicio,
+        fecha_fin: fin,
+        veterinario_id: profesional
+      },
       this.alcanceListado()
-    ).subscribe({
+    )
+    .pipe(
+      finalize(() => {
+        if (consultaActual === this.secuenciaConsultaCitas) {
+          this.consultaCitasEnCurso = false;
+          this.cargando.set(false);
+        }
+      })
+    )
+    .subscribe({
       next: (data) => {
+        if (consultaActual !== this.secuenciaConsultaCitas) {
+          return;
+        }
+
         this.citas.set(data || []);
-        this.cargando.set(false);
+        this.ultimaActualizacionAgenda.set(new Date());
+        this.error.set(null);
       },
+
       error: (err) => {
-        this.cargando.set(false);
-        this.citas.set([]);
+        if (consultaActual !== this.secuenciaConsultaCitas) {
+          return;
+        }
+
+        // En refrescos automáticos conservamos las citas anteriores.
+        if (!silencioso) {
+          this.citas.set([]);
+        }
+
         this.error.set(
-          err?.error?.message || 'No se pudieron cargar las citas desde el servidor.'
+          err?.error?.message ||
+          'No se pudieron actualizar las citas desde el servidor.'
         );
-      },
+      }
     });
   }
 
@@ -502,7 +921,7 @@ export class AgendaComponent implements OnInit {
 
   abrirModalCrear(horaInicial?: string): void {
     if (!this.puedeAgendar()) {
-      this.error.set('Los veterinarios no pueden agendar citas.');
+      this.error.set('No tiene permiso para crear citas.');
       return;
     }
 
@@ -582,7 +1001,7 @@ export class AgendaComponent implements OnInit {
 
   guardar(): void {
     if (!this.puedeAgendar() && !this.citaEnEdicion()) {
-      this.errorFormulario.set('Los veterinarios no pueden agendar citas.');
+      this.errorFormulario.set('No tiene permiso para crear citas.');
       return;
     }
 
@@ -610,6 +1029,7 @@ export class AgendaComponent implements OnInit {
 
     const payload: CitaPayload = {
       ...restoForm,
+      motivo: this.citaEnEdicion()?.motivo ?? '',
       servicio_id: restoForm.servicio_id || null,
       paciente_nombre: paciente?.nombre || 'Paciente',
       propietario_nombre: paciente?.propietario_nombre || 'Propietario',
@@ -665,12 +1085,14 @@ export class AgendaComponent implements OnInit {
   }
 
   abrirAtencion(cita: Cita): void {
+    if (!this.puedeAtender()) { this.error.set('No tiene permiso para atender citas.'); return; }
     if (cita.estado !== 'cumplida') {
       this.error.set('La cita debe ser marcada como cumplida por recepción antes de iniciar la atención.');
       return;
     }
 
     this.atencionCargando.set(true);
+    this.pestanaAtencion.set('general');
     this.atencionError.set(null);
     this.atencionCita.set(cita);
 
@@ -678,8 +1100,10 @@ export class AgendaComponent implements OnInit {
       next: (respuesta) => {
         this.tipoFormatoAtencion.set(respuesta.tipo_formato);
         this.medicamentosDisponibles.set(respuesta.medicamentos || []);
+        if (respuesta.tipo_formato === 'estetica') {
+          this.cargarInsumosEstetica(cita.empresa_id ?? '');
+        }
         this.inicializarAtencion(cita);
-        this.historialAgendaAtencion.set(respuesta.historial_agenda || []);
         this.modalAtencionAbierto.set(true);
         this.atencionCargando.set(false);
       },
@@ -694,12 +1118,13 @@ export class AgendaComponent implements OnInit {
     const hoy = this.formatoFechaIso(new Date());
     this.atencion.set({
       fecha: hoy,
-      motivo: cita.motivo || '',
+      motivo: '',
+      clinicos: {tipo_diagnostico:'presuntivo'},
       peso_kg: null,
       temperatura_c: null,
       diagnostico: '',
       tratamiento: '',
-      observaciones: cita.observaciones || '',
+      observaciones: '',
       evolucion: '',
       detalles: {
         procedimiento: '', categoria: '', duracion: '', sala: '', prioridad: 'Media', indicaciones: '',
@@ -712,13 +1137,20 @@ export class AgendaComponent implements OnInit {
       },
     });
     this.medicamentosAtencion.set([]);
+    this.serviciosEsteticaSeleccionados.set([]);
+    this.productosCosmeticos.set([]);
+    this.pestanaAtencion.set('general');
+    this.busquedaDiagnostico.set('');
+    this.diagnosticosEncontrados.set([]);
+    this.diagnosticoConsultaRealizada.set(false);
+    this.diagnosticosRegistrados.set([]);
+    this.diagnosticoPrincipalId.set(null);
   }
 
   cerrarAtencion(): void {
     if (this.atencionGuardando()) return;
     this.modalAtencionAbierto.set(false);
     this.atencionCita.set(null);
-    this.historialAgendaAtencion.set([]);
   }
 
   actualizarAtencion<K extends keyof ReturnType<typeof this.atencion>>(campo: K, valor: ReturnType<typeof this.atencion>[K]): void {
@@ -781,14 +1213,26 @@ export class AgendaComponent implements OnInit {
   }
 
   guardarAtencion(): void {
+    if (!this.puedeAtender()) { this.atencionError.set('No tiene permiso para atender citas.'); return; }
     const cita = this.atencionCita();
     const tipo = this.tipoFormatoAtencion();
     const datos = this.atencion();
 
-    if (!cita) return;
+    if (!cita) {
+      this.atencionError.set('No se encontró la cita para registrar la atención.');
+      return;
+    }
 
-    if ((tipo !== 'vacunacion' && tipo !== 'desparasitacion') && !datos.diagnostico.trim()) {
-      this.atencionError.set('El diagnóstico es obligatorio para este tipo de atención.');
+    if (!datos.motivo.trim()) {
+      this.atencionError.set(
+        'Debes registrar el motivo de consulta antes de finalizar.'
+      );
+      this.pestanaAtencion.set('general');
+      return;
+    }
+
+    if (this.requiereDiagnosticoAtencion() && (!this.diagnosticosRegistrados().length || !this.diagnosticoPrincipalId())) {
+      this.atencionError.set('Agrega al menos un diagnóstico y selecciona el principal.');
       return;
     }
 
@@ -812,6 +1256,18 @@ export class AgendaComponent implements OnInit {
       return;
     }
 
+    if (tipo === 'estetica' && this.serviciosEsteticaSeleccionados().length === 0) {
+      this.atencionError.set('Selecciona al menos un servicio de peluquería realizado.');
+      this.pestanaAtencion.set('ficha');
+      return;
+    }
+    if (tipo === 'estetica' && this.productosCosmeticos().some(p =>
+      !p.medicamento_id || p.cantidad === null || !Number.isFinite(p.cantidad) || p.cantidad <= 0 || !p.unidad)) {
+      this.atencionError.set('Selecciona un insumo del catálogo y completa cantidad y unidad.');
+      this.pestanaAtencion.set('ficha');
+      return;
+    }
+
     const payload: AtencionCitaPayload = {
       fecha: datos.fecha,
       motivo: datos.motivo,
@@ -821,7 +1277,16 @@ export class AgendaComponent implements OnInit {
       tratamiento: datos.tratamiento || null,
       observaciones: datos.observaciones || null,
       evolucion: datos.evolucion || null,
-      detalles: datos.detalles,
+      detalles: {
+        ...datos.detalles,
+        ...datos.clinicos,
+        ...(tipo === 'estetica' ? {
+          estetica_servicios: this.serviciosEsteticaSeleccionados(),
+          estetica_productos_cosmeticos: this.productosCosmeticos().map(p => ({
+            medicamento_id: p.medicamento_id, nombre: p.nombre, cantidad: p.cantidad, unidad: p.unidad,
+          })),
+        } : {}),
+      },
       medicamentos: this.medicamentosAtencion(),
     };
 
@@ -837,7 +1302,6 @@ export class AgendaComponent implements OnInit {
         this.atencionGuardando.set(false);
         this.modalAtencionAbierto.set(false);
         this.atencionCita.set(null);
-        this.historialAgendaAtencion.set([]);
         this.cargarCitas();
       },
       error: (err) => {

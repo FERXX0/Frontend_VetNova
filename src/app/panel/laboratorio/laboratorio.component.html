@@ -18,7 +18,7 @@
 
     </div>
 
-    <button type="button" class="btn-primary" [disabled]="!puedeCrear()"
+    <button appPermiso="laboratorio.crear" type="button" class="btn-primary" [disabled]="!puedeCrear()"
       [title]="puedeCrear() ? '' : 'Selecciona una empresa para crear solicitudes'" (click)="abrirNuevaSolicitud()">
       + Nueva solicitud
     </button>
@@ -524,7 +524,7 @@
                   Ver
                 </button>
 
-                <button type="button" class="action-edit" (click)="
+                <button appPermiso="laboratorio.editar" type="button" class="action-edit" (click)="
                       editarSolicitud(solicitud)
                     ">
                   Editar
@@ -874,7 +874,7 @@ solicitudSeleccionada()
 
       <div class="state-actions">
 
-        <button type="button" [class.active]="
+        <button appPermiso="laboratorio.editar" type="button" [class.active]="
               solicitudSeleccionada()!.estado ===
               'Solicitado'
             " (click)="
@@ -887,7 +887,7 @@ solicitudSeleccionada()
         </button>
 
 
-        <button type="button" [class.active]="
+        <button appPermiso="laboratorio.editar" type="button" [class.active]="
               solicitudSeleccionada()!.estado ===
               'Muestra recibida'
             " (click)="
@@ -900,7 +900,7 @@ solicitudSeleccionada()
         </button>
 
 
-        <button type="button" [class.active]="
+        <button appPermiso="laboratorio.editar" type="button" [class.active]="
               solicitudSeleccionada()!.estado ===
               'En procesamiento'
             " (click)="
@@ -913,7 +913,7 @@ solicitudSeleccionada()
         </button>
 
 
-        <button type="button" [class.active]="
+        <button appPermiso="laboratorio.editar" type="button" [class.active]="
               solicitudSeleccionada()!.estado ===
               'Resultado disponible'
             " (click)="
@@ -926,7 +926,7 @@ solicitudSeleccionada()
         </button>
 
 
-        <button type="button" [class.active]="
+        <button appPermiso="laboratorio.editar" type="button" [class.active]="
               solicitudSeleccionada()!.estado ===
               'Finalizado'
             " (click)="
@@ -939,7 +939,7 @@ solicitudSeleccionada()
         </button>
 
 
-        <button type="button" [class.active]="
+        <button appPermiso="laboratorio.editar" type="button" [class.active]="
               solicitudSeleccionada()!.estado ===
               'Cancelado'
             " (click)="
@@ -976,7 +976,7 @@ solicitudSeleccionada()
         </div>
 
 
-        <button type="button" class="btn-primary" (click)="abrirNuevoResultado()">
+        <button appPermiso="laboratorio.crear" type="button" class="btn-primary" (click)="abrirNuevoResultado()">
           + Registrar resultado
         </button>
 
@@ -1085,7 +1085,7 @@ solicitudSeleccionada()
         </div>
 
 
-        <button type="button" class="btn-primary" (click)="abrirNuevaNota()">
+        <button appPermiso="laboratorio.crear" type="button" class="btn-primary" (click)="abrirNuevaNota()">
           + Agregar nota
         </button>
 
@@ -1154,7 +1154,7 @@ solicitudSeleccionada()
 
     <div class="modal-footer">
 
-      <button type="button" class="btn-danger-outline" (click)="
+      <button appPermiso="laboratorio.eliminar" type="button" class="btn-danger-outline" (click)="
             eliminarSolicitud(
               solicitudSeleccionada()!
             )
@@ -1169,7 +1169,7 @@ solicitudSeleccionada()
           Cerrar
         </button>
 
-        <button type="button" class="btn-primary" (click)="
+        <button appPermiso="laboratorio.editar" type="button" class="btn-primary" (click)="
               editarSolicitud(
                 solicitudSeleccionada()!
               )
@@ -1576,7 +1576,7 @@ solicitudSeleccionada()
         Cancelar
       </button>
 
-      <button type="button" class="btn-primary" [disabled]="guardando()" (click)="guardarSolicitud()">
+      <button appPermiso="laboratorio.editar" type="button" class="btn-primary" [disabled]="guardando()" (click)="guardarSolicitud()">
         {{
         modoEdicion()
         ? 'Guardar cambios'
@@ -1721,7 +1721,7 @@ solicitudSeleccionada()
         Cancelar
       </button>
 
-      <button type="button" class="btn-primary" [disabled]="guardando()" (click)="guardarResultado()">
+      <button appPermiso="laboratorio.editar" type="button" class="btn-primary" [disabled]="guardando()" (click)="guardarResultado()">
         Guardar resultado
       </button>
 
@@ -1797,7 +1797,7 @@ solicitudSeleccionada()
         Cancelar
       </button>
 
-      <button type="button" class="btn-primary" [disabled]="guardando()" (click)="guardarNota()">
+      <button appPermiso="laboratorio.editar" type="button" class="btn-primary" [disabled]="guardando()" (click)="guardarNota()">
         Guardar nota
       </button>
 

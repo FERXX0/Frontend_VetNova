@@ -22,7 +22,7 @@
 
     </div>
     <button
-      type="button"
+ appPermiso="usuarios.crear"      type="button"
       class="btn-primary"
       (click)="abrirNuevoUsuario()"
     >
@@ -502,7 +502,7 @@
                 <div class="actions">
 
                   <button
-                    type="button"
+ appPermiso="usuarios.editar"                    type="button"
                     class="action-btn"
                     title="Editar usuario"
                     (click)="editarUsuario(usuario)"
@@ -526,7 +526,7 @@
 
 
                   <button
-                    type="button"
+ appPermiso="usuarios.editar"                    type="button"
                     class="action-btn"
                     [title]="usuario.estado === 'Activo' ? 'Desactivar usuario' : 'Activar usuario'"
                     (click)="cambiarEstado(usuario)"
@@ -570,7 +570,7 @@
 
 
                   <button
-                    type="button"
+ appPermiso="usuarios.eliminar"                    type="button"
                     class="action-btn action-btn--danger"
                     title="Eliminar usuario"
                     (click)="eliminarUsuario(usuario)"
@@ -915,7 +915,7 @@
               </button>
 
               <button
-                type="button"
+ appPermiso="usuarios.eliminar"                type="button"
                 (click)="quitarTodosLosModulos()"
               >
                 Quitar todos
@@ -927,60 +927,47 @@
 
 
           <div class="modules-grid">
-
-            @for (
-              modulo of modulosDisponibles();
-              track modulo.codigo
-            ) {
-
-              <button
-                type="button"
-                class="module-option"
-                [class.module-option--selected]="moduloSeleccionado(modulo.codigo)"
-                (click)="toggleModulo(modulo.codigo)"
-              >
-
-                <span class="module-option__check">
-
-                  @if (moduloSeleccionado(modulo.codigo)) {
-
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="3"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <polyline points="20 6 9 17 4 12"></polyline>
+            @for (modulo of modulosDisponibles(); track modulo.codigo) {
+              <div class="module-permission-card" [class.module-permission-card--active]="moduloSeleccionado(modulo.codigo)">
+                <div class="module-permission-card__row">
+                  <button type="button" class="module-option"
+                    [class.module-option--selected]="moduloSeleccionado(modulo.codigo)"
+                    (click)="toggleModulo(modulo.codigo)"
+                    [attr.aria-label]="'Cambiar acceso a ' + modulo.nombre">
+                    <span class="module-option__check">
+                      @if (moduloSeleccionado(modulo.codigo)) { <span aria-hidden="true">✓</span> }
+                    </span>
+                    <span class="module-option__content">
+                      <strong>{{ modulo.nombre }}</strong>
+                      <small>{{ moduloSeleccionado(modulo.codigo) ? 'Permisos: ' + permisosSeleccionadosModulo(modulo.id) : 'Sin acceso' }}</small>
+                    </span>
+                  </button>
+                  <button type="button" class="module-permission-card__settings"
+                    [disabled]="!moduloSeleccionado(modulo.codigo)"
+                    (click)="abrirPermisos(modulo.codigo)"
+                    [attr.aria-expanded]="moduloPermisosAbierto() === modulo.codigo"
+                    [attr.aria-label]="'Configurar permisos de ' + modulo.nombre"
+                    [title]="'Configurar permisos de ' + modulo.nombre">
+                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                      <path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5" fill="white"/><circle cx="15" cy="17" r="2.5" fill="white"/>
                     </svg>
-
-                  }
-
-                </span>
-
-
-                <span class="module-option__content">
-
-                  <strong>
-                    {{ modulo.nombre }}
-                  </strong>
-
-                  <small>
-                    {{ moduloSeleccionado(modulo.codigo)
-                      ? 'Acceso habilitado'
-                      : 'Sin acceso'
-                    }}
-                  </small>
-
-                </span>
-
-              </button>
-
+                  </button>
+                </div>
+                @if (moduloSeleccionado(modulo.codigo) && moduloPermisosAbierto() === modulo.codigo) {
+                  <div class="module-permission-card__permissions">
+                    @for (permiso of permisosDeModulo(modulo.id); track permiso.id) {
+                      <label class="module-permission-card__permission">
+                        <input type="checkbox" [checked]="permisoSeleccionado(permiso.id)"
+                          (change)="togglePermiso(permiso.id)" />
+                        <span>{{ permiso.nombre }}</span>
+                      </label>
+                    } @empty {
+                      <small>Este módulo aún no tiene permisos definidos en el catálogo.</small>
+                    }
+                  </div>
+                }
+              </div>
             }
-
           </div>
 
         </div>
@@ -1011,7 +998,7 @@
           </button>
 
           <button
-            type="button"
+ appPermiso="usuarios.editar"            type="button"
             class="btn-primary"
             (click)="guardarUsuario()"
           >
@@ -1064,5 +1051,4 @@
     </div>
 
   </div>
-
 }

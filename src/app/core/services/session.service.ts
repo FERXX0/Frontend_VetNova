@@ -30,6 +30,14 @@ export class SessionService {
     this.inactividad.markActive();
   }
 
+  /** Actualiza permisos y módulos sin renovar el token ni reiniciar inactividad. */
+  actualizarUsuario(usuario: UsuarioAutenticado): void {
+    if (this.esNavegador) {
+      localStorage.setItem(USUARIO_KEY, JSON.stringify(usuario));
+    }
+    this.usuario.set(usuario);
+  }
+
   limpiar(): void {
     if (this.esNavegador) {
       localStorage.removeItem(TOKEN_KEY);
@@ -64,6 +72,15 @@ export class SessionService {
     const codigo = usuario?.rol?.codigo;
 
     return !!usuario?.es_super_administrador && (codigo === 'super_admin' || codigo === 'soporte');
+  }
+
+  tienePermiso(codigo: string): boolean {
+    const usuario = this.usuario();
+    if (!usuario) return false;
+    if (this.esPersonalPlataforma()) return true;
+    const moduloCodigo = codigo.split('.')[0];
+    const modulo = (usuario.modulos ?? []).find(m => m.codigo === moduloCodigo && m.activo !== false);
+    return !!modulo && (usuario.permisos ?? []).some(p => p.codigo === codigo && p.activo !== false && p.modulo_id === modulo.id);
   }
 
   rutaInicio(): string {

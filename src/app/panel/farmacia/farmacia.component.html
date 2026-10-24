@@ -15,7 +15,7 @@
 
     @if (vista() === 'inventario') {
       <button
-        class="btn-primary"
+ appPermiso="farmacia.registrar_movimiento"        class="btn-primary"
         type="button"
         [disabled]="!puedeCrearMedicamento()"
         [attr.title]="puedeCrearMedicamento() ? null : 'Selecciona una empresa para crear medicamentos'"
@@ -541,7 +541,7 @@
                   </p>
 
                   <button
-                    type="button"
+ appPermiso="farmacia.registrar_movimiento"                    type="button"
                     class="btn-primary"
                     [disabled]="!puedeCrearMedicamento()"
                     [attr.title]="puedeCrearMedicamento() ? null : 'Selecciona una empresa para crear medicamentos'"
@@ -998,7 +998,7 @@
           @if (medicamento.estado === 'Activo') {
 
             <button
-              type="button"
+ appPermiso="farmacia.ajustar_stock"              type="button"
               class="btn-danger-outline"
               (click)="cambiarEstado(medicamento, 'Inactivo')"
             >
@@ -1012,7 +1012,7 @@
           } @else {
 
             <button
-              type="button"
+ appPermiso="farmacia.ajustar_stock"              type="button"
               class="btn-secondary"
               (click)="cambiarEstado(medicamento, 'Activo')"
             >
@@ -1027,7 +1027,7 @@
 
 
           <button
-            type="button"
+ appPermiso="farmacia.ajustar_stock"            type="button"
             class="btn-secondary"
             (click)="editarMedicamento(medicamento)"
           >
@@ -1446,7 +1446,7 @@
 
 
         <button
-          type="button"
+ appPermiso="farmacia.ajustar_stock"          type="button"
           class="btn-primary"
           [disabled]="
             !formulario().nombre ||
@@ -1698,7 +1698,7 @@
 
 
         <button
-          type="button"
+ appPermiso="farmacia.ajustar_stock"          type="button"
           class="btn-primary"
           [disabled]="movimientoInvalido(medicamento)"
           (click)="guardarMovimiento()"

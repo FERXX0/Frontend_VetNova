@@ -1,3 +1,4 @@
+import { PermisoDirective } from '../../core/directives/permiso.directive';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -19,6 +20,19 @@ import {
 } from '../../core/models/historia-clinica.model';
 
 interface FormularioConsulta {
+  anamnesis: string;
+  frecuencia_cardiaca: string;
+  frecuencia_respiratoria: string;
+  spo2: string;
+  llenado_capilar: string;
+  mucosas: string;
+  hidratacion: string;
+  condicion_corporal: string;
+  estado_general: string;
+  examen_por_sistemas: string;
+  tipo_diagnostico: string;
+  recomendaciones: string;
+
   fecha: string;
   veterinario_id: string;
   motivo: string;
@@ -34,7 +48,7 @@ interface FormularioConsulta {
 @Component({
   selector: 'app-historias-clinicas',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [PermisoDirective, CommonModule, FormsModule],
   templateUrl: './historias-clinicas.component.html',
   styleUrls: ['./historias-clinicas.component.scss'],
 })
@@ -45,6 +59,9 @@ export class HistoriasClinicasComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
+  readonly puedeCrear = computed(() => this.session.tienePermiso('historias_clinicas.crear'));
+  readonly puedeEditar = computed(() => this.session.tienePermiso('historias_clinicas.editar'));
+
 
   empresasDisponibles = signal<EmpresaOpcion[]>([]);
   filtroEmpresa = signal<string>('');
@@ -89,6 +106,8 @@ export class HistoriasClinicasComponent implements OnInit {
 
   readonly especies = ['Canino', 'Felino', 'Ave', 'Equino', 'Otro'];
 
+  pestanaConsulta = signal<'datos' | 'signos' | 'examen' | 'diagnostico' | 'plan'>('datos');
+
   formularioConsulta = signal<FormularioConsulta>({
     fecha: this.obtenerFechaActual(),
     veterinario_id: '',
@@ -100,8 +119,24 @@ export class HistoriasClinicasComponent implements OnInit {
     medicamentos: '',
     observaciones: '',
     evolucion: '',
+    anamnesis: '',
+    frecuencia_cardiaca: '',
+    frecuencia_respiratoria: '',
+    spo2: '',
+    llenado_capilar: '',
+    mucosas: '',
+    hidratacion: '',
+    condicion_corporal: '',
+    estado_general: '',
+    examen_por_sistemas: '',
+    tipo_diagnostico: '',
+    recomendaciones: '',
+
   });
 
+  pacienteEnPantalla = signal<HistoriaDetalle | null>(null);
+  modalImpresiones = signal<ConsultaClinica | null>(null);
+  busquedaRealizada = signal(false);
   private debounceTimer: any = null;
 
   alcanceListado = computed<AlcanceApi | undefined>(() => {
@@ -124,7 +159,6 @@ export class HistoriasClinicasComponent implements OnInit {
         error: () => {},
       });
     }
-    this.cargarHistorias(1);
     this.cargarResumen();
   }
 
@@ -135,6 +169,14 @@ export class HistoriasClinicasComponent implements OnInit {
   }
 
   cargarHistorias(pagina = 1): void {
+    if (!this.busqueda().trim()) {
+      this.historias.set([]);
+      this.total.set(0);
+      this.busquedaRealizada.set(false);
+      this.pacienteEnPantalla.set(null);
+      return;
+    }
+    this.busquedaRealizada.set(true);
     this.cargando.set(true);
     this.error.set(null);
 
@@ -178,12 +220,14 @@ export class HistoriasClinicasComponent implements OnInit {
 
   onEmpresaChange(valor: string): void {
     this.filtroEmpresa.set(valor);
+    this.pacienteEnPantalla.set(null);
     this.cargarHistorias(1);
     this.cargarResumen();
   }
 
   cambiarBusqueda(valor: string): void {
     this.busqueda.set(valor);
+    this.pacienteEnPantalla.set(null);
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
     }
@@ -206,6 +250,7 @@ export class HistoriasClinicasComponent implements OnInit {
 
   limpiarFiltros(): void {
     this.busqueda.set('');
+    this.pacienteEnPantalla.set(null);
     this.filtroEspecie.set('Todos');
     this.filtroEstado.set('Todos');
     this.filtroEmpresa.set('');
@@ -221,7 +266,8 @@ export class HistoriasClinicasComponent implements OnInit {
         next: (res) => {
           this.cargandoDetalle.set(false);
           this.historiaSeleccionada.set(res);
-          this.modalHistoriaAbierto.set(true);
+          this.pacienteEnPantalla.set(res);
+          this.modalHistoriaAbierto.set(false);
         },
         error: () => {
           this.cargandoDetalle.set(false);
@@ -230,17 +276,198 @@ export class HistoriasClinicasComponent implements OnInit {
       });
   }
 
+
+  abrirDetallePaciente(): void {
+    const paciente = this.pacienteEnPantalla();
+    if (paciente) {
+      this.historiaSeleccionada.set(paciente);
+      this.modalHistoriaAbierto.set(true);
+    }
+  }
+
+  private escaparHtml(valor: unknown): string {
+    return String(valor ?? '').replace(/[&<>"']/g, (caracter) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[caracter] || caracter));
+  }
+
+  readonly etiquetasServicios: Record<string, string> = {
+    general: 'Consulta general', control: 'Control / Seguimiento', cirugia: 'Cirugía',
+    urgencia: 'Urgencia', estetica: 'Peluquería / Estética', vacunacion: 'Vacunación',
+    desparasitacion: 'Desparasitación',
+  };
+
+  nombreServicio(consulta: ConsultaClinica): string {
+    return this.etiquetasServicios[consulta.tipo_consulta || ''] || 'Atención';
+  }
+
+  /** Las impresiones complementarias dependen de datos reales, nunca de valores por defecto. */
+  puedeImprimirFormulacion(consulta: ConsultaClinica): boolean {
+    const servicio = consulta.tipo_consulta || 'general';
+    return !['estetica', 'vacunacion', 'desparasitacion'].includes(servicio)
+      && typeof consulta.medicamentos === 'string'
+      && consulta.medicamentos.trim().length > 0;
+  }
+
+  puedeImprimirIndicaciones(consulta: ConsultaClinica): boolean {
+    const servicio = consulta.tipo_consulta || 'general';
+    if (['estetica', 'vacunacion', 'desparasitacion'].includes(servicio)) return false;
+    const datos = (consulta.datos_especificos || {}) as Record<string, unknown>;
+    return [consulta.tratamiento, datos['indicaciones'], datos['recomendaciones']]
+      .some(valor => typeof valor === 'string' && valor.trim().length > 0);
+  }
+
+  tieneOtrasImpresiones(consulta: ConsultaClinica): boolean {
+    return this.puedeImprimirFormulacion(consulta) || this.puedeImprimirIndicaciones(consulta);
+  }
+
+  imprimirConsulta(consulta: ConsultaClinica, tipo: 'evolucion' | 'formulacion' | 'servicios'): void {
+    const paciente = this.pacienteEnPantalla();
+    if (!paciente) return;
+    const servicio = consulta.tipo_consulta || 'general';
+    const datos = (consulta.datos_especificos || {}) as Record<string, unknown>;
+    const tieneValor = (v: unknown): boolean => {
+      if (v === null || v === undefined || v === false) return false;
+      if (typeof v === 'string') return v.trim().length > 0;
+      if (Array.isArray(v)) return v.some(tieneValor);
+      if (typeof v === 'object') return Object.values(v).some(tieneValor);
+      return true;
+    };
+    const formatoValor = (v: unknown): string => {
+      if (Array.isArray(v)) return v.filter(tieneValor).map(formatoValor).filter(Boolean).join('\n');
+      if (typeof v === 'object' && v !== null) {
+        return Object.entries(v)
+          .filter(([clave, valor]) => !['medicamento_id', 'producto_id', 'insumo_id'].includes(clave) && tieneValor(valor))
+          .map(([clave, valor]) => `${clave.replace(/_/g, ' ')}: ${formatoValor(valor)}`)
+          .join(' · ');
+      }
+      return String(v);
+    };
+    const campo = (etiqueta: string, valor: unknown): string => tieneValor(valor)
+      ? `<div class="campo"><b>${this.escaparHtml(etiqueta)}</b><p>${this.escaparHtml(formatoValor(valor))}</p></div>` : '';
+    const seccion = (titulo: string, contenido: string): string => contenido ? `<h2>${this.escaparHtml(titulo)}</h2>${contenido}` : '';
+    const campos = (entradas: Array<[string, unknown]>): string => entradas.map(([k, v]) => campo(k, v)).join('');
+    const datosServicio: Record<string, Array<[string, string]>> = {
+      estetica: [
+        ['Servicios realizados', 'estetica_servicios'], ['Insumos utilizados', 'estetica_productos_cosmeticos'],
+        ['Estado de piel y pelaje', 'estetica_estado_piel'], ['Comportamiento', 'estetica_comportamiento'],
+        ['Novedades y hallazgos', 'estetica_novedades'], ['Recomendaciones de estética', 'estetica_recomendaciones'],
+      ],
+      control: [
+        ['Motivo del control', 'control_motivo'], ['Adherencia al tratamiento', 'control_adherencia'],
+        ['Respuesta clínica', 'control_respuesta'], ['Hallazgos del seguimiento', 'control_hallazgos'],
+        ['Próximo control', 'control_proximo'],
+      ],
+      cirugia: [
+        ['Ayuno preoperatorio', 'cirugia_ayuno'], ['Consentimiento informado', 'cirugia_consentimiento'],
+        ['Riesgo anestésico', 'cirugia_riesgo'], ['Anestesia y monitoreo', 'cirugia_anestesia'],
+        ['Hallazgos intraoperatorios', 'cirugia_hallazgos'], ['Complicaciones y manejo', 'cirugia_complicaciones'],
+        ['Recuperación', 'cirugia_recuperacion'],
+      ],
+      urgencia: [
+        ['Triaje', 'urgencia_triage'], ['Inicio de síntomas', 'urgencia_inicio'],
+        ['Estado al ingreso', 'urgencia_estado'], ['Evaluación ABC', 'urgencia_abc'],
+        ['Estabilización', 'urgencia_estabilizacion'], ['Destino del paciente', 'urgencia_destino'],
+      ],
+      vacunacion: [
+        ['Vacuna', 'nombre'], ['Tipo de vacuna', 'tipo'], ['Lote', 'lote'],
+        ['Fecha de aplicación', 'fecha_aplicacion'], ['Próxima aplicación', 'proxima_fecha'],
+      ],
+      desparasitacion: [
+        ['Producto', 'producto'], ['Tipo', 'tipo'], ['Fecha de aplicación', 'fecha_aplicacion'],
+        ['Próxima aplicación', 'proxima_fecha'],
+      ],
+    };
+    let contenido = '';
+    if (tipo === 'formulacion' && !this.puedeImprimirFormulacion(consulta)) return;
+    if (tipo === 'servicios' && !this.puedeImprimirIndicaciones(consulta)) return;
+
+    // Lista blanca por servicio: nunca agregar indiscriminadamente todas las claves
+    // de datos_especificos (puede contener defaults de otros formularios).
+    const clinico = !['estetica', 'vacunacion', 'desparasitacion'].includes(servicio);
+    if (tipo === 'formulacion') {
+      contenido = seccion('Formulación médica', campos([
+        ['Medicamentos formulados', consulta.medicamentos],
+      ]));
+    } else if (tipo === 'servicios') {
+      contenido = seccion('Servicios e indicaciones', campos([
+        ['Tratamiento', consulta.tratamiento],
+        ['Indicaciones', datos['indicaciones']],
+        ['Recomendaciones', datos['recomendaciones']],
+      ]));
+    } else {
+      // El motivo de una vacunación o desparasitación se genera automáticamente;
+      // ya está identificado en el título, por lo que no se presenta como diligenciado.
+      const motivo = ['vacunacion', 'desparasitacion'].includes(servicio) ? null : consulta.motivo;
+      contenido += seccion('Registro de ' + this.nombreServicio(consulta), campos([
+        ['Motivo', motivo],
+        ...(datosServicio[servicio] || []).map(([etiqueta, clave]): [string, unknown] => [etiqueta, datos[clave]]),
+      ]));
+      if (clinico) {
+        // Solo campos que pertenecen a la atención clínica, nunca prioridad ni
+        // tipo_diagnostico (inicializados automáticamente por el formulario).
+        contenido += seccion('Evaluación clínica', campos([
+          ['Anamnesis', datos['anamnesis']],
+          ['Frecuencia cardíaca', datos['frecuencia_cardiaca']],
+          ['Frecuencia respiratoria', datos['frecuencia_respiratoria']],
+          ['Saturación de oxígeno', datos['spo2']],
+          ['Llenado capilar', datos['llenado_capilar']],
+          ['Mucosas', datos['mucosas']],
+          ['Hidratación', datos['hidratacion']],
+          ['Condición corporal', datos['condicion_corporal']],
+          ['Estado general', datos['estado_general']],
+          ['Examen por sistemas', datos['examen_por_sistemas']],
+          ['Peso (kg)', consulta.peso_kg], ['Temperatura (°C)', consulta.temperatura_c],
+          ['Diagnóstico', consulta.diagnostico],
+        ]));
+      }
+      // Cada servicio solo expone sus resultados pertinentes, si fueron registrados.
+      const resultado = servicio === 'estetica' ? [
+        ['Observaciones', consulta.observaciones],
+        ['Entrega / evolución', consulta.evolucion],
+      ] as Array<[string, unknown]>
+        : ['vacunacion', 'desparasitacion'].includes(servicio) ? [
+          ['Observaciones', consulta.observaciones],
+        ] as Array<[string, unknown]>
+        : [
+          ['Tratamiento', consulta.tratamiento], ['Medicamentos', consulta.medicamentos],
+          ['Evolución', consulta.evolucion], ['Observaciones', consulta.observaciones],
+          ['Indicaciones', datos['indicaciones']], ['Recomendaciones', datos['recomendaciones']],
+        ] as Array<[string, unknown]>;
+      contenido += seccion('Resultados y recomendaciones', campos(resultado));
+    }
+    if (!contenido) { this.mostrarMensaje('Esta atención no tiene información diligenciada para generar el documento.', 'error'); return; }
+    const titulo = tipo === 'evolucion' ? `Atención · ${this.nombreServicio(consulta)}`
+      : tipo === 'formulacion' ? 'Formulación médica' : 'Servicios e indicaciones';
+    const ventana = window.open('', '_blank');
+    if (!ventana) { this.mostrarMensaje('Permite las ventanas emergentes para imprimir el documento.', 'error'); return; }
+    const metadatos = [
+      campo('Paciente', paciente.nombre), campo('Especie', paciente.especie),
+      campo('Raza', paciente.raza), campo('Responsable', paciente.propietario?.nombre),
+      ...(consulta.tipo_consulta && this.etiquetasServicios[consulta.tipo_consulta]
+        ? [campo('Tipo de servicio', this.nombreServicio(consulta))] : []),
+      campo('Fecha', consulta.fecha), campo('Profesional', consulta.veterinario_nombre),
+    ].filter(Boolean).join('');
+    ventana.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${this.escaparHtml(titulo)}</title><style>body{font-family:Arial,sans-serif;color:#183047;margin:40px}h1{color:#167d8b;border-bottom:3px solid #167d8b;padding-bottom:12px}h2{font-size:16px;margin-top:28px;background:#eff6f8;padding:9px}.meta{background:#f1f7f8;padding:12px 14px;border-radius:10px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 16px;line-height:1.35}.meta .campo{padding:3px 0;border:0;min-width:0}.meta .campo b{display:block;font-size:11px;color:#536b7d;margin-bottom:3px}.meta .campo p{margin:0;font-size:13px;overflow-wrap:anywhere}.campo{padding:9px 0;border-bottom:1px solid #e0e8eb;break-inside:avoid}.campo p{white-space:pre-wrap;margin:7px 0}footer{margin-top:40px;color:#667;font-size:12px}@media(max-width:680px){.meta{grid-template-columns:repeat(2,minmax(0,1fr))}}@media print{body{margin:15mm}.meta{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 12px}}</style></head><body><h1>VetNova · ${this.escaparHtml(titulo)}</h1>${metadatos ? `<div class="meta">${metadatos}</div>` : ''}${contenido}<footer>Documento generado desde VetNova. Verifique los datos antes de su entrega.</footer></body></html>`);
+    ventana.document.close();
+    ventana.focus();
+    ventana.print();
+    this.modalImpresiones.set(null);
+  }
+
   cerrarHistoria(): void {
     this.modalHistoriaAbierto.set(false);
     this.historiaSeleccionada.set(null);
   }
 
   nuevaConsulta(historia: HistoriaResumen | HistoriaDetalle): void {
+    if (!this.puedeCrear()) { this.mostrarMensaje('No tienes permiso para realizar esta acción.', 'error'); return; }
     this.pacienteConsulta.set({
       id: historia.id,
       nombre: historia.nombre,
       empresa_id: historia.empresa_id,
     });
+    this.pestanaConsulta.set('datos');
     this.modoEdicionConsulta.set(false);
     this.consultaEditandoId.set(null);
     this.errorFormulario.set(null);
@@ -256,6 +483,18 @@ export class HistoriasClinicasComponent implements OnInit {
       medicamentos: '',
       observaciones: '',
       evolucion: '',
+      anamnesis: '',
+      frecuencia_cardiaca: '',
+      frecuencia_respiratoria: '',
+      spo2: '',
+      llenado_capilar: '',
+      mucosas: '',
+      hidratacion: '',
+      condicion_corporal: '',
+      estado_general: '',
+      examen_por_sistemas: '',
+      tipo_diagnostico: '',
+      recomendaciones: '',
     });
 
     this.historiaClinicaService
@@ -277,11 +516,13 @@ export class HistoriasClinicasComponent implements OnInit {
   }
 
   editarConsulta(historia: HistoriaDetalle, consulta: ConsultaClinica): void {
+    if (!this.puedeEditar()) { this.mostrarMensaje('No tienes permiso para realizar esta acción.', 'error'); return; }
     this.pacienteConsulta.set({
       id: historia.id,
       nombre: historia.nombre,
       empresa_id: historia.empresa_id,
     });
+    this.pestanaConsulta.set('datos');
     this.modoEdicionConsulta.set(true);
     this.consultaEditandoId.set(consulta.id);
     this.errorFormulario.set(null);
@@ -297,6 +538,19 @@ export class HistoriasClinicasComponent implements OnInit {
       medicamentos: consulta.medicamentos || '',
       observaciones: consulta.observaciones || '',
       evolucion: consulta.evolucion || '',
+      anamnesis: String(consulta.datos_especificos?.anamnesis ?? ''),
+      frecuencia_cardiaca: String(consulta.datos_especificos?.frecuencia_cardiaca ?? ''),
+      frecuencia_respiratoria: String(consulta.datos_especificos?.frecuencia_respiratoria ?? ''),
+      spo2: String(consulta.datos_especificos?.spo2 ?? ''),
+      llenado_capilar: String(consulta.datos_especificos?.llenado_capilar ?? ''),
+      mucosas: String(consulta.datos_especificos?.mucosas ?? ''),
+      hidratacion: String(consulta.datos_especificos?.hidratacion ?? ''),
+      condicion_corporal: String(consulta.datos_especificos?.condicion_corporal ?? ''),
+      estado_general: String(consulta.datos_especificos?.estado_general ?? ''),
+      examen_por_sistemas: String(consulta.datos_especificos?.examen_por_sistemas ?? ''),
+      tipo_diagnostico: String(consulta.datos_especificos?.tipo_diagnostico ?? ''),
+      recomendaciones: String(consulta.datos_especificos?.recomendaciones ?? ''),
+
     });
 
     this.historiaClinicaService
@@ -328,6 +582,10 @@ export class HistoriasClinicasComponent implements OnInit {
   }
 
   guardarConsulta(): void {
+    if (!(this.modoEdicionConsulta() ? this.puedeEditar() : this.puedeCrear())) {
+      this.errorFormulario.set('No tienes permiso para realizar esta acción.');
+      return;
+    }
     const paciente = this.pacienteConsulta();
     const f = this.formularioConsulta();
 
@@ -367,6 +625,20 @@ export class HistoriasClinicasComponent implements OnInit {
       medicamentos: f.medicamentos.trim() || null,
       observaciones: f.observaciones.trim() || null,
       evolucion: f.evolucion.trim() || null,
+      datos_especificos: {
+        anamnesis: f.anamnesis.trim() || null,
+        frecuencia_cardiaca: (f.frecuencia_cardiaca.trim() ? Number(f.frecuencia_cardiaca) : null),
+        frecuencia_respiratoria: (f.frecuencia_respiratoria.trim() ? Number(f.frecuencia_respiratoria) : null),
+        spo2: (f.spo2.trim() ? Number(f.spo2) : null),
+        llenado_capilar: (f.llenado_capilar.trim() ? Number(f.llenado_capilar) : null),
+        mucosas: f.mucosas.trim() || null,
+        hidratacion: f.hidratacion.trim() || null,
+        condicion_corporal: f.condicion_corporal.trim() || null,
+        estado_general: f.estado_general.trim() || null,
+        examen_por_sistemas: f.examen_por_sistemas.trim() || null,
+        tipo_diagnostico: f.tipo_diagnostico.trim() || null,
+        recomendaciones: f.recomendaciones.trim() || null,
+      },
     };
 
     const alcance = this.alcancePaciente(paciente.empresa_id);
@@ -421,6 +693,7 @@ export class HistoriasClinicasComponent implements OnInit {
   }
 
   eliminarConsulta(historia: HistoriaDetalle, consulta: ConsultaClinica): void {
+    if (!this.puedeEditar()) { this.mostrarMensaje('No tienes permiso para realizar esta acción.', 'error'); return; }
     const confirmar = window.confirm(
       `¿Deseas eliminar la consulta del ${this.formatearFecha(consulta.fecha)}?`
     );
@@ -451,6 +724,7 @@ export class HistoriasClinicasComponent implements OnInit {
   }
 
   abrirDatosGenerales(): void {
+    if (!this.puedeEditar()) { this.mostrarMensaje('No tienes permiso para realizar esta acción.', 'error'); return; }
     const det = this.historiaSeleccionada();
     if (!det) return;
 
@@ -475,6 +749,7 @@ export class HistoriasClinicasComponent implements OnInit {
   }
 
   guardarDatosGenerales(): void {
+    if (!this.puedeEditar()) { this.mostrarMensaje('No tienes permiso para realizar esta acción.', 'error'); return; }
     const det = this.historiaSeleccionada();
     if (!det) return;
 

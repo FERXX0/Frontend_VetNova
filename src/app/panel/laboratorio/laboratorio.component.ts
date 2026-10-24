@@ -1,3 +1,4 @@
+import { PermisoDirective } from '../../core/directives/permiso.directive';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -52,7 +53,7 @@ interface FormularioResultado {
 @Component({
   selector: 'app-laboratorio',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [PermisoDirective, CommonModule, FormsModule],
   templateUrl: './laboratorio.component.html',
   styleUrl: './laboratorio.component.scss',
 })

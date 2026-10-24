@@ -34,6 +34,19 @@ export class AuthService {
       );
   }
 
+  /** Reconsulta el estado vigente de acceso para una sesión ya iniciada. */
+  refrescarUsuario(): Observable<{ usuario: UsuarioAutenticado }> {
+    return this.http.get<{ usuario: UsuarioAutenticado }>(
+      `${environment.apiUrl}/auth/me`
+    ).pipe(
+      tap(({ usuario }) => {
+        if (usuario && this.session.estaAutenticado()) {
+          this.session.actualizarUsuario(usuario);
+        }
+      })
+    );
+  }
+
   logout(): void {
     // Si tu backend maneja blacklist de tokens o refresh tokens,
     // aquí deberías llamar también a POST /auth/logout antes de limpiar local.

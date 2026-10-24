@@ -1,4 +1,4 @@
-﻿import { inject } from '@angular/core';
+import { inject } from '@angular/core';
 import {
   ActivatedRouteSnapshot,
   CanActivateChildFn,
@@ -55,11 +55,11 @@ export const moduloChildGuard: CanActivateChildFn = (
 
   const modulosActivos = (usuario.modulos ?? []).filter((modulo) => modulo.activo !== false);
 
-  if (modulosActivos.some((modulo) => modulo.codigo === moduloRequerido)) {
+  if (modulosActivos.some((modulo) => modulo.codigo === moduloRequerido) && session.tienePermiso(`${moduloRequerido}.ver`)) {
     return true;
   }
 
-  const alternativo = modulosActivos.find((modulo) => RUTAS_POR_MODULO[modulo.codigo]);
+  const alternativo = modulosActivos.find((modulo) => RUTAS_POR_MODULO[modulo.codigo] && session.tienePermiso(`${modulo.codigo}.ver`));
 
   return router.createUrlTree([
     alternativo ? RUTAS_POR_MODULO[alternativo.codigo] : '/panel/sin-modulos',

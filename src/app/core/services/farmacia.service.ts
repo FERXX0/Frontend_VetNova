@@ -53,6 +53,13 @@ export class FarmaciaService {
     return this.http.get<RespuestaPaginaMedicamentos>(url, { params });
   }
 
+  obtenerInsumosParaCita(alcance?: AlcanceApi, busqueda = ''): Observable<RespuestaPaginaMedicamentos> {
+    const url = urlRecurso(this.apiUrl, 'citas/insumos', alcance);
+    return this.http.get<RespuestaPaginaMedicamentos>(url, {
+      params: new HttpParams().set('per_page', '50').set('q', busqueda),
+    });
+  }
+
   obtenerResumen(alcance?: AlcanceApi): Observable<ResumenFarmacia> {
     const url = urlRecurso(this.apiUrl, 'farmacia/resumen', alcance);
     return this.http.get<ResumenFarmacia>(url);

@@ -7,7 +7,7 @@
     </div>
 
     <button
-      type="button"
+ appPermiso="servicios.crear"      type="button"
       class="servicios-page__btn-nuevo"
       [disabled]="esVistaSuperUsuario() && !empresaSeleccionada()"
       (click)="abrirModalCrear()"
@@ -109,7 +109,7 @@
           }
         </p>
         @if (!filtroTexto() && filtroTipo() === 'todos' && filtroEstado() === 'todos') {
-          <button type="button" class="btn-primario" (click)="abrirModalCrear()">
+          <button appPermiso="servicios.crear" type="button" class="btn-primario" (click)="abrirModalCrear()">
             Registrar el primer servicio
           </button>
         }
@@ -157,7 +157,7 @@
               </td>
               <td class="td-acciones">
                 <button
-                  type="button"
+ appPermiso="servicios.editar"                  type="button"
                   class="btn-accion"
                   title="Editar servicio"
                   (click)="abrirModalEditar(s)"
@@ -167,7 +167,7 @@
                   </svg>
                 </button>
                 <button
-                  type="button"
+ appPermiso="servicios.eliminar"                  type="button"
                   class="btn-accion btn-accion--eliminar"
                   title="Eliminar servicio"
                   (click)="eliminar(s)"

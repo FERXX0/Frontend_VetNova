@@ -41,6 +41,7 @@ export interface UsuarioAutenticado {
   rol: Rol;
   empresa: Empresa;
   modulos: Modulo[];
+  permisos: { id: string; codigo: string; modulo_id: string; activo?: boolean }[];
 }
 
 export interface LoginResponse {

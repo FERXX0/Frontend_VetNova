@@ -1,3 +1,4 @@
+import { PermisoDirective } from '../../core/directives/permiso.directive';
 ﻿import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -47,7 +48,7 @@ interface FormularioFormulacion {
 @Component({
   selector: 'app-formulaciones',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [PermisoDirective, CommonModule, FormsModule],
   templateUrl: './formulaciones.component.html',
   styleUrl: './formulaciones.component.scss',
 })

@@ -1,3 +1,4 @@
+import { PermisoDirective } from '../../core/directives/permiso.directive';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -12,7 +13,7 @@ import { AlcanceApi } from '../../core/utils/alcance-api';
 @Component({
   selector: 'app-servicios',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [PermisoDirective, CommonModule, ReactiveFormsModule],
   templateUrl: './servicios.component.html',
   styleUrl: './servicios.component.scss',
 })

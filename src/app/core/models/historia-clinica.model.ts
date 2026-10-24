@@ -23,6 +23,8 @@ export interface HistoriaResumen {
 }
 
 export interface ConsultaClinica {
+  datos_especificos?: (DatosConsultaGeneral & Record<string, unknown>) | null;
+  tipo_consulta?: string | null;
   id: string;
   empresa_id: string;
   paciente_id: string;
@@ -74,7 +76,23 @@ export interface DatosGeneralesPayload {
   observaciones: string | null;
 }
 
+export interface DatosConsultaGeneral {
+  anamnesis?: string | null;
+  frecuencia_cardiaca?: number | null;
+  frecuencia_respiratoria?: number | null;
+  spo2?: number | null;
+  llenado_capilar?: number | null;
+  mucosas?: string | null;
+  hidratacion?: string | null;
+  condicion_corporal?: string | null;
+  estado_general?: string | null;
+  examen_por_sistemas?: string | null;
+  tipo_diagnostico?: string | null;
+  recomendaciones?: string | null;
+}
+
 export interface ConsultaPayload {
+  datos_especificos?: DatosConsultaGeneral;
   veterinario_id: string;
   fecha: string;
   motivo: string;

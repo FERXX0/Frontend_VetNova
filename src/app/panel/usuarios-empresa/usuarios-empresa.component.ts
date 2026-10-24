@@ -1,3 +1,4 @@
+import { PermisoDirective } from '../../core/directives/permiso.directive';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -26,6 +27,8 @@ interface UsuarioVeterinaria {
   numeroIdentificacion: string;
   estado: 'Activo' | 'Inactivo';
   modulos: string[];
+  permisos: string[];
+  permisosPersonalizados: boolean;
   empresaId?: string; // solo aplica en la vista de Super Usuario
 }
 
@@ -39,13 +42,14 @@ interface FormularioUsuario {
   contrasena: string;
   estado: 'Activo' | 'Inactivo';
   modulos: string[];
+  permisos: string[];
   empresaId: string; // solo se usa/valida en la vista de Super Usuario
 }
 
 @Component({
   selector: 'app-usuarios-empresa',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [PermisoDirective, CommonModule, FormsModule],
   templateUrl: './usuarios-empresa.component.html',
   styleUrls: ['./usuarios-empresa.component.scss']
 })
@@ -87,9 +91,31 @@ export class UsuariosEmpresaComponent implements OnInit {
   tipoMensaje = signal<'success' | 'error'>('success');
 
   cargandoUsuarios = signal(false);
+  permisosCatalogo = signal<{ id: string; modulo_id: string; codigo: string; nombre: string; activo: boolean }[]>([]);
+  moduloPermisosAbierto = signal<string | null>(null);
+  permisosDeModulo(moduloId: string) {
+    return this.permisosCatalogo().filter(p => p.activo && p.modulo_id === moduloId);
+  }
+  permisosSeleccionadosModulo(moduloId: string): number {
+    return this.permisosDeModulo(moduloId).filter(p => this.formulario().permisos.includes(p.id)).length;
+  }
+  permisoSeleccionado(id: string): boolean { return this.formulario().permisos.includes(id); }
+  togglePermiso(id: string): void {
+    this.formulario.update(f => ({ ...f, permisos: f.permisos.includes(id) ? f.permisos.filter(x => x !== id) : [...f.permisos, id] }));
+  }
+  abrirPermisos(codigo: string): void {
+    this.moduloPermisosAbierto.update(actual => actual === codigo ? null : codigo);
+  }
+  cargarPermisos(): void {
+    this.usuarioService.listarPermisos().subscribe({
+      next: r => this.permisosCatalogo.set(r.permisos),
+      error: () => this.mostrarMensaje('No se pudo cargar el catálogo de permisos.', 'error')
+    });
+  }
 
   ngOnInit(): void {
     this.cargarRoles();
+    this.cargarPermisos();
     this.cargarCatalogoModulos();
 
     if (this.esVistaSuperUsuario()) {
@@ -129,6 +155,8 @@ export class UsuariosEmpresaComponent implements OnInit {
       numeroIdentificacion: u.numero_identificacion,
       estado: u.activo ? 'Activo' : 'Inactivo',
       modulos: (u.modulos || []).map((modulo) => modulo.codigo),
+      permisos: (u.permisos || []).map(p => p.id),
+      permisosPersonalizados: !!u.permisos_personalizados,
       empresaId: u.empresa_id,
     };
   }
@@ -262,6 +290,7 @@ export class UsuariosEmpresaComponent implements OnInit {
     contrasena: '',
     estado: 'Activo',
     modulos: [],
+    permisos: [],
     empresaId: ''
   });
 
@@ -332,12 +361,13 @@ export class UsuariosEmpresaComponent implements OnInit {
       correo: '',
       telefono: '',
       rolId: '',
-      tipoIdentificacion: 'CC',
+      tipoIdentificacion: '',
       numeroIdentificacion: '',
       contrasena: '',
       estado: 'Activo',
       modulos: [],
-      empresaId: ''
+      permisos: [],
+      empresaId: '',
     });
 
     if (this.esVistaSuperUsuario()) {
@@ -362,6 +392,7 @@ export class UsuariosEmpresaComponent implements OnInit {
       contrasena: '',
       estado: usuario.estado,
       modulos: [...usuario.modulos],
+      permisos: [...usuario.permisos],
       empresaId: usuario.empresaId ?? ''
     });
 
@@ -389,7 +420,7 @@ export class UsuariosEmpresaComponent implements OnInit {
       [campo]: valor,
       // al cambiar de empresa se limpia el rol y los módulos, porque ambas
       // listas dependen de la empresa elegida
-      ...(campo === 'empresaId' ? { rolId: '', modulos: [] } : {})
+      ...(campo === 'empresaId' ? { rolId: '', modulos: [], permisos: [] } : {})
     }));
 
     if (campo === 'empresaId') {
@@ -422,12 +453,15 @@ export class UsuariosEmpresaComponent implements OnInit {
     this.formulario.update(formulario => {
 
       const existe = formulario.modulos.includes(codigo);
+      const modulo = this.catalogoModulos().find(m => m.codigo === codigo);
+      const idsPermisos = this.permisosDeModulo(modulo?.id || '').map(p => p.id);
 
       return {
         ...formulario,
         modulos: existe
           ? formulario.modulos.filter(modulo => modulo !== codigo)
-          : [...formulario.modulos, codigo]
+          : [...formulario.modulos, codigo],
+        permisos: existe ? formulario.permisos.filter(id => !idsPermisos.includes(id)) : [...formulario.permisos, ...this.permisosDeModulo(modulo?.id || '').filter(p => p.codigo.endsWith('.ver')).map(p => p.id)]
       };
     });
   }
@@ -435,14 +469,16 @@ export class UsuariosEmpresaComponent implements OnInit {
   seleccionarTodosLosModulos(): void {
     this.formulario.update(formulario => ({
       ...formulario,
-      modulos: this.modulosDisponibles().map(modulo => modulo.codigo)
+      modulos: this.modulosDisponibles().map(modulo => modulo.codigo),
+      permisos: this.permisosCatalogo().filter(p => p.codigo.endsWith('.ver') && this.modulosDisponibles().some(m => m.id === p.modulo_id)).map(p => p.id)
     }));
   }
 
   quitarTodosLosModulos(): void {
     this.formulario.update(formulario => ({
       ...formulario,
-      modulos: []
+      modulos: [],
+      permisos: []
     }));
   }
 
@@ -492,6 +528,11 @@ export class UsuariosEmpresaComponent implements OnInit {
       }
 
       payload.modulos = ids;
+      const permitidos = new Set(this.permisosCatalogo().filter(p =>
+        f.modulos.some(codigo => this.catalogoModulos().find(m => m.codigo === codigo)?.id === p.modulo_id)
+      ).map(p => p.id));
+      payload.permisos = f.permisos.filter(id => permitidos.has(id));
+      payload.permisos_personalizados = true;
     }
 
     const peticion = this.modoEdicion()

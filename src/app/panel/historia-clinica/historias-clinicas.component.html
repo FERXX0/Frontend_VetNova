@@ -231,6 +231,9 @@
   </section>
 
 
+  @if (!busqueda().trim()) {
+    <section class="hc-welcome"><div class="hc-welcome__symbol">✚</div><h2>Busca un paciente para consultar su historia</h2><p>Ingresa su nombre, identificación o responsable. Las historias clínicas solo se mostrarán después de seleccionar un paciente.</p></section>
+  } @else if (!pacienteEnPantalla()) {
   <!-- =====================================================
        TABLA
   ====================================================== -->
@@ -356,9 +359,10 @@
                     </button>
 
                     <button
-                      type="button"
+ appPermiso="historias_clinicas.crear"                      type="button"
                       class="action-btn action-btn--primary"
                       title="Nueva consulta"
+                      *ngIf="puedeCrear()"
                       (click)="nuevaConsulta(historia)"
                     >
                       <svg
@@ -430,6 +434,22 @@
       </div>
     }
   </section>
+
+  } @else {
+    <section class="hc-patient-card">
+      <div class="hc-patient-heading"><div class="patient-avatar">{{ obtenerIniciales(pacienteEnPantalla()!.nombre) }}</div><div><span class="hc-overline">Historia clínica del paciente</span><h2>{{ pacienteEnPantalla()!.nombre }}</h2><p>{{ textoIdentificacion(pacienteEnPantalla()!) }}</p></div><button class="hc-secondary" type="button" (click)="pacienteEnPantalla.set(null)">Cambiar paciente</button></div>
+      <div class="hc-patient-data"><div><small>Especie y raza</small><strong>{{ pacienteEnPantalla()!.especie }} · {{ pacienteEnPantalla()!.raza || 'Sin registrar' }}</strong></div><div><small>Sexo</small><strong>{{ etiquetaSexo(pacienteEnPantalla()!.sexo) }}</strong></div><div><small>Responsable</small><strong>{{ pacienteEnPantalla()!.propietario.nombre || 'Sin registrar' }}</strong></div><div><small>Teléfono del responsable</small><strong>{{ pacienteEnPantalla()!.propietario.celular || 'Sin registrar' }}</strong></div><div><small>Identificación del responsable</small><strong>{{ pacienteEnPantalla()!.propietario.numero_identificacion || 'Sin registrar' }}</strong></div></div>
+      <div class="hc-patient-toolbar"><div><h3>Evoluciones clínicas</h3><p>{{ pacienteEnPantalla()!.consultas.length }} evolución(es) registradas</p></div><div class="hc-toolbar-actions"><button type="button" class="hc-secondary" (click)="abrirDetallePaciente()">Ver historia completa</button>@if (puedeCrear()) {<button type="button" class="hc-primary" (click)="nuevaConsulta(pacienteEnPantalla()!)">+ Nueva consulta</button>}</div></div>
+      <div class="table-responsive"><table class="vn-table"><thead><tr><th>N.º evolución</th><th>Paciente</th><th>Tipo de consulta</th><th>Profesional</th><th>Acción</th></tr></thead><tbody>
+        @for (consulta of pacienteEnPantalla()!.consultas; track consulta.id; let i = $index) {
+          <tr><td><strong>#{{ i + 1 }}</strong><div class="hc-muted">{{ formatearFecha(consulta.fecha) }}</div></td><td>{{ pacienteEnPantalla()!.nombre }}</td><td>{{ nombreServicio(consulta) }}</td><td>{{ consulta.veterinario_nombre || 'Sin asignar' }}</td><td><div class="hc-actions"><button type="button" title="Imprimir evolución completa en PDF" aria-label="Imprimir evolución" (click)="imprimirConsulta(consulta, 'evolucion')">⬇ <span>PDF</span></button>@if (tieneOtrasImpresiones(consulta)) {<button type="button" title="Otras impresiones" aria-label="Otras impresiones" (click)="modalImpresiones.set(consulta)">▤ <span>Más</span></button>}</div></td></tr>
+        } @empty {<tr><td colspan="5" class="empty-state">Este paciente aún no tiene evoluciones registradas.</td></tr>}
+      </tbody></table></div>
+    </section>
+  }
+  @if (modalImpresiones(); as consulta) {
+    <div class="modal-backdrop" (click)="modalImpresiones.set(null)"><div class="hc-print-modal" role="dialog" aria-modal="true" aria-label="Opciones de impresión" (click)="$event.stopPropagation()"><div class="hc-print-modal__head"><h2>Otras impresiones</h2><button type="button" aria-label="Cerrar" (click)="modalImpresiones.set(null)">✕</button></div><p>Selecciona el documento que deseas imprimir o guardar como PDF.</p>@if (puedeImprimirFormulacion(consulta)) {<button type="button" (click)="imprimirConsulta(consulta, 'formulacion')">Formulación médica <span>↗</span></button>} @if (puedeImprimirIndicaciones(consulta)) {<button type="button" (click)="imprimirConsulta(consulta, 'servicios')">Servicios e indicaciones <span>↗</span></button>}</div></div>
+  }
 
 </div>
 
@@ -581,7 +601,8 @@
             <button
               type="button"
               class="btn-secondary btn-primary--small"
-              (click)="abrirDatosGenerales()"
+              *ngIf="puedeEditar()"
+                      (click)="abrirDatosGenerales()"
             >
               Editar datos generales
             </button>
@@ -653,9 +674,10 @@
 
 
             <button
-              type="button"
+ appPermiso="historias_clinicas.crear"              type="button"
               class="btn-primary btn-primary--small"
-              (click)="nuevaConsulta(historiaSeleccionada()!)"
+              *ngIf="puedeCrear()"
+                      (click)="nuevaConsulta(historiaSeleccionada()!)"
             >
 
               <svg
@@ -724,9 +746,10 @@
                   <div class="consultation-actions">
 
                     <button
-                      type="button"
+ appPermiso="historias_clinicas.editar"                      type="button"
                       class="action-btn"
                       title="Editar consulta"
+                      *ngIf="puedeEditar() && !['vacunacion', 'desparasitacion'].includes(consulta.tipo_consulta || '')"
                       (click)="editarConsulta(historiaSeleccionada()!, consulta)"
                     >
 
@@ -749,6 +772,7 @@
                       type="button"
                       class="action-btn action-btn--danger"
                       title="Eliminar consulta"
+                      *ngIf="puedeEditar()"
                       (click)="eliminarConsulta(historiaSeleccionada()!, consulta)"
                     >
 
@@ -1198,7 +1222,7 @@
 
 
         <button
-          type="button"
+ appPermiso="historias_clinicas.editar"          type="button"
           class="btn-primary"
           [disabled]="guardando()"
           (click)="guardarConsulta()"
@@ -1330,7 +1354,41 @@
 
       </div>
 
-      <div class="modal__footer">
+      <section class="consulta-ampliada">
+  <h3>Valoración clínica ampliada</h3>
+  <p>Los campos originales de la consulta se conservan arriba. Completa las pestañas según los hallazgos.</p>
+  <nav class="consulta-tabs" aria-label="Secciones de valoración clínica">
+    @for (tab of [{id:'datos',nombre:'Anamnesis'},{id:'signos',nombre:'Signos vitales'},{id:'examen',nombre:'Examen físico'},{id:'diagnostico',nombre:'Diagnóstico'},{id:'plan',nombre:'Plan médico'}]; track tab.id) {
+      <button type="button" [class.activa]="pestanaConsulta() === tab.id" (click)="pestanaConsulta.set($any(tab.id))">{{tab.nombre}}</button>
+    }
+  </nav>
+  @if (pestanaConsulta() === 'datos') {
+    <label>Anamnesis / enfermedad actual<textarea rows="4" [value]="formularioConsulta().anamnesis" (input)="actualizarCampo('anamnesis',$any($event.target).value)"></textarea></label>
+  }
+  @if (pestanaConsulta() === 'signos') {
+    <div class="consulta-grid">
+      @for (campo of [{id:'frecuencia_cardiaca',nombre:'Frecuencia cardíaca (lpm)'},{id:'frecuencia_respiratoria',nombre:'Frecuencia respiratoria (rpm)'},{id:'spo2',nombre:'Saturación O₂ (%)'},{id:'llenado_capilar',nombre:'Llenado capilar (seg)'}]; track campo.id) {
+        <label>{{campo.nombre}}<input type="number" min="0" step="any" [value]="$any(formularioConsulta())[campo.id]" (input)="actualizarCampo($any(campo.id),$any($event.target).value)"></label>
+      }
+      <label>Mucosas<select [value]="formularioConsulta().mucosas" (change)="actualizarCampo('mucosas',$any($event.target).value)"><option value="">Sin registrar</option><option>Rosadas</option><option>Pálidas</option><option>Cianóticas</option><option>Ictéricas</option><option>Congestivas</option><option>Otras</option></select></label>
+      <label>Hidratación<input [value]="formularioConsulta().hidratacion" (input)="actualizarCampo('hidratacion',$any($event.target).value)" placeholder="Ej. Normohidratado"></label>
+    </div>
+  }
+  @if (pestanaConsulta() === 'examen') {
+    <label>Condición corporal<input [value]="formularioConsulta().condicion_corporal" (input)="actualizarCampo('condicion_corporal',$any($event.target).value)" placeholder="Ej. 5/9"></label>
+    <label>Estado general<textarea rows="3" [value]="formularioConsulta().estado_general" (input)="actualizarCampo('estado_general',$any($event.target).value)"></textarea></label>
+    <label>Examen por sistemas<textarea rows="5" [value]="formularioConsulta().examen_por_sistemas" (input)="actualizarCampo('examen_por_sistemas',$any($event.target).value)" placeholder="Cardiovascular, respiratorio, digestivo, neurológico, piel, musculoesquelético..."></textarea></label>
+  }
+  @if (pestanaConsulta() === 'diagnostico') {
+    <label>Tipo de diagnóstico<select [value]="formularioConsulta().tipo_diagnostico" (change)="actualizarCampo('tipo_diagnostico',$any($event.target).value)"><option value="">Sin clasificar</option><option value="presuntivo">Presuntivo</option><option value="definitivo">Definitivo</option></select></label>
+    <p>El diagnóstico escrito original sigue siendo obligatorio. La integración con terminología veterinaria se realizará en la siguiente fase.</p>
+  }
+  @if (pestanaConsulta() === 'plan') {
+    <label>Recomendaciones y seguimiento<textarea rows="4" [value]="formularioConsulta().recomendaciones" (input)="actualizarCampo('recomendaciones',$any($event.target).value)"></textarea></label>
+  }
+</section>
+
+<div class="modal__footer">
 
         <button
           type="button"
@@ -1341,7 +1399,7 @@
         </button>
 
         <button
-          type="button"
+ appPermiso="historias_clinicas.editar"          type="button"
           class="btn-primary"
           [disabled]="guardandoDatos()"
           (click)="guardarDatosGenerales()"

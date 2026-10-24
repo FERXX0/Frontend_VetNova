@@ -7,7 +7,7 @@
     </div>
 
     @if (puedeAgendar()) {
-      <button type="button" class="agenda-page__btn-nueva" (click)="abrirModalCrear()">
+      <button appPermiso="citas.crear" type="button" class="agenda-page__btn-nueva" (click)="abrirModalCrear()">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
@@ -167,7 +167,13 @@
           }
         </div>
 
-        <p class="cita-card__motivo">{{ cita.motivo }}</p>
+
+        @if (cita.observaciones) {
+          <p class="cita-card__motivo" [title]="cita.observaciones">
+            <strong>Nota de recepción:</strong>
+            {{ cita.observaciones }}
+          </p>
+        }
 
         <div class="cita-card__meta">
           <span class="cita-card__veterinario">
@@ -187,64 +193,125 @@
           {{ cita.estado }}
         </span>
 
-        <div class="cita-card__botones">
+        <div class="cita-card__botones">               
           @if (cita.estado === 'pendiente' && !esVeterinario()) {
             <button
-              type="button"
-              class="btn-mini btn-mini--confirmar"
+ appPermiso="citas.editar"              type="button"
+              class="btn-accion-cita btn-accion-cita--confirmar"
               title="Confirmar cita"
+              aria-label="Confirmar cita"
               (click)="cambiarEstadoCita(cita, 'confirmada')"
             >
-              ✓ Confirmar
+              <span class="material-symbols-rounded" aria-hidden="true">
+                event_available
+              </span>
             </button>
           }
+
           @if (cita.estado === 'confirmada' && esRecepcionista()) {
             <button
               type="button"
-              class="btn-mini btn-mini--atender"
-              title="Registrar llegada del paciente"
+              class="btn-accion-cita btn-accion-cita--confirmar"
+              title="Cumplir cita / Registrar llegada"
+              aria-label="Cumplir cita y registrar llegada"
               (click)="marcarLlegada(cita)"
             >
-              ✓ <span class="sr-only">Registrar llegada</span> Cumplir cita
+              <span class="material-symbols-rounded" aria-hidden="true">
+                fact_check
+              </span>
             </button>
           }
+
           @if (cita.estado === 'confirmada' && !esRecepcionista()) {
-            <span class="cita-esperando-recepcion">Esperando llegada</span>
+            <span
+              class="btn-accion-cita btn-accion-cita--esperando"
+              title="Esperando llegada del paciente"
+              role="img"
+              aria-label="Esperando llegada del paciente"
+            >
+              <span class="material-symbols-rounded" aria-hidden="true">
+                hourglass_top
+              </span>
+            </span>
           }
+
           @if (cita.estado === 'cumplida' && esRecepcionista()) {
-            <span class="cita-esperando-recepcion">Paciente en clínica</span>
+            <span
+              class="btn-accion-cita btn-accion-cita--clinica"
+              title="Paciente en clínica"
+              role="img"
+              aria-label="Paciente en clínica"
+            >
+              <span class="material-symbols-rounded" aria-hidden="true">
+                clinical_notes
+              </span>
+            </span>
           }
-          @if (cita.estado === 'cumplida' && !esRecepcionista()) {
+
+          @if (cita.estado === 'cumplida' && puedeAtender()) {
             <button
-              type="button"
-              class="btn-mini btn-mini--atender"
-              title="Abrir historia clínica y finalizar atención"
+ appPermiso="citas.atender"              type="button"
+              class="btn-accion-cita btn-accion-cita--atender"
+              title="Atender paciente"
+              aria-label="Iniciar atención veterinaria"
               (click)="abrirAtencion(cita)"
             >
-              ✓ Finalizar historia
+              <span class="material-symbols-rounded" aria-hidden="true">
+                stethoscope
+              </span>
             </button>
           }
+
           @if (cita.estado === 'atendida') {
-            <span class="cita-atendida-icono" title="Atención registrada">✓</span>
+            <span
+              class="btn-accion-cita btn-accion-cita--finalizada"
+              title="Atención clínica finalizada"
+              role="img"
+              aria-label="Atención clínica finalizada"
+            >
+              <span class="material-symbols-rounded" aria-hidden="true">
+                task_alt
+              </span>
+            </span>
           }
+
           @if (!esVeterinario()) {
             <button
-              type="button"
+ appPermiso="citas.editar"              type="button"
               class="btn-mini-icon"
               title="Editar cita"
-            (click)="abrirModalEditar(cita)"
-          >
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+              aria-label="Editar cita"
+              (click)="abrirModalEditar(cita)"
+            >
+              <svg viewBox="0 0 24 24" fill="none"
+                  xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linejoin="round"
+                />
+              </svg>
             </button>
           }
+
           @if (!esVeterinario()) {
             <button
               type="button"
               class="btn-mini-icon btn-mini-icon--eliminar"
-            title="Cancelar / Eliminar"
-            (click)="eliminarCita(cita)"
-          >
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              title="Cancelar / Eliminar"
+              aria-label="Cancelar o eliminar cita"
+              (click)="eliminarCita(cita)"
+            >
+              <svg viewBox="0 0 24 24" fill="none"
+                  xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M18 6L6 18M6 6l12 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
             </button>
           }
         </div>
@@ -270,7 +337,7 @@
 
                 @if (citasEnFranja(hora).length === 0 && puedeAgendar() && !franjaPasada(hora)) {
                   <button
-                    type="button"
+ appPermiso="citas.crear"                    type="button"
                     class="timeline__slot-vacio"
                     (click)="abrirModalCrear(hora)"
                     title="Agendar cita a las {{ hora }}"
@@ -427,20 +494,6 @@
             <span class="error-texto">No se puede agendar una cita en una fecha u hora que ya pasó.</span>
           }
 
-          <div class="form-campo">
-            <label for="motivo">Motivo de la Cita *</label>
-            <input
-              id="motivo"
-              type="text"
-              formControlName="motivo"
-              placeholder="Ej. Vacunación antirrábica y revisión general"
-              [class.input--invalido]="form.get('motivo')?.invalid && form.get('motivo')?.touched"
-            />
-            @if (form.get('motivo')?.invalid && form.get('motivo')?.touched) {
-              <span class="error-texto">El motivo es obligatorio.</span>
-            }
-          </div>
-
           <div class="form-fila">
             <div class="form-campo">
               <label for="estado">Estado de la Cita</label>
@@ -458,8 +511,22 @@
             </div>
 
             <div class="form-campo">
-              <label for="observaciones">Instrucciones previas / Observaciones</label>
-              <input id="observaciones" type="text" formControlName="observaciones" placeholder="Ej. Ayuno de 8 horas, traer bozal" />
+              <label for="observaciones">
+                Observaciones de recepción
+              </label>
+
+              <textarea
+                id="observaciones"
+                class="agenda-observaciones-recepcion"
+                formControlName="observaciones"
+                rows="2"
+                maxlength="300"
+                placeholder="Indicaciones para el veterinario"
+              ></textarea>
+
+              <small class="form-hint">
+                Estas observaciones serán visibles para el veterinario.
+              </small>
             </div>
           </div>
 
@@ -481,7 +548,6 @@
       </div>
     </div>
   }
-</div>
 
   <!-- ========================================================= -->
   <!-- MODAL ATENCIÓN CLÍNICA DESDE LA CITA -->
@@ -510,177 +576,644 @@
             <div><strong>Profesional</strong><span>{{ atencionCita()?.veterinario_nombre }}</span></div>
             <div><strong>Fecha</strong><span>{{ atencionCita()?.fecha | date:'dd/MM/yyyy' }}</span></div>
             <div><strong>Horario</strong><span>{{ atencionCita()?.hora_inicio }} - {{ atencionCita()?.hora_fin || '—' }}</span></div>
-            <div><strong>Motivo de agenda</strong><span>{{ atencionCita()?.motivo }}</span></div>
+            <div>
+              <strong>Observaciones de recepción</strong>
+              <span>
+                {{ atencionCita()?.observaciones || 'Sin observación' }}
+              </span>
+            </div>
           </div>
 
           @if (atencionError()) {
             <div class="alerta-form-error">{{ atencionError() }}</div>
           }
 
-          <div class="form-fila form-fila--3">
-            <div class="form-campo">
-              <label>Fecha de atención *</label>
-              <input type="date" [ngModel]="atencion().fecha" (ngModelChange)="actualizarAtencion('fecha', $event)" />
-            </div>
-            <div class="form-campo">
-              <label>Peso (kg)</label>
-              <input type="number" min="0" step="0.01" [ngModel]="atencion().peso_kg" (ngModelChange)="actualizarAtencion('peso_kg', $event)" />
-            </div>
-            <div class="form-campo">
-              <label>Temperatura (°C)</label>
-              <input type="number" min="25" max="45" step="0.1" [ngModel]="atencion().temperatura_c" (ngModelChange)="actualizarAtencion('temperatura_c', $event)" />
-            </div>
-          </div>
-
-          <div class="form-campo">
-            <label>Motivo *</label>
-            <textarea rows="2" [ngModel]="atencion().motivo" (ngModelChange)="actualizarAtencion('motivo', $event)"></textarea>
-          </div>
-
-          @if (tipoFormatoAtencion() === 'vacunacion') {
+          <nav class="atencion-tabs" aria-label="Secciones de atención">
+            @for (tab of tabsServicio(); track tab.id) {
+              <button type="button" [class.activa]="pestanaAtencion() === tab.id" (click)="pestanaAtencion.set(tab.id)">{{ tab.nombre }}</button>
+            }
+          </nav>
+          @if (pestanaAtencion() === 'general') {
             <section class="atencion-seccion">
-              <h3>Vacunación</h3>
-              <div class="form-fila">
-                <div class="form-campo">
-                  <label>Vacuna *</label>
-                  <input type="text" [ngModel]="atencion().vacunacion.nombre" (ngModelChange)="actualizarVacunacion('nombre', $event)" />
-                </div>
-                <div class="form-campo">
-                  <label>Tipo *</label>
-                  <select [ngModel]="atencion().vacunacion.tipo" (ngModelChange)="actualizarVacunacion('tipo', $event)">
-                    <option value="Antirrábica">Antirrábica</option>
-                    <option value="Polivalente">Polivalente</option>
-                    <option value="Refuerzo">Refuerzo</option>
-                    <option value="Otra">Otra</option>
-                  </select>
-                </div>
+              <h3>Información de la atención · {{ atencionCita()?.servicio_nombre }}</h3>
+              <div class="form-fila form-fila--3">
+                <div class="form-campo"><label>Profesional que atiende</label><input type="text" [value]="profesionalAtencion()" readonly /></div>
+                <div class="form-campo"><label>Fecha de atención</label><input type="date" [value]="atencion().fecha" readonly /></div>
+                <div class="form-campo"><label>Tipo de consulta</label><input type="text" [value]="nombreTipoAtencion()" readonly /></div>
               </div>
-              <div class="form-fila">
-                <div class="form-campo"><label>Lote</label><input type="text" [ngModel]="atencion().vacunacion.lote" (ngModelChange)="actualizarVacunacion('lote', $event)" /></div>
-                <div class="form-campo"><label>Fecha aplicación *</label><input type="date" [ngModel]="atencion().vacunacion.fecha_aplicacion" (ngModelChange)="actualizarVacunacion('fecha_aplicacion', $event)" /></div>
-                <div class="form-campo"><label>Próxima fecha *</label><input type="date" [ngModel]="atencion().vacunacion.proxima_fecha" (ngModelChange)="actualizarVacunacion('proxima_fecha', $event)" /></div>
-              </div>
+              <div class="form-campo"><label>Motivo de consulta *</label><textarea rows="3" [ngModel]="atencion().motivo" (ngModelChange)="actualizarAtencion('motivo', $event)"></textarea></div>
             </section>
           }
-
-          @if (tipoFormatoAtencion() === 'desparasitacion') {
-            <section class="atencion-seccion">
-              <h3>Desparasitación</h3>
-              <div class="form-fila">
-                <div class="form-campo"><label>Producto *</label><input type="text" [ngModel]="atencion().desparasitacion.producto" (ngModelChange)="actualizarDesparasitacion('producto', $event)" /></div>
-                <div class="form-campo"><label>Tipo *</label><select [ngModel]="atencion().desparasitacion.tipo" (ngModelChange)="actualizarDesparasitacion('tipo', $event)"><option value="Interna">Interna</option><option value="Externa">Externa</option><option value="Interna y Externa">Interna y Externa</option></select></div>
-              </div>
-              <div class="form-fila">
-                <div class="form-campo"><label>Fecha aplicación *</label><input type="date" [ngModel]="atencion().desparasitacion.fecha_aplicacion" (ngModelChange)="actualizarDesparasitacion('fecha_aplicacion', $event)" /></div>
-                <div class="form-campo"><label>Próxima fecha *</label><input type="date" [ngModel]="atencion().desparasitacion.proxima_fecha" (ngModelChange)="actualizarDesparasitacion('proxima_fecha', $event)" /></div>
-              </div>
+          @if (pestanaAtencion() === 'anamnesis' && tipoFormatoAtencion() === 'general') {
+            <section class="atencion-seccion"><h3>Anamnesis y antecedentes</h3>
+              @for (campo of camposAnamnesis; track campo.clave) {
+                <div class="form-campo"><label>{{ campo.nombre }}</label><textarea rows="3" [ngModel]="datoClinico(campo.clave)" (ngModelChange)="actualizarDatoClinico(campo.clave, $event)"></textarea></div>
+              }
             </section>
           }
-
-          <section class="atencion-seccion atencion-historial">
-            <div class="atencion-seccion__cabecera">
-              <div>
-                <h3>Historial de agenda del paciente</h3>
-                <p class="atencion-vacio">Últimas atenciones y citas registradas para mantener la trazabilidad.</p>
-              </div>
-            </div>
-
-            @if (historialAgendaAtencion().length === 0) {
-              <p class="atencion-vacio">No existen citas anteriores registradas para este paciente.</p>
-            } @else {
-              <div class="historial-agenda-lista">
-                @for (item of historialAgendaAtencion(); track item.id) {
-                  <article class="historial-agenda-item">
-                    <div class="historial-agenda-item__fecha">
-                      <strong>{{ item.fecha | date:'dd/MM/yyyy' }}</strong>
-                      <span>{{ item.hora_inicio }}{{ item.hora_fin ? ' - ' + item.hora_fin : '' }}</span>
-                    </div>
-                    <div class="historial-agenda-item__detalle">
-                      <strong>{{ item.servicio || item.tipo_consulta }}</strong>
-                      <span>{{ item.motivo }}</span>
-                      <small>Profesional: {{ item.veterinario || 'No registrado' }} · Estado: {{ item.estado }}</small>
-                      @if (item.observaciones) { <small>{{ item.observaciones }}</small> }
-                    </div>
-                  </article>
+          @if (pestanaAtencion() === 'examen') {
+            <section class="atencion-seccion"><h3>Signos vitales</h3>
+              <div class="form-fila form-fila--3">
+                <div class="form-campo"><label>Peso (kg)</label><input type="number" min="0" step="0.01" [ngModel]="atencion().peso_kg" (ngModelChange)="actualizarAtencion('peso_kg', $event)" /></div>
+                <div class="form-campo"><label>Temperatura (°C)</label><input type="number" min="25" max="45" step="0.1" [ngModel]="atencion().temperatura_c" (ngModelChange)="actualizarAtencion('temperatura_c', $event)" /></div>
+                @for (campo of camposSignos; track campo.clave) {
+                  <div class="form-campo"><label>{{ campo.nombre }}</label><input type="number" min="0" [ngModel]="datoClinico(campo.clave)" (ngModelChange)="actualizarDatoClinico(campo.clave, $event === '' ? null : +$event)" /></div>
                 }
               </div>
+              @for (campo of camposExamen; track campo.clave) {
+                <div class="form-campo"><label>{{ campo.nombre }}</label><textarea rows="2" [ngModel]="datoClinico(campo.clave)" (ngModelChange)="actualizarDatoClinico(campo.clave, $event)"></textarea></div>
+              }
+            </section>
+          }
+          
+<!-- VACUNACIÓN -->
+@if (pestanaAtencion() === 'ficha' && tipoFormatoAtencion() === 'vacunacion') {
+  <section class="atencion-seccion">
+    <h3>Vacunación</h3>
+
+    <div class="form-fila">
+      <div class="form-campo">
+        <label>Vacuna *</label>
+        <input
+          type="text"
+          [ngModel]="atencion().vacunacion.nombre"
+          (ngModelChange)="actualizarVacunacion('nombre', $event)"
+        />
+      </div>
+
+      <div class="form-campo">
+        <label>Tipo *</label>
+        <select
+          [ngModel]="atencion().vacunacion.tipo"
+          (ngModelChange)="actualizarVacunacion('tipo', $event)"
+        >
+          <option value="Antirrábica">Antirrábica</option>
+          <option value="Polivalente">Polivalente</option>
+          <option value="Refuerzo">Refuerzo</option>
+          <option value="Otra">Otra</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-fila">
+      <div class="form-campo">
+        <label>Lote</label>
+        <input
+          type="text"
+          [ngModel]="atencion().vacunacion.lote"
+          (ngModelChange)="actualizarVacunacion('lote', $event)"
+        />
+      </div>
+
+      <div class="form-campo">
+        <label>Fecha aplicación *</label>
+        <input
+          type="date"
+          [ngModel]="atencion().vacunacion.fecha_aplicacion"
+          (ngModelChange)="actualizarVacunacion('fecha_aplicacion', $event)"
+        />
+      </div>
+
+      <div class="form-campo">
+        <label>Próxima fecha *</label>
+        <input
+          type="date"
+          [ngModel]="atencion().vacunacion.proxima_fecha"
+          (ngModelChange)="actualizarVacunacion('proxima_fecha', $event)"
+        />
+      </div>
+    </div>
+    <div class="form-campo"><label>Reacciones y observaciones de aplicación</label>
+      <textarea rows="3" [ngModel]="atencion().vacunacion.observaciones"
+        (ngModelChange)="actualizarVacunacion('observaciones', $event)"></textarea>
+    </div>
+  </section>
+}
+
+
+<!-- DESPARASITACIÓN: registro independiente de consulta general -->
+@if (pestanaAtencion() === 'ficha' && tipoFormatoAtencion() === 'desparasitacion') {
+  <section class="atencion-seccion">
+    <h3>Registro de desparasitación</h3>
+    <div class="form-fila">
+      <div class="form-campo"><label>Producto aplicado *</label>
+        <input type="text" [ngModel]="atencion().desparasitacion.producto"
+          (ngModelChange)="actualizarDesparasitacion('producto', $event)" /></div>
+      <div class="form-campo"><label>Tipo *</label>
+        <select [ngModel]="atencion().desparasitacion.tipo"
+          (ngModelChange)="actualizarDesparasitacion('tipo', $event)">
+          <option value="Interna">Interna</option>
+          <option value="Externa">Externa</option>
+          <option value="Interna y Externa">Interna y Externa</option>
+        </select></div>
+    </div>
+    <div class="form-fila">
+      <div class="form-campo"><label>Fecha de aplicación *</label>
+        <input type="date" [ngModel]="atencion().desparasitacion.fecha_aplicacion"
+          (ngModelChange)="actualizarDesparasitacion('fecha_aplicacion', $event)" /></div>
+      <div class="form-campo"><label>Próxima aplicación *</label>
+        <input type="date" [ngModel]="atencion().desparasitacion.proxima_fecha"
+          (ngModelChange)="actualizarDesparasitacion('proxima_fecha', $event)" /></div>
+    </div>
+    <div class="form-campo"><label>Reacciones, recomendaciones y observaciones</label>
+      <textarea rows="3" [ngModel]="atencion().desparasitacion.observaciones"
+        (ngModelChange)="actualizarDesparasitacion('observaciones', $event)"></textarea></div>
+  </section>
+}
+
+@if (pestanaAtencion() === 'diagnostico') {
+  <section class="atencion-seccion diagnostico-seccion">
+    <h3>Diagnóstico clínico</h3>
+
+    <div class="form-campo">
+      <label>Tipo de diagnóstico</label>
+      <select
+        [ngModel]="datoClinico('tipo_diagnostico')"
+        (ngModelChange)="actualizarDatoClinico('tipo_diagnostico', $event)"
+      >
+        <option value="presuntivo">Presuntivo</option>
+        <option value="definitivo">Definitivo</option>
+      </select>
+    </div>
+
+    <div class="diagnostico-historial">
+      <button
+        type="button"
+        class="btn-traer-diagnostico"
+        [disabled]="cargandoDiagnosticoAnterior()"
+        (click)="traerDiagnosticosUltimaEvolucion()"
+      >
+        <span class="material-symbols-rounded">history</span>
+        {{ cargandoDiagnosticoAnterior()
+          ? 'Consultando evolución...'
+          : 'Traer diagnóstico de la última evolución' }}
+      </button>
+    </div>
+
+    <div class="form-campo">
+      <label>Buscar diagnóstico en Wikidata</label>
+
+      <div class="diagnostico-buscador">
+        <input
+          type="search"
+          [ngModel]="busquedaDiagnostico()"
+          (ngModelChange)="busquedaDiagnostico.set($event); diagnosticoConsultaRealizada.set(false)"
+          (keyup.enter)="buscarDiagnosticos()"
+          placeholder="Ej. rabia, parvovirosis, dermatitis"
+        />
+
+        <button
+          type="button"
+          class="btn-buscar-diagnostico"
+          [disabled]="diagnosticoBuscando() || busquedaDiagnostico().trim().length < 3"
+          (click)="buscarDiagnosticos()"
+        >
+          {{ diagnosticoBuscando() ? 'Buscando...' : 'Buscar' }}
+        </button>
+      </div>
+    </div>
+
+    @if (diagnosticoError()) {
+      <p class="alerta-form-error">{{ diagnosticoError() }}</p>
+    }
+
+    @if (diagnosticosEncontrados().length > 0) {
+      <div class="diagnosticos-resultados">
+        <div class="diagnosticos-resultados__titulo">
+          Resultados de búsqueda
+          <span>{{ diagnosticosEncontrados().length }}</span>
+        </div>
+
+        @for (item of diagnosticosEncontrados(); track item.id) {
+          <button
+            type="button"
+            class="diagnostico-opcion"
+            (click)="seleccionarDiagnostico(item)"
+          >
+            <span class="diagnostico-opcion__contenido">
+              <strong>{{ item.label }}</strong>
+              <small>{{ item.description || 'Sin descripción disponible' }}</small>
+              <span class="diagnostico-opcion__codigo">{{ item.id }}</span>
+            </span>
+
+            <span class="material-symbols-rounded diagnostico-opcion__agregar">
+              add_circle
+            </span>
+          </button>
+        }
+      </div>
+    } @else if (diagnosticoConsultaRealizada() && !diagnosticoBuscando()) {
+      <p class="atencion-vacio">
+        No se encontraron diagnósticos para esta búsqueda.
+      </p>
+    }
+
+    <div class="form-campo">
+      <div class="diagnosticos-tabla-titulo">
+        <label>Diagnósticos registrados *</label>
+        <span>{{ diagnosticosRegistrados().length }} registrados</span>
+      </div>
+
+      <div class="diagnosticos-tabla-contenedor">
+        <table class="diagnosticos-tabla">
+          <thead>
+            <tr>
+              <th class="diagnosticos-col-principal">Principal</th>
+              <th>Diagnóstico</th>
+              <th class="diagnosticos-col-accion">Acción</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (item of diagnosticosRegistrados(); track item.id) {
+              <tr>
+                  <td class="diagnosticos-col-principal">
+                    <input
+                      type="radio"
+                      class="diagnostico-radio-compacto"
+                      name="diagnostico-principal"
+                      [value]="item.id"
+                      [checked]="diagnosticoPrincipalId() === item.id"
+                      (change)="marcarDiagnosticoPrincipal(item.id)"
+                      [attr.aria-label]="'Marcar como diagnóstico principal: ' + item.label"
+                    />
+                  </td>
+
+                <td>
+                  <div class="diagnostico-registrado-info">
+                    <strong>{{ item.label }}</strong>
+                    <small>{{ item.id }} · {{ item.description }}</small>
+                  </div>
+                </td>
+
+                <td class="diagnosticos-col-accion">
+                  <button
+                    type="button"
+                    class="diagnostico-eliminar"
+                    (click)="eliminarDiagnostico(item.id)"
+                    [attr.aria-label]="'Eliminar ' + item.label"
+                    title="Eliminar diagnóstico"
+                  >
+                    ×
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3" class="diagnosticos-vacio">
+                  No hay diagnósticos registrados.
+                  Busca y selecciona uno.
+                </td>
+              </tr>
             }
-          </section>
+          </tbody>
+        </table>
+      </div>
 
-          @if (tipoFormatoAtencion() !== 'vacunacion' && tipoFormatoAtencion() !== 'desparasitacion') {
+      @if (diagnosticosRegistrados().length > 0 && !diagnosticoPrincipalId()) {
+        <p class="alerta-form-error">
+          Selecciona el diagnóstico principal antes de finalizar.
+        </p>
+      }
+    </div>
+
+    <p class="atencion-vacio">
+      Los diagnósticos de Wikidata requieren validación veterinaria.
+    </p>
+  </section>
+}
+
+<!-- EVOLUCIÓN -->
+@if (pestanaAtencion() === 'evolucion') {
+  <section class="atencion-seccion">
+    <h3>Evolución y seguimiento</h3>
+
+    <div class="form-campo">
+      <label>Evolución</label>
+      <textarea
+        rows="4"
+        [ngModel]="atencion().evolucion"
+        (ngModelChange)="actualizarAtencion('evolucion', $event)"
+      ></textarea>
+    </div>
+
+    <div class="form-campo">
+      <label>Recomendaciones y seguimiento</label>
+      <textarea
+        rows="3"
+        [ngModel]="datoClinico('recomendaciones')"
+        (ngModelChange)="actualizarDatoClinico('recomendaciones', $event)"
+      ></textarea>
+    </div>
+  </section>
+}
+
+<!-- CIRUGÍA -->
+@if (pestanaAtencion() === 'ficha' && tipoFormatoAtencion() === 'cirugia') {
+  <section class="atencion-seccion">
+    <h3>Datos del procedimiento quirúrgico</h3>
+
+    <div class="form-fila">
+      <div class="form-campo">
+        <label>Procedimiento</label>
+        <input
+          type="text"
+          [ngModel]="atencion().detalles.procedimiento"
+          (ngModelChange)="actualizarDetalle('procedimiento', $event)"
+        />
+      </div>
+
+      <div class="form-campo">
+        <label>Categoría</label>
+        <input
+          type="text"
+          [ngModel]="atencion().detalles.categoria"
+          (ngModelChange)="actualizarDetalle('categoria', $event)"
+        />
+      </div>
+
+      <div class="form-campo">
+        <label>Duración</label>
+        <input
+          type="text"
+          [ngModel]="atencion().detalles.duracion"
+          (ngModelChange)="actualizarDetalle('duracion', $event)"
+        />
+      </div>
+    </div>
+
+    <div class="form-fila">
+      <div class="form-campo">
+        <label>Sala</label>
+        <input
+          type="text"
+          [ngModel]="atencion().detalles.sala"
+          (ngModelChange)="actualizarDetalle('sala', $event)"
+        />
+      </div>
+
+      <div class="form-campo">
+        <label>Prioridad</label>
+        <select
+          [ngModel]="atencion().detalles.prioridad"
+          (ngModelChange)="actualizarDetalle('prioridad', $event)"
+        >
+          <option>Baja</option>
+          <option>Media</option>
+          <option>Alta</option>
+          <option>Crítica</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-campo">
+      <label>Indicaciones</label>
+      <textarea
+        rows="2"
+        [ngModel]="atencion().detalles.indicaciones"
+        (ngModelChange)="actualizarDetalle('indicaciones', $event)"
+      ></textarea>
+    </div>
+  </section>
+}
+
+          <!-- FICHA ESPECÍFICA: CAMPOS PROPIOS DE CADA SERVICIO -->
+          @if (pestanaAtencion() === 'ficha' && camposFichaServicio().length) {
             <section class="atencion-seccion">
-              <h3>Evaluación clínica</h3>
-              <div class="form-campo"><label>Diagnóstico *</label><textarea rows="3" [ngModel]="atencion().diagnostico" (ngModelChange)="actualizarAtencion('diagnostico', $event)"></textarea></div>
-              <div class="form-campo"><label>Tratamiento</label><textarea rows="3" [ngModel]="atencion().tratamiento" (ngModelChange)="actualizarAtencion('tratamiento', $event)"></textarea></div>
-              <div class="form-campo"><label>Evolución</label><textarea rows="3" [ngModel]="atencion().evolucion" (ngModelChange)="actualizarAtencion('evolucion', $event)"></textarea></div>
-            </section>
-          }
-
-          @if (tipoFormatoAtencion() === 'cirugia') {
-            <section class="atencion-seccion">
-              <h3>Datos del procedimiento quirúrgico</h3>
-              <div class="form-fila">
-                <div class="form-campo"><label>Procedimiento</label><input type="text" [ngModel]="atencion().detalles.procedimiento" (ngModelChange)="actualizarDetalle('procedimiento', $event)" /></div>
-                <div class="form-campo"><label>Categoría</label><input type="text" [ngModel]="atencion().detalles.categoria" (ngModelChange)="actualizarDetalle('categoria', $event)" /></div>
-                <div class="form-campo"><label>Duración</label><input type="text" [ngModel]="atencion().detalles.duracion" (ngModelChange)="actualizarDetalle('duracion', $event)" /></div>
-              </div>
-              <div class="form-fila">
-                <div class="form-campo"><label>Sala</label><input type="text" [ngModel]="atencion().detalles.sala" (ngModelChange)="actualizarDetalle('sala', $event)" /></div>
-                <div class="form-campo"><label>Prioridad</label><select [ngModel]="atencion().detalles.prioridad" (ngModelChange)="actualizarDetalle('prioridad', $event)"><option>Baja</option><option>Media</option><option>Alta</option><option>Crítica</option></select></div>
-              </div>
-              <div class="form-campo"><label>Indicaciones</label><textarea rows="2" [ngModel]="atencion().detalles.indicaciones" (ngModelChange)="actualizarDetalle('indicaciones', $event)"></textarea></div>
-            </section>
-          }
-
-          @if (tipoFormatoAtencion() === 'urgencia' || tipoFormatoAtencion() === 'estetica') {
-            <section class="atencion-seccion">
-              <h3>Observaciones del servicio</h3>
-              <div class="form-campo"><textarea rows="3" [ngModel]="atencion().observaciones" (ngModelChange)="actualizarAtencion('observaciones', $event)" placeholder="Registra las observaciones relevantes de la atención."></textarea></div>
-            </section>
-          }
-
-          <section class="atencion-seccion">
-            <div class="atencion-seccion__cabecera">
-              <h3>Medicamentos / Formulación</h3>
-              <button type="button" class="btn-mini btn-mini--confirmar" (click)="agregarMedicamentoAtencion()">+ Agregar medicamento</button>
-            </div>
-
-            @if (medicamentosAtencion().length === 0) {
-              <p class="atencion-vacio">No se formularán medicamentos en esta atención.</p>
-            }
-
-            @for (med of medicamentosAtencion(); track $index; let i = $index) {
-              <div class="medicamento-atencion-row">
-                <div class="form-campo medicamento-selector">
-                  <label>Medicamento *</label>
-                  <select [ngModel]="med.medicamento_id" (ngModelChange)="actualizarMedicamentoAtencion(i, 'medicamento_id', $event)">
-                    <option value="">Seleccionar medicamento</option>
-                    @for (item of medicamentosDisponibles(); track item.id) {
-                      <option [value]="item.id">{{ item.nombre }} · {{ item.concentracion }} {{ item.concentracion_unidad }} · {{ item.presentacion }} · Stock: {{ item.stock }}</option>
+              <h3>Registro específico · {{ atencionCita()?.servicio_nombre }}</h3>
+              @if (tipoFormatoAtencion() === 'estetica') {
+                <div class="form-campo">
+                  <label>Servicios realizados *</label>
+                  <div class="servicios-estetica-grid">
+                    @for (servicio of serviciosEstetica; track servicio) {
+                      <label class="servicio-estetica-opcion">
+                        <input type="checkbox"
+                          [checked]="serviciosEsteticaSeleccionados().includes(servicio)"
+                          (change)="cambiarServicioEstetica(servicio, $any($event.target).checked)" />
+                        <span class="servicio-estetica-check" aria-hidden="true"></span>
+                        <span class="servicio-estetica-nombre">{{ servicio }}</span>
+                      </label>
                     }
-                  </select>
+                  </div>
                 </div>
-                <div class="form-campo"><label>Dosis *</label><input type="number" min="0.001" step="0.001" [ngModel]="med.dosis_cantidad" (ngModelChange)="actualizarMedicamentoAtencion(i, 'dosis_cantidad', $event)" /></div>
-                <div class="form-campo"><label>Unidad dosis *</label><input type="text" [ngModel]="med.dosis_unidad" (ngModelChange)="actualizarMedicamentoAtencion(i, 'dosis_unidad', $event)" /></div>
-                <div class="form-campo"><label>Frecuencia</label><select [ngModel]="med.frecuencia_horas" (ngModelChange)="actualizarMedicamentoAtencion(i, 'frecuencia_horas', $event ? +$event : null)"><option [ngValue]="null">Dosis única</option><option [ngValue]="4">Cada 4 h</option><option [ngValue]="6">Cada 6 h</option><option [ngValue]="8">Cada 8 h</option><option [ngValue]="12">Cada 12 h</option><option [ngValue]="24">Cada 24 h</option></select></div>
-                <div class="form-campo"><label>Días *</label><input type="number" min="1" [ngModel]="med.duracion_dias" (ngModelChange)="actualizarMedicamentoAtencion(i, 'duracion_dias', $event)" /></div>
-                <div class="form-campo"><label>Vía *</label><select [ngModel]="med.via" (ngModelChange)="actualizarMedicamentoAtencion(i, 'via', $event)"><option>Oral</option><option>Tópica</option><option>Ótica</option><option>Oftálmica</option><option>Subcutánea</option><option>Intramuscular</option><option>Intravenosa</option></select></div>
-                <div class="medicamento-cantidad-calculada"><span>Cantidad</span><strong>{{ cantidadMedicamento(i) }} {{ medicamentoSeleccionado(med.medicamento_id)?.presentacion || '' }}</strong></div>
-                <button type="button" class="btn-mini-icon btn-mini-icon--eliminar" title="Eliminar medicamento" (click)="eliminarMedicamentoAtencion(i)">×</button>
-              </div>
-            }
-          </section>
+                <div class="form-campo">
+                  <div class="atencion-seccion__cabecera">
+                    <h3>Insumos utilizados</h3>
+                    <button type="button" class="btn-mini btn-mini--confirmar"
+                      (click)="agregarProductoCosmetico()">+ Agregar producto</button>
+                  </div>
+                  <p class="atencion-vacio">Busca productos activos registrados en Farmacia por nombre o código. No forman parte de la formulación médica.</p>
+                  @if (productosCosmeticos().length === 0) {
+                    <p class="atencion-vacio">Sin insumos registrados.</p>
+                  }
+                  @if (insumosCargando()) { <p class="atencion-vacio">Cargando insumos de Farmacia...</p> }
+                  @if (insumosError()) { <p class="atencion-vacio">{{ insumosError() }}</p> }
+                  @for (producto of productosCosmeticos(); track $index; let i = $index) {
+                    <div class="producto-cosmetico-fila">
+                      <div class="form-campo">
+                        <label>Insumo del catálogo *</label>
+                        <input type="search" placeholder="Buscar por nombre o código"
+                          [ngModel]="producto.busqueda"
+                          (ngModelChange)="editarProductoCosmetico(i, 'busqueda', $event)" />
+                        @if (!producto.medicamento_id && producto.busqueda.trim().length > 0) {
+                          <div class="insumo-sugerencias" role="listbox" aria-label="Coincidencias del catálogo de insumos">
+                            @for (insumo of buscarInsumos(producto.busqueda); track insumo.id) {
+                              <button type="button" class="insumo-sugerencia" role="option"
+                                (click)="seleccionarInsumoCosmetico(i, insumo.id)">
+                                <strong>{{ insumo.nombre }}</strong>
+                                <small>{{ insumo.codigo }} · {{ insumo.presentacion }} · Stock: {{ insumo.stock }}</small>
+                              </button>
+                            } @empty {
+                              @if (!insumosCargando() && !insumosError()) { <div class="insumo-sin-resultados">No se encontraron productos coincidentes.</div> }
+                            }
+                          </div>
+                        }
+                        @if (producto.medicamento_id) {
+                          <small class="insumo-resumen">Seleccionado: {{ producto.nombre }}. Modifica la búsqueda para elegir otro.</small>
+                        }
+                      </div>
+                      <div class="form-campo">
+                        <label>Cantidad utilizada *</label>
+                        <input type="number" min="0.001" step="any" [ngModel]="producto.cantidad"
+                          (ngModelChange)="editarProductoCosmetico(i, 'cantidad', $event)" />
+                      </div>
+                      <div class="form-campo">
+                        <label>Unidad *</label>
+                        <select [ngModel]="producto.unidad"
+                          (ngModelChange)="editarProductoCosmetico(i, 'unidad', $event)">
+                          @for (unidad of unidadesCosmeticas; track unidad) {
+                            <option [value]="unidad">{{ unidad }}</option>
+                          }
+                        </select>
+                      </div>
+                      <button type="button" class="btn-mini" (click)="quitarProductoCosmetico(i)">
+                        Quitar
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+              @for (campo of camposFichaServicio(); track campo.clave) {
+                <div class="form-campo">
+                  <label>{{ campo.nombre }}</label>
+                  <textarea rows="2" [ngModel]="datoClinico(campo.clave)"
+                    (ngModelChange)="actualizarDatoClinico(campo.clave, $event)"></textarea>
+                </div>
+              }
+            </section>
+          }
+          <!-- TRATAMIENTO Y FORMULACIÓN -->
+          @if (pestanaAtencion() === 'tratamiento' && requiereDiagnosticoAtencion()) {
+            <section class="atencion-seccion">
+              <h3>Plan terapéutico</h3>
 
-          <div class="form-campo">
-            <label>Observaciones generales</label>
-            <textarea rows="3" [ngModel]="atencion().observaciones" (ngModelChange)="actualizarAtencion('observaciones', $event)"></textarea>
-          </div>
+              <div class="form-campo">
+                <label>Tratamiento</label>
+                <textarea
+                  rows="3"
+                  [ngModel]="atencion().tratamiento"
+                  (ngModelChange)="actualizarAtencion('tratamiento', $event)"
+                ></textarea>
+              </div>
+            </section>
+
+            <section class="atencion-seccion">
+              <div class="atencion-seccion__cabecera">
+                <h3>Medicamentos / Formulación</h3>
+
+                <button
+ appPermiso="formulaciones.crear" type="button"
+                  class="btn-mini btn-mini--confirmar"
+                  (click)="agregarMedicamentoAtencion()"
+                >
+                  + Agregar medicamento
+                </button>
+              </div>
+
+              @if (medicamentosAtencion().length === 0) {
+                <p class="atencion-vacio">
+                  No se formularán medicamentos en esta atención.
+                </p>
+              }
+
+              @for (med of medicamentosAtencion(); track $index; let i = $index) {
+                <div class="medicamento-atencion-row">
+
+                  <div class="form-campo medicamento-selector">
+                    <label>Medicamento *</label>
+                    <select
+                      [ngModel]="med.medicamento_id"
+                      (ngModelChange)="actualizarMedicamentoAtencion(i, 'medicamento_id', $event)"
+                    >
+                      <option value="">Seleccionar medicamento</option>
+                      @for (item of medicamentosDisponibles(); track item.id) {
+                        <option [value]="item.id">
+                          {{ item.nombre }} ·
+                          {{ item.concentracion }}
+                          {{ item.concentracion_unidad }} ·
+                          {{ item.presentacion }} ·
+                          Stock: {{ item.stock }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="form-campo">
+                    <label>Dosis *</label>
+                    <input
+                      type="number"
+                      min="0.001"
+                      step="0.001"
+                      [ngModel]="med.dosis_cantidad"
+                      (ngModelChange)="actualizarMedicamentoAtencion(i, 'dosis_cantidad', $event)"
+                    />
+                  </div>
+
+                  <div class="form-campo">
+                    <label>Unidad dosis *</label>
+                    <input
+                      type="text"
+                      [ngModel]="med.dosis_unidad"
+                      (ngModelChange)="actualizarMedicamentoAtencion(i, 'dosis_unidad', $event)"
+                    />
+                  </div>
+
+                  <div class="form-campo">
+                    <label>Frecuencia</label>
+                    <select
+                      [ngModel]="med.frecuencia_horas"
+                      (ngModelChange)="actualizarMedicamentoAtencion(i, 'frecuencia_horas', $event ? +$event : null)"
+                    >
+                      <option [ngValue]="null">Dosis única</option>
+                      <option [ngValue]="4">Cada 4 h</option>
+                      <option [ngValue]="6">Cada 6 h</option>
+                      <option [ngValue]="8">Cada 8 h</option>
+                      <option [ngValue]="12">Cada 12 h</option>
+                      <option [ngValue]="24">Cada 24 h</option>
+                    </select>
+                  </div>
+
+                  <div class="form-campo">
+                    <label>Días *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      [ngModel]="med.duracion_dias"
+                      (ngModelChange)="actualizarMedicamentoAtencion(i, 'duracion_dias', $event)"
+                    />
+                  </div>
+
+                  <div class="form-campo">
+                    <label>Vía *</label>
+                    <select
+                      [ngModel]="med.via"
+                      (ngModelChange)="actualizarMedicamentoAtencion(i, 'via', $event)"
+                    >
+                      <option>Oral</option>
+                      <option>Tópica</option>
+                      <option>Ótica</option>
+                      <option>Oftálmica</option>
+                      <option>Subcutánea</option>
+                      <option>Intramuscular</option>
+                      <option>Intravenosa</option>
+                    </select>
+                  </div>
+
+                  <div class="medicamento-cantidad-calculada">
+                    <span>Cantidad</span>
+                    <strong>
+                      {{ cantidadMedicamento(i) }}
+                      {{ medicamentoSeleccionado(med.medicamento_id)?.presentacion || '' }}
+                    </strong>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="btn-mini-icon btn-mini-icon--eliminar"
+                    title="Eliminar medicamento"
+                    (click)="eliminarMedicamentoAtencion(i)"
+                  >
+                    ×
+                  </button>
+                </div>
+              }
+            </section>
+
+            <div class="form-campo">
+              <label>Observaciones generales</label>
+              <textarea
+                rows="3"
+                [ngModel]="atencion().observaciones"
+                (ngModelChange)="actualizarAtencion('observaciones', $event)"
+              ></textarea>
+            </div>
+          }
         </div>
 
         <div class="modal-acciones">
           <button type="button" class="btn-cancelar" (click)="cerrarAtencion()">Cancelar</button>
-          <button type="button" class="btn-guardar" [disabled]="atencionGuardando() || atencionCargando()" (click)="guardarAtencion()">
-            {{ atencionGuardando() ? 'Guardando…' : 'Finalizar historia clínica' }}
+          <button appPermiso="citas.atender" type="button" class="btn-guardar" [disabled]="atencionGuardando() || atencionCargando()" (click)="guardarAtencion()">
+            {{ atencionGuardando() ? 'Guardando…' : 'Finalizar atención clínica' }}
           </button>
         </div>
       </div>

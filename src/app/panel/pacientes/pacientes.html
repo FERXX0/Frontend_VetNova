@@ -6,7 +6,7 @@
       <p>Registro y seguimiento de mascotas y sus propietarios</p>
     </div>
 
-    <button type="button" class="pacientes-page__btn-nuevo" (click)="abrirModalCrear()">
+    <button appPermiso="clientes_pacientes.crear" type="button" class="pacientes-page__btn-nuevo" (click)="abrirModalCrear()">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
@@ -84,7 +84,7 @@
             Todavía no hay pacientes registrados en esta veterinaria.
           }
         </p>
-        <button type="button" class="btn-primario" (click)="abrirModalCrear()">
+        <button appPermiso="clientes_pacientes.crear" type="button" class="btn-primario" (click)="abrirModalCrear()">
           Registrar el primer paciente
         </button>
       </div>
@@ -173,7 +173,7 @@
                   </svg>
                 </button>
                 <button
-                  type="button"
+ appPermiso="clientes_pacientes.editar"                  type="button"
                   class="btn-accion"
                   title="Editar paciente"
                   (click)="abrirModalEditar(p)"
@@ -183,7 +183,7 @@
                   </svg>
                 </button>
                 <button
-                  type="button"
+ appPermiso="clientes_pacientes.eliminar"                  type="button"
                   class="btn-accion btn-accion--eliminar"
                   title="Eliminar paciente"
                   (click)="eliminar(p)"

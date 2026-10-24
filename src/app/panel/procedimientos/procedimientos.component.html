@@ -19,7 +19,7 @@
     </div>
 
     <button
-      type="button"
+ appPermiso="procedimientos.crear"      type="button"
       class="btn-primary"
       (click)="abrirNuevoProcedimiento()"
     >
@@ -519,7 +519,7 @@
                   </button>
 
                   <button
-                    type="button"
+ appPermiso="procedimientos.editar"                    type="button"
                     class="action-edit"
                     (click)="editarProcedimiento(item)"
                   >
@@ -874,7 +874,7 @@
         <div class="state-actions">
 
           <button
-            type="button"
+ appPermiso="procedimientos.editar"            type="button"
             [class.active]="
               procedimientoSeleccionado()!.estado ===
               'Programado'
@@ -891,7 +891,7 @@
 
 
           <button
-            type="button"
+ appPermiso="procedimientos.editar"            type="button"
             [class.active]="
               procedimientoSeleccionado()!.estado ===
               'En proceso'
@@ -908,7 +908,7 @@
 
 
           <button
-            type="button"
+ appPermiso="procedimientos.editar"            type="button"
             [class.active]="
               procedimientoSeleccionado()!.estado ===
               'Completado'
@@ -925,7 +925,7 @@
 
 
           <button
-            type="button"
+ appPermiso="procedimientos.editar"            type="button"
             [class.active]="
               procedimientoSeleccionado()!.estado ===
               'Cancelado'
@@ -966,7 +966,7 @@
 
 
           <button
-            type="button"
+ appPermiso="procedimientos.crear"            type="button"
             class="btn-primary"
             (click)="abrirNuevaNota()"
           >
@@ -1066,7 +1066,7 @@
           </button>
 
           <button
-            type="button"
+ appPermiso="procedimientos.editar"            type="button"
             class="btn-primary"
             (click)="
               editarProcedimiento(
@@ -1583,7 +1583,7 @@
         </button>
 
         <button
-          type="button"
+ appPermiso="procedimientos.editar"          type="button"
           class="btn-primary"
           (click)="guardarProcedimiento()"
         >
@@ -1680,7 +1680,7 @@
         </button>
 
         <button
-          type="button"
+ appPermiso="procedimientos.editar"          type="button"
           class="btn-primary"
           (click)="guardarNota()"
         >

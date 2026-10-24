@@ -30,6 +30,10 @@ export class UsuarioService {
     return this.http.get<PaginacionUsuarios>(`${this.apiUrl}/empresas/${empresaId}/usuarios`);
   }
 
+  listarPermisos(): Observable<{ permisos: { id: string; modulo_id: string; codigo: string; nombre: string; activo: boolean }[] }> {
+    return this.http.get<{ permisos: { id: string; modulo_id: string; codigo: string; nombre: string; activo: boolean }[] }>(`${this.apiUrl}/catalogos/permisos-empresa`);
+  }
+
   crear(empresaId: string, payload: UsuarioPayload): Observable<Usuario> {
     return this.http
     .post<{ message: string; usuario: Usuario }>(`${this.apiUrl}/empresas/${empresaId}/usuarios`, payload)
