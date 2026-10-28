@@ -634,3 +634,41 @@
     box-sizing: border-box;
   }
 }
+
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid var(--vn-border, #e5e9ec);
+  background: var(--vn-surface, #f6f9fa);
+}
+
+.paginacion-info {
+  font-size: 12px;
+  color: var(--vn-text-muted, #8a97a1);
+  font-weight: 600;
+}
+
+.btn-paginacion {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid var(--vn-border, #e5e9ec);
+  background: var(--vn-white, #fff);
+  color: var(--vn-text-dark, #1c2b36);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--vn-surface, #f6f9fa);
+    border-color: var(--vn-teal, #1aa7a0);
+    color: var(--vn-teal-dark, #0e7c86);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

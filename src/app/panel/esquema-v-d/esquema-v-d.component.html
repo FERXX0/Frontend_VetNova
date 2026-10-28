@@ -219,6 +219,7 @@
               <th>Última vacuna</th>
               <th>Próxima vacuna</th>
               <th>Desparasitaciones</th>
+              <th>Próx. desparasitación</th>
               <th>Estado</th>
               <th>Acciones</th>
             </tr>
@@ -288,6 +289,11 @@
 
 
                 <td>
+                  {{ formatearFecha(paciente.proxima_desparasitacion) }}
+                </td>
+
+
+                <td>
                   <span
                     class="status-badge"
                     [ngClass]="obtenerClaseEstado(paciente.estado)"
@@ -319,7 +325,7 @@
               <tr>
 
                 <td
-                  [attr.colspan]="esSuperUsuario() ? 9 : 8"
+                  [attr.colspan]="esSuperUsuario() ? 10 : 9"
                   class="empty-state"
                 >
                   <div>
@@ -487,6 +493,10 @@
                         {{ vacuna.nombre }}
                       </strong>
 
+                      @if (vacuna.estado) {
+                        <span class="status-badge" [ngClass]="obtenerClaseEstado(vacuna.estado)">{{ vacuna.estado }}</span>
+                      }
+
                       <span>
                         {{ vacuna.tipo }}
                       </span>
@@ -610,6 +620,10 @@
                       <strong>
                         {{ registro.producto }}
                       </strong>
+
+                      @if (registro.estado) {
+                        <span class="status-badge" [ngClass]="obtenerClaseEstado(registro.estado)">{{ registro.estado }}</span>
+                      }
 
                       <span>
                         {{ registro.tipo }}
@@ -930,7 +944,8 @@
         </button>
 
         <button
- appPermiso="esquema_v_d.editar"          type="button"
+          [appPermiso]="modoEdicion() ? 'esquema_v_d.editar' : 'esquema_v_d.crear'"
+          type="button"
           class="btn-primary"
           [disabled]="guardando()"
           (click)="guardarRegistro()"

@@ -11,24 +11,84 @@
     <div class="facturacion-alert">{{ error() }}</div>
   }
 
+  <section class="facturacion-filtros">
+    <div class="search-box">
+      <span class="search-icon">⌕</span>
+      <input
+        type="text"
+        placeholder="Buscar por número, comprador o identificación"
+        [value]="busqueda()"
+        (input)="cambiarBusqueda($any($event.target).value)"
+      />
+    </div>
+
+    @if (esVistaSuperUsuario()) {
+      <select [value]="filtroEmpresa()" (change)="onEmpresaChange($any($event.target).value)">
+        <option value="">Todas las empresas</option>
+        @for (empresa of empresasDisponibles(); track empresa.id) {
+          <option [value]="empresa.id" [selected]="empresa.id === filtroEmpresa()">
+            {{ empresa.nombre }}
+          </option>
+        }
+      </select>
+    }
+
+    <div class="filtro-fecha">
+      <label for="fecha-desde">Desde</label>
+      <input
+        id="fecha-desde"
+        type="date"
+        [value]="desde()"
+        [max]="hasta() || null"
+        (change)="cambiarDesde($any($event.target).value)"
+      />
+    </div>
+
+    <div class="filtro-fecha">
+      <label for="fecha-hasta">Hasta</label>
+      <input
+        id="fecha-hasta"
+        type="date"
+        [value]="hasta()"
+        [min]="desde() || null"
+        (change)="cambiarHasta($any($event.target).value)"
+      />
+    </div>
+
+    @if (hayFiltros()) {
+      <button type="button" class="btn-limpiar" (click)="limpiarFiltros()">
+        Limpiar filtros
+      </button>
+    }
+  </section>
+
   <section class="facturacion-card">
     <div class="facturacion-card__header">
       <div>
         <h2>Ventas de medicamentos</h2>
-        <span>{{ facturas().length }} registro(s) en esta página</span>
+        <span>{{ total() }} factura(s)</span>
       </div>
     </div>
 
     @if (cargando()) {
       <div class="facturacion-empty">Cargando facturación…</div>
     } @else if (facturas().length === 0) {
-      <div class="facturacion-empty">Aún no se han registrado ventas de medicamentos.</div>
+      <div class="facturacion-empty">
+        @if (hayFiltros()) {
+          No hay facturas que coincidan con los filtros.
+        } @else {
+          Aún no se han registrado ventas de medicamentos.
+        }
+      </div>
     } @else {
       <div class="table-wrapper">
         <table>
           <thead>
             <tr>
               <th>NÚMERO</th>
+              @if (esVistaSuperUsuario()) {
+                <th>EMPRESA</th>
+              }
               <th>FECHA</th>
               <th>COMPRADOR</th>
               <th>DETALLE</th>
@@ -41,6 +101,9 @@
             @for (factura of facturas(); track factura.id) {
               <tr>
                 <td><strong>{{ factura.numero }}</strong></td>
+                @if (esVistaSuperUsuario()) {
+                  <td>{{ factura.empresa?.nombre || '—' }}</td>
+                }
                 <td>{{ factura.fecha | date:'dd/MM/yyyy' }}</td>
                 <td>
                   <strong>{{ factura.tercero_nombre }}</strong>
@@ -79,6 +142,9 @@
           <button type="button" (click)="cerrarDetalle()">×</button>
         </header>
         <div class="facturacion-modal__cliente">
+          @if (esVistaSuperUsuario() && factura.empresa?.nombre) {
+            <span class="facturacion-modal__empresa"><strong>Empresa:</strong> {{ factura.empresa?.nombre }}</span>
+          }
           <strong>{{ factura.tercero_nombre }}</strong>
           <span>{{ factura.tercero_identificacion || 'Sin identificación' }}</span>
           <span>{{ factura.tercero_celular || 'Sin celular' }}</span>

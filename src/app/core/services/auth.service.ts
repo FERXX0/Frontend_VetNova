@@ -58,9 +58,9 @@ export class AuthService {
   }
 
   /**
-   * ⚠️ El backend actual (routes/api.php) NO expone estos endpoints todavía
-   * (solo existe /auth/login, /auth/me y /auth/logout). Estos métodos compilan
-   * y quedan listos, pero devolverán 404 hasta que el backend los implemente.
+   * Recuperación de contraseña: POST /recuperar-contrasena envía al correo un enlace
+   * a /restablecer-contrasena?token=...&correo=...; POST /restablecer-contrasena aplica
+   * la nueva contraseña. El enlace vence a los 60 minutos.
    */
   solicitarRecuperacion(payload: { correo: string }): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(
@@ -82,9 +82,7 @@ export class AuthService {
   }
 
   /**
-   * ⚠️ Contrato pendiente en backend: PUT /auth/perfil (o PUT /usuarios/perfil)
-   * Permite que el usuario autenticado actualice sus datos personales básicos
-   * (nombre, celular, correo, fecha_nacimiento).
+   * PUT /auth/perfil: actualiza nombre, correo, celular y fecha_nacimiento del usuario autenticado. Responde { message, usuario } y la sesion se actualiza con ese usuario.
    */
   actualizarPerfil(payload: {
     nombre: string;

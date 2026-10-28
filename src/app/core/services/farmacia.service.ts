@@ -11,8 +11,6 @@ import {
   RegistroPacienteFarmacia,
   ResumenFarmacia,
 } from '../models/farmacia.model';
-import { PaginacionLaravel } from '../models/empresa.model';
-import { FormulacionFila } from '../models/formulacion.model';
 
 export interface RespuestaPaginaMedicamentos {
   data: Medicamento[];
@@ -147,39 +145,6 @@ export class FarmaciaService {
       url,
       payload
     );
-  }
-
-  obtenerFormulaciones(
-    alcance?: AlcanceApi,
-    filtros?: {
-      dispensacion?: 'pendientes' | 'completas' | 'todas';
-      buscar?: string;
-      page?: number;
-      per_page?: number;
-    }
-  ): Observable<PaginacionLaravel<FormulacionFila>> {
-    const url = urlRecurso(this.apiUrl, 'farmacia/formulaciones', alcance);
-
-    let params = new HttpParams();
-    if (filtros?.dispensacion) params = params.set('dispensacion', filtros.dispensacion);
-    if (filtros?.buscar) params = params.set('buscar', filtros.buscar);
-    if (filtros?.page) params = params.set('page', filtros.page.toString());
-    if (filtros?.per_page) params = params.set('per_page', filtros.per_page.toString());
-
-    return this.http.get<PaginacionLaravel<FormulacionFila>>(url, { params });
-  }
-
-  dispensar(
-    formulacionId: string,
-    lineaId: string,
-    alcance?: AlcanceApi
-  ): Observable<FormulacionFila> {
-    const url = urlRecurso(
-      this.apiUrl,
-      `farmacia/formulaciones/${formulacionId}/medicamentos/${lineaId}/dispensar`,
-      alcance
-    );
-    return this.http.post<FormulacionFila>(url, {});
   }
 
   obtenerRegistroPaciente(

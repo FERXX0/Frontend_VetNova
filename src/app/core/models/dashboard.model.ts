@@ -24,6 +24,7 @@ export interface ResumenDashboard {
     activas: number;
     suspendidas: number;
     nuevas_este_mes: number;
+    por_mes?: { mes: string; total: number }[];
   };
 
   usuarios: {

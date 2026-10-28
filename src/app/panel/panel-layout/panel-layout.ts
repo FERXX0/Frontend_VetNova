@@ -92,49 +92,42 @@ export class PanelLayoutComponent {
     nombre: 'Historias Clínicas',
     ruta: '/panel/historias-clinicas',   // <-- se agrega
     icono: 'historia'
-    // se quita proximamente: true
   },
   {
     codigo: 'esquema_v_d',
     nombre: 'Vacunación y Desp.',
     ruta: '/panel/esquema-v-d',          // <-- se agrega
     icono: 'vacuna'
-    // se quita proximamente: true
   },
   {
     codigo: 'hospitalizacion',
     nombre: 'Hospitalización',
     ruta: '/panel/hospitalizacion',      // <-- se agrega
     icono: 'hospital'
-    // se quita proximamente: true
   },
   {
     codigo: 'procedimientos',
     nombre: 'Procedimientos',
     ruta: '/panel/procedimientos',       // <-- se agrega
     icono: 'procedimiento'
-    // se quita proximamente: true
   },
   {
     codigo: 'laboratorio',
     nombre: 'Laboratorio',
     ruta: '/panel/laboratorio',          // <-- se agrega
     icono: 'laboratorio'
-    // se quita proximamente: true
   },
   {
     codigo: 'formulaciones',
     nombre: 'Formulaciones',
     ruta: '/panel/formulaciones',        // <-- se agrega
     icono: 'receta'
-    // se quita proximamente: true
   },
   {
     codigo: 'farmacia',
     nombre: 'Farmacia',
     ruta: '/panel/farmacia',             // <-- se agrega
     icono: 'farmacia'
-    // se quita proximamente: true
   },
   {
     codigo: 'servicios',

@@ -300,6 +300,22 @@
     </select>
 
 
+    <input
+      type="date"
+      class="filter-date-input"
+      title="Desde"
+      [value]="filtroDesde()"
+      (change)="cambiarFiltroDesde($any($event.target).value)"
+    />
+
+    <input
+      type="date"
+      class="filter-date-input"
+      title="Hasta"
+      [value]="filtroHasta()"
+      (change)="cambiarFiltroHasta($any($event.target).value)"
+    />
+
     <button type="button" class="btn-secondary" (click)="limpiarFiltros()">
       Limpiar
     </button>
@@ -524,11 +540,13 @@
                   Ver
                 </button>
 
-                <button appPermiso="laboratorio.editar" type="button" class="action-edit" (click)="
-                      editarSolicitud(solicitud)
-                    ">
-                  Editar
-                </button>
+                @if (solicitud.estado !== 'Cancelado') {
+                  <button appPermiso="laboratorio.editar" type="button" class="action-edit" (click)="
+                        editarSolicitud(solicitud)
+                      ">
+                    Editar
+                  </button>
+                }
 
               </div>
 
@@ -877,7 +895,7 @@ solicitudSeleccionada()
         <button appPermiso="laboratorio.editar" type="button" [class.active]="
               solicitudSeleccionada()!.estado ===
               'Solicitado'
-            " (click)="
+            " [disabled]="solicitudSeleccionada()!.estado === 'Cancelado'" (click)="
               cambiarEstado(
                 solicitudSeleccionada()!,
                 'Solicitado'
@@ -890,7 +908,7 @@ solicitudSeleccionada()
         <button appPermiso="laboratorio.editar" type="button" [class.active]="
               solicitudSeleccionada()!.estado ===
               'Muestra recibida'
-            " (click)="
+            " [disabled]="solicitudSeleccionada()!.estado === 'Cancelado'" (click)="
               cambiarEstado(
                 solicitudSeleccionada()!,
                 'Muestra recibida'
@@ -903,7 +921,7 @@ solicitudSeleccionada()
         <button appPermiso="laboratorio.editar" type="button" [class.active]="
               solicitudSeleccionada()!.estado ===
               'En procesamiento'
-            " (click)="
+            " [disabled]="solicitudSeleccionada()!.estado === 'Cancelado'" (click)="
               cambiarEstado(
                 solicitudSeleccionada()!,
                 'En procesamiento'
@@ -916,7 +934,7 @@ solicitudSeleccionada()
         <button appPermiso="laboratorio.editar" type="button" [class.active]="
               solicitudSeleccionada()!.estado ===
               'Resultado disponible'
-            " (click)="
+            " [disabled]="solicitudSeleccionada()!.estado === 'Cancelado'" (click)="
               cambiarEstado(
                 solicitudSeleccionada()!,
                 'Resultado disponible'
@@ -929,7 +947,7 @@ solicitudSeleccionada()
         <button appPermiso="laboratorio.editar" type="button" [class.active]="
               solicitudSeleccionada()!.estado ===
               'Finalizado'
-            " (click)="
+            " [disabled]="solicitudSeleccionada()!.estado === 'Cancelado'" (click)="
               cambiarEstado(
                 solicitudSeleccionada()!,
                 'Finalizado'
@@ -942,7 +960,7 @@ solicitudSeleccionada()
         <button appPermiso="laboratorio.editar" type="button" [class.active]="
               solicitudSeleccionada()!.estado ===
               'Cancelado'
-            " (click)="
+            " [disabled]="solicitudSeleccionada()!.estado === 'Cancelado'" (click)="
               cambiarEstado(
                 solicitudSeleccionada()!,
                 'Cancelado'
@@ -976,11 +994,17 @@ solicitudSeleccionada()
         </div>
 
 
-        <button appPermiso="laboratorio.crear" type="button" class="btn-primary" (click)="abrirNuevoResultado()">
-          + Registrar resultado
-        </button>
+        @if (resultadosEditables()) {
+          <button appPermiso="laboratorio.editar" type="button" class="btn-primary" (click)="abrirNuevoResultado()">
+            + Registrar resultado
+          </button>
+        }
 
       </div>
+
+      @if (!resultadosEditables()) {
+        <p class="text-muted-block">Los resultados no se pueden modificar en una solicitud finalizada o cancelada.</p>
+      }
 
 
       @if (
@@ -999,6 +1023,9 @@ solicitudSeleccionada()
               <th>Unidad</th>
               <th>Referencia</th>
               <th>Observación</th>
+              @if (resultadosEditables()) {
+                <th>Acciones</th>
+              }
             </tr>
 
           </thead>
@@ -1007,7 +1034,7 @@ solicitudSeleccionada()
 
             @for (
             resultado of solicitudSeleccionada()!.resultados;
-            track $index
+            track resultado.id
             ) {
 
             <tr>
@@ -1033,6 +1060,19 @@ solicitudSeleccionada()
               <td>
                 {{ resultado.observacion || '-' }}
               </td>
+
+              @if (resultadosEditables()) {
+                <td>
+                  <div class="actions">
+                    <button appPermiso="laboratorio.editar" type="button" class="action-edit" (click)="editarResultado(resultado)">
+                      Editar
+                    </button>
+                    <button appPermiso="laboratorio.editar" type="button" class="action-danger" (click)="eliminarResultado(resultado)">
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              }
 
             </tr>
 
@@ -1085,7 +1125,7 @@ solicitudSeleccionada()
         </div>
 
 
-        <button appPermiso="laboratorio.crear" type="button" class="btn-primary" (click)="abrirNuevaNota()">
+        <button appPermiso="laboratorio.editar" type="button" class="btn-primary" (click)="abrirNuevaNota()">
           + Agregar nota
         </button>
 
@@ -1169,13 +1209,15 @@ solicitudSeleccionada()
           Cerrar
         </button>
 
-        <button appPermiso="laboratorio.editar" type="button" class="btn-primary" (click)="
-              editarSolicitud(
-                solicitudSeleccionada()!
-              )
-            ">
-          Editar solicitud
-        </button>
+        @if (solicitudSeleccionada()!.estado !== 'Cancelado') {
+          <button appPermiso="laboratorio.editar" type="button" class="btn-primary" (click)="
+                editarSolicitud(
+                  solicitudSeleccionada()!
+                )
+              ">
+            Editar solicitud
+          </button>
+        }
 
       </div>
 
@@ -1238,28 +1280,22 @@ solicitudSeleccionada()
           Paciente *
         </label>
 
-        <select [value]="formulario().pacienteId" (change)="
-              actualizarFormulario(
-                'pacienteId',
-                $any($event.target).value
-              )
-            ">
-          <option value="">
-            Seleccionar paciente
-          </option>
-
-          @for (paciente of pacientes(); track paciente.id) {
-          <option [value]="paciente.id" [selected]="paciente.id === formulario().pacienteId">
-            {{ paciente.nombre }} · {{ paciente.especie
-            }}{{ paciente.propietario ? ' · ' + paciente.propietario : '' }}
-          </option>
-          }
-        </select>
-
-        @if (pacientes().length === 0) {
-        <span class="error-texto">
-          No hay pacientes registrados en esta empresa.
-        </span>
+        @if (pacienteSeleccionado(); as pac) {
+          <div class="paciente-chip">
+            <span class="material-symbols-rounded">pets</span>
+            <span>{{ pac.nombre }}{{ pac.especie ? ' · ' + pac.especie : '' }}{{ pac.propietario ? ' · ' + pac.propietario : '' }}</span>
+            @if (!modoEdicion()) {
+              <button type="button" (click)="quitarPaciente()" aria-label="Quitar paciente">
+                <span class="material-symbols-rounded">close</span>
+              </button>
+            }
+          </div>
+        } @else {
+          <app-buscador-paciente
+            [alcance]="alcanceFormulario()"
+            placeholder="Buscar paciente por nombre o propietario..."
+            (pacienteSeleccionado)="alSeleccionarPaciente($event)"
+          />
         }
 
       </div>
@@ -1576,7 +1612,7 @@ solicitudSeleccionada()
         Cancelar
       </button>
 
-      <button appPermiso="laboratorio.editar" type="button" class="btn-primary" [disabled]="guardando()" (click)="guardarSolicitud()">
+      <button [appPermiso]="modoEdicion() ? 'laboratorio.editar' : 'laboratorio.crear'" type="button" class="btn-primary" [disabled]="guardando()" (click)="guardarSolicitud()">
         {{
         modoEdicion()
         ? 'Guardar cambios'
@@ -1608,7 +1644,7 @@ solicitudSeleccionada()
       <div>
 
         <h2>
-          Registrar resultado
+          {{ resultadoEditandoId() ? 'Editar resultado' : 'Registrar resultado' }}
         </h2>
 
         <p>
@@ -1722,7 +1758,7 @@ solicitudSeleccionada()
       </button>
 
       <button appPermiso="laboratorio.editar" type="button" class="btn-primary" [disabled]="guardando()" (click)="guardarResultado()">
-        Guardar resultado
+        {{ resultadoEditandoId() ? 'Guardar cambios' : 'Guardar resultado' }}
       </button>
 
     </div>

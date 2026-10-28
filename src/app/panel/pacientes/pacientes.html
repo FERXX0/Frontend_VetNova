@@ -25,10 +25,10 @@
         type="text"
         placeholder="Buscar por nombre de mascota, propietario o celular…"
         [value]="filtroTexto()"
-        (input)="filtroTexto.set($any($event.target).value)"
+        (input)="alBuscar($any($event.target).value)"
       />
       @if (filtroTexto()) {
-        <button type="button" class="btn-limpiar" (click)="filtroTexto.set('')">✕</button>
+        <button type="button" class="btn-limpiar" (click)="alBuscar('')">✕</button>
       }
     </div>
 
@@ -38,7 +38,7 @@
         <select
           class="pacientes-page__filtro-select"
           [value]="filtroEmpresa()"
-          (change)="filtroEmpresa.set($any($event.target).value)"
+          (change)="alCambiarEmpresa($any($event.target).value)"
         >
           <option value="todas">Todas las empresas</option>
           @for (empresa of empresasDisponibles(); track empresa.id) {
@@ -50,7 +50,7 @@
       <select
         class="pacientes-page__filtro-select"
         [value]="filtroEspecie()"
-        (change)="filtroEspecie.set($any($event.target).value)"
+        (change)="alCambiarEspecie($any($event.target).value)"
       >
         @for (esp of especies; track esp.valor) {
           <option [value]="esp.valor">{{ esp.etiqueta }}</option>
@@ -72,13 +72,13 @@
       <div class="pacientes-page__estado-vacio">
         <p>Cargando pacientes…</p>
       </div>
-    } @else if (pacientesFiltrados().length === 0) {
+    } @else if (pacientes().length === 0) {
       <div class="pacientes-page__estado-vacio">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 21s-7-4.35-9.5-8.5C.7 9 2 5 6 5c2 0 3.5 1.5 4 2.5C10.5 6.5 12 5 14 5c4 0 5.3 4 3.5 7.5C15 16.65 12 21 12 21Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
         </svg>
         <p>
-          @if (filtroTexto() || filtroEspecie() !== 'todas') {
+          @if (filtroTexto() || filtroEspecie() !== 'todas' || filtroEmpresa() !== 'todas') {
             No se encontraron pacientes que coincidan con los filtros aplicados.
           } @else {
             Todavía no hay pacientes registrados en esta veterinaria.
@@ -102,7 +102,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (p of pacientesFiltrados(); track p.id) {
+          @for (p of pacientes(); track p.id) {
             <tr>
               <td>
                 <div class="paciente-celda">
@@ -197,6 +197,24 @@
           }
         </tbody>
       </table>
+    }
+
+    @if (totalPaginas() > 1) {
+      <div class="paginacion">
+        <button type="button" class="btn-paginacion" [disabled]="paginaActual() <= 1"
+          (click)="irAPagina(paginaActual() - 1)">
+          ‹ Anterior
+        </button>
+
+        <span class="paginacion-info">
+          Página {{ paginaActual() }} de {{ totalPaginas() }} ({{ total() }} paciente(s))
+        </span>
+
+        <button type="button" class="btn-paginacion" [disabled]="paginaActual() >= totalPaginas()"
+          (click)="irAPagina(paginaActual() + 1)">
+          Siguiente ›
+        </button>
+      </div>
     }
   </div>
 

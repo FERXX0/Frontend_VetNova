@@ -104,27 +104,266 @@
       </div>
     </div>
 
-    <!-- Secciones Clínicas Preparadas para el Futuro -->
-    <div class="secciones-futuras">
-      <div class="secciones-futuras__header">
+    <!-- Historial clínico del paciente -->
+    <div class="historial">
+      <div class="historial__header">
         <h3>Historial Clínico y Procedimientos</h3>
-        <span class="badge-modulo-futuro">Módulos en Integración</span>
       </div>
 
-      <div class="tabs-futuras">
-        <div class="tab-futura tab-futura--activo">📋 Consultas y Evolución</div>
-        <div class="tab-futura">💉 Vacunas y Desparasitación</div>
-        <div class="tab-futura">🔬 Exámenes de Laboratorio</div>
-        <div class="tab-futura">🏥 Hospitalización</div>
-      </div>
+      @if (pestanasDisponibles().length === 0) {
+        <div class="historial__mensaje">
+          <span class="material-symbols-rounded" aria-hidden="true">lock</span>
+          <span>Tu usuario no tiene módulos clínicos habilitados para ver el historial de este paciente.</span>
+        </div>
+      } @else {
+        <div class="historial__tabs" role="tablist">
+          @for (pestana of pestanasDisponibles(); track pestana.id) {
+            <button
+              type="button"
+              role="tab"
+              class="historial__tab"
+              [class.historial__tab--activo]="pestanaActiva() === pestana.id"
+              [attr.aria-selected]="pestanaActiva() === pestana.id"
+              (click)="seleccionarPestana(pestana.id)"
+            >
+              <span class="material-symbols-rounded" aria-hidden="true">{{ pestana.icono }}</span>
+              {{ pestana.etiqueta }}
+            </button>
+          }
+        </div>
 
-      <div class="tab-contenido-placeholder">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        <p>Ficha clínica preparada para el registro de consultas, formulaciones y esquemas de vacunación.</p>
-        <small>Los módulos de Historias Clínicas y Esquemas se habilitarán próximamente según el plan de la veterinaria.</small>
-      </div>
+        <div class="historial__contenido">
+          @if (estadoPestana()[pestanaActiva()].cargando) {
+            <p class="historial__mensaje">Cargando información…</p>
+          } @else if (estadoPestana()[pestanaActiva()].error) {
+            <div class="historial__mensaje historial__mensaje--error">
+              <span>{{ estadoPestana()[pestanaActiva()].error }}</span>
+              <button type="button" class="historial__reintentar" (click)="cargarPestana(pestanaActiva(), true)">Reintentar</button>
+            </div>
+          } @else {
+            @switch (pestanaActiva()) {
+              @case ('consultas') {
+                @if (consultas().length === 0) {
+                  <p class="historial__mensaje">Este paciente aún no tiene consultas registradas.</p>
+                } @else {
+                  <ul class="historial__lista">
+                    @for (c of consultas(); track c.id) {
+                      <li class="historial__item">
+                        <div class="historial__item-cabecera">
+                          <strong>{{ formatearFecha(c.fecha) }}</strong>
+                          @if (c.tipo_consulta) {
+                            <span class="historial__badge">{{ c.tipo_consulta }}</span>
+                          }
+                          <span class="historial__autor">{{ c.veterinario_nombre }}</span>
+                        </div>
+                        <dl class="historial__datos">
+                          <div><dt>Motivo</dt><dd>{{ c.motivo }}</dd></div>
+                          <div><dt>Diagnóstico</dt><dd>{{ c.diagnostico }}</dd></div>
+                          @if (c.tratamiento) { <div><dt>Tratamiento</dt><dd>{{ c.tratamiento }}</dd></div> }
+                          @if (c.medicamentos) { <div><dt>Medicamentos</dt><dd>{{ c.medicamentos }}</dd></div> }
+                          @if (c.evolucion) { <div><dt>Evolución</dt><dd>{{ c.evolucion }}</dd></div> }
+                          @if (c.observaciones) { <div><dt>Observaciones</dt><dd>{{ c.observaciones }}</dd></div> }
+                        </dl>
+                      </li>
+                    }
+                  </ul>
+                }
+              }
+
+              @case ('esquema') {
+                <h4 class="historial__subtitulo">Vacunas</h4>
+                @if (vacunas().length === 0) {
+                  <p class="historial__mensaje">Sin vacunas registradas.</p>
+                } @else {
+                  <div class="historial__tabla-wrap">
+                    <table class="historial__tabla">
+                      <thead>
+                        <tr><th>Vacuna</th><th>Tipo</th><th>Lote</th><th>Aplicación</th><th>Próxima</th><th>Veterinario</th></tr>
+                      </thead>
+                      <tbody>
+                        @for (v of vacunas(); track v.id) {
+                          <tr>
+                            <td>{{ v.nombre }}</td>
+                            <td>{{ v.tipo }}</td>
+                            <td>{{ v.lote || '-' }}</td>
+                            <td>{{ formatearFecha(v.fecha_aplicacion) }}</td>
+                            <td [class.historial__vencida]="estaVencida(v.proxima_fecha)">{{ formatearFecha(v.proxima_fecha) }}</td>
+                            <td>{{ v.veterinario_nombre }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+
+                <h4 class="historial__subtitulo">Desparasitaciones</h4>
+                @if (desparasitaciones().length === 0) {
+                  <p class="historial__mensaje">Sin desparasitaciones registradas.</p>
+                } @else {
+                  <div class="historial__tabla-wrap">
+                    <table class="historial__tabla">
+                      <thead>
+                        <tr><th>Producto</th><th>Tipo</th><th>Aplicación</th><th>Próxima</th><th>Veterinario</th></tr>
+                      </thead>
+                      <tbody>
+                        @for (d of desparasitaciones(); track d.id) {
+                          <tr>
+                            <td>{{ d.producto }}</td>
+                            <td>{{ d.tipo }}</td>
+                            <td>{{ formatearFecha(d.fecha_aplicacion) }}</td>
+                            <td [class.historial__vencida]="estaVencida(d.proxima_fecha)">{{ formatearFecha(d.proxima_fecha) }}</td>
+                            <td>{{ d.veterinario_nombre }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              }
+
+              @case ('laboratorio') {
+                @if (solicitudesLab().length === 0) {
+                  <p class="historial__mensaje">Este paciente no tiene exámenes de laboratorio registrados.</p>
+                } @else {
+                  <ul class="historial__lista">
+                    @for (s of solicitudesLab(); track s.id) {
+                      <li class="historial__item">
+                        <div class="historial__item-cabecera">
+                          <strong>{{ s.examen }}</strong>
+                          <span class="historial__badge">{{ s.estado }}</span>
+                          <span class="historial__autor">{{ formatearFecha(s.fecha_solicitud) }} - {{ s.veterinario_nombre }}</span>
+                        </div>
+                        <dl class="historial__datos">
+                          <div><dt>Categoría</dt><dd>{{ s.categoria }}</dd></div>
+                          <div><dt>Laboratorio</dt><dd>{{ s.laboratorio }}</dd></div>
+                          @if (s.diagnostico) { <div><dt>Diagnóstico</dt><dd>{{ s.diagnostico }}</dd></div> }
+                        </dl>
+                        @if (s.resultados.length > 0) {
+                          <div class="historial__tabla-wrap">
+                            <table class="historial__tabla">
+                              <thead>
+                                <tr><th>Parámetro</th><th>Resultado</th><th>Unidad</th><th>Referencia</th></tr>
+                              </thead>
+                              <tbody>
+                                @for (r of s.resultados; track r.id) {
+                                  <tr>
+                                    <td>{{ r.parametro }}</td>
+                                    <td>{{ r.resultado }}</td>
+                                    <td>{{ r.unidad || '-' }}</td>
+                                    <td>{{ r.referencia || '-' }}</td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        } @else {
+                          <p class="historial__mensaje">Aún sin resultados.</p>
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+              }
+
+              @case ('hospitalizacion') {
+                @if (hospitalizaciones().length === 0) {
+                  <p class="historial__mensaje">Este paciente no tiene hospitalizaciones registradas.</p>
+                } @else {
+                  <ul class="historial__lista">
+                    @for (h of hospitalizaciones(); track h.id) {
+                      <li class="historial__item">
+                        <div class="historial__item-cabecera">
+                          <strong>{{ h.motivo }}</strong>
+                          <span class="historial__badge">{{ h.estado }}</span>
+                          <span class="historial__autor">{{ formatearFecha(h.fecha_ingreso) }} - {{ h.veterinario_nombre }}</span>
+                        </div>
+                        <dl class="historial__datos">
+                          <div><dt>Ubicación</dt><dd>{{ h.ubicacion }}</dd></div>
+                          <div><dt>Prioridad</dt><dd>{{ h.prioridad }}</dd></div>
+                          @if (h.diagnostico) { <div><dt>Diagnóstico</dt><dd>{{ h.diagnostico }}</dd></div> }
+                          <div><dt>Salida estimada</dt><dd>{{ formatearFecha(h.fecha_salida_estimada) }}</dd></div>
+                          @if (h.fecha_alta) {
+                            <div><dt>Salida registrada</dt><dd>{{ formatearFecha(h.fecha_alta) }} - {{ h.hora_alta || '' }}</dd></div>
+                          }
+                          @if (h.observaciones) { <div><dt>Observaciones</dt><dd>{{ h.observaciones }}</dd></div> }
+                        </dl>
+                        @if (h.evoluciones && h.evoluciones.length > 0) {
+                          <h4 class="historial__subtitulo">Evoluciones</h4>
+                          <div class="historial__tabla-wrap">
+                            <table class="historial__tabla">
+                              <thead>
+                                <tr><th>Fecha</th><th>Estado</th><th>Observaciones</th><th>Registrado por</th></tr>
+                              </thead>
+                              <tbody>
+                                @for (e of h.evoluciones; track e.id) {
+                                  <tr>
+                                    <td>{{ formatearFecha(e.fecha) }} {{ e.hora }}</td>
+                                    <td>{{ e.estado }}</td>
+                                    <td>{{ e.observaciones }}</td>
+                                    <td>{{ e.usuario }}</td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+              }
+
+              @case ('procedimientos') {
+                @if (procedimientos().length === 0) {
+                  <p class="historial__mensaje">Este paciente no tiene procedimientos registrados.</p>
+                } @else {
+                  <ul class="historial__lista">
+                    @for (p of procedimientos(); track p.id) {
+                      <li class="historial__item">
+                        <div class="historial__item-cabecera">
+                          <strong>{{ p.procedimiento }}</strong>
+                          <span class="historial__badge">{{ p.estado }}</span>
+                          <span class="historial__autor">{{ formatearFecha(p.fecha) }} {{ p.hora }} - {{ p.veterinario_nombre }}</span>
+                        </div>
+                        <dl class="historial__datos">
+                          <div><dt>Categoría</dt><dd>{{ p.categoria }}</dd></div>
+                          @if (p.diagnostico) { <div><dt>Diagnóstico</dt><dd>{{ p.diagnostico }}</dd></div> }
+                          <div><dt>Sala</dt><dd>{{ p.sala }}</dd></div>
+                          <div><dt>Prioridad</dt><dd>{{ p.prioridad }}</dd></div>
+                          @if (p.duracion) { <div><dt>Duración</dt><dd>{{ p.duracion }}</dd></div> }
+                          @if (p.indicaciones) { <div><dt>Indicaciones</dt><dd>{{ p.indicaciones }}</dd></div> }
+                          @if (p.observaciones) { <div><dt>Observaciones</dt><dd>{{ p.observaciones }}</dd></div> }
+                        </dl>
+                        @if (p.notas && p.notas.length > 0) {
+                          <h4 class="historial__subtitulo">Notas</h4>
+                          <div class="historial__tabla-wrap">
+                            <table class="historial__tabla">
+                              <thead>
+                                <tr><th>Fecha</th><th>Nota</th><th>Registrado por</th></tr>
+                              </thead>
+                              <tbody>
+                                @for (nota of p.notas; track nota.id) {
+                                  <tr>
+                                    <td>{{ formatearFecha(nota.fecha) }} {{ nota.hora }}</td>
+                                    <td>{{ nota.nota }}</td>
+                                    <td>{{ nota.usuario }}</td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        } @else {
+                          <p class="historial__mensaje">Sin notas registradas.</p>
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+              }
+            }
+          }
+        </div>
+      }
     </div>
   }
 </div>

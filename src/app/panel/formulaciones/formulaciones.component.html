@@ -6,16 +6,11 @@
       <span class="eyebrow">GESTIÓN CLÍNICA</span>
       <h1>Formulaciones</h1>
       <p>
-        Gestiona las formulaciones médicas y medicamentos prescritos
-        a los pacientes.
+        Dispensa los medicamentos e insumos formulados por los veterinarios y consulta el estado de cada formulación.
       </p>
     </div>
 
-    <button appPermiso="formulaciones.crear" class="btn-primary" type="button" (click)="abrirNuevaFormulacion()">
-      <span class="material-symbols-rounded">add</span>
-      Nueva formulación
-    </button>
-  </header>
+      </header>
 
   <!-- SELECTOR EMPRESA (SUPERUSUARIO) -->
   <div class="selector-empresa" *ngIf="esSuperUsuario()">
@@ -88,6 +83,36 @@
   </section>
 
   <!-- FILTROS -->
+  <nav class="vista-tabs">
+    <button
+      type="button"
+      [class.active]="filtroDispensacion() === 'pendientes'"
+      (click)="alCambiarFiltroDispensacion('pendientes')"
+    >
+      <span class="material-symbols-rounded">medication_liquid</span>
+      Pendientes de dispensar
+      <span class="tab-contador" *ngIf="resumen().pendientes_dispensar > 0">
+        {{ resumen().pendientes_dispensar }}
+      </span>
+    </button>
+    <button
+      type="button"
+      [class.active]="filtroDispensacion() === 'completas'"
+      (click)="alCambiarFiltroDispensacion('completas')"
+    >
+      <span class="material-symbols-rounded">check_circle</span>
+      Dispensadas
+    </button>
+    <button
+      type="button"
+      [class.active]="filtroDispensacion() === 'todas'"
+      (click)="alCambiarFiltroDispensacion('todas')"
+    >
+      <span class="material-symbols-rounded">list_alt</span>
+      Todas
+    </button>
+  </nav>
+
   <section class="filters-card">
 
     <div class="search-box">
@@ -166,10 +191,10 @@
             <th>PACIENTE</th>
             <th>VETERINARIO</th>
             <th>DIAGNÓSTICO</th>
-            <th>MEDICAMENTOS</th>
+            <th>DISPENSADOS</th>
             <th>FECHA</th>
             <th>ESTADO</th>
-            <th>ACTIONS</th>
+            <th>ACCIONES</th>
           </tr>
         </thead>
 
@@ -219,7 +244,7 @@
             <td>
               <span class="medicine-count">
                 <span class="material-symbols-rounded">medication</span>
-                {{ formulacion.medicamentos.length }}
+                {{ formulacion.medicamentos_dispensados ?? 0 }} / {{ formulacion.total_medicamentos ?? formulacion.medicamentos.length }}
               </span>
             </td>
 
@@ -246,7 +271,7 @@
 
                 <button
                   type="button"
-                  title="Ver formulación"
+                  title="Ver y dispensar"
                   (click)="abrirDetalle(formulacion)"
                 >
                   <span class="material-symbols-rounded">
@@ -282,18 +307,10 @@
                 <h3>No se encontraron formulaciones</h3>
 
                 <p>
-                  Intenta cambiar los filtros o registra una nueva
-                  formulación.
+                  Intenta cambiar los filtros o la pestaña de dispensación.
                 </p>
 
-                <button
- appPermiso="formulaciones.crear"                  type="button"
-                  class="btn-primary"
-                  (click)="abrirNuevaFormulacion()"
-                >
-                  Nueva formulación
-                </button>
-
+                
               </div>
 
             </td>
@@ -457,7 +474,7 @@
           </div>
 
           <button
- appPermiso="formulaciones.crear"            *ngIf="formulacion.estado === 'Activa'"
+ appPermiso="formulaciones.anular"            *ngIf="formulacion.estado === 'Activa'"
             class="btn-secondary"
             type="button"
             (click)="abrirAgregarMedicamento(formulacion)"
@@ -544,6 +561,8 @@
                 {{ medicamento.dispensado_en | date:'dd/MM/yyyy HH:mm' }}
                 <ng-container *ngIf="medicamento.dispensado_por_nombre"> · {{ medicamento.dispensado_por_nombre }}</ng-container>
               </span>
+
+              <button appPermiso="formulaciones.dispensar" *ngIf="!esSuperUsuario() && !medicamento.dispensado && formulacion.estado === 'Activa'" class="btn-primary btn-compact" type="button" [disabled]="dispensandoLineaId() === medicamento.id" (click)="dispensar(formulacion, medicamento)"><span class="material-symbols-rounded">check_circle</span> {{ dispensandoLineaId() === medicamento.id ? 'Dispensando...' : 'Dispensar' }}</button>
 
               <button
  appPermiso="formulaciones.anular"                *ngIf="!medicamento.dispensado && formulacion.estado === 'Activa'"
@@ -642,359 +661,6 @@
         </button>
 
       </div>
-
-    </div>
-
-  </div>
-
-</div>
-
-<!-- ========================================================= -->
-<!-- MODAL NUEVA / EDITAR FORMULACIÓN -->
-<!-- ========================================================= -->
-
-<div
-  class="modal-backdrop"
-  *ngIf="modalFormularioAbierto()"
-  (click)="cerrarFormulario()"
->
-
-  <div
-    class="modal modal-extra-large"
-    (click)="$event.stopPropagation()"
-  >
-
-    <div class="modal-header">
-
-      <div>
-
-        <span class="eyebrow">
-          NUEVA
-        </span>
-
-        <h2>
-          Nueva formulación
-        </h2>
-
-        <p>
-          Registra la información clínica y los medicamentos.
-        </p>
-
-      </div>
-
-      <button
-        class="modal-close"
-        type="button"
-        (click)="cerrarFormulario()"
-      >
-        <span class="material-symbols-rounded">close</span>
-      </button>
-
-    </div>
-
-    <div class="modal-body">
-
-      <!-- MENSAJE DE ERROR -->
-      <div class="alert alert-error" *ngIf="errorModal()">
-        <span class="material-symbols-rounded">error</span>
-        <span>{{ errorModal() }}</span>
-      </div>
-
-      <!-- DATOS DEL PACIENTE -->
-      <section class="form-section">
-
-        <div class="section-title">
-
-          <span class="material-symbols-rounded">
-            pets
-          </span>
-
-          <h3>Paciente</h3>
-
-        </div>
-
-        <div class="form-grid">
-
-          <div class="form-group">
-
-            <label>Paciente *</label>
-
-            <select
-              [ngModel]="formulario().paciente_id"
-              (ngModelChange)="actualizarFormulario('paciente_id', $event)"
-            >
-              <option value="">Seleccione un paciente</option>
-              <option *ngFor="let p of pacientes()" [value]="p.id">
-                {{ p.nombre }} - {{ p.propietario.nombre || 'Sin propietario' }} ({{ p.especie }})
-              </option>
-            </select>
-
-          </div>
-
-          <div class="form-group">
-
-            <label>Propietario</label>
-
-            <input
-              type="text"
-              [value]="pacienteSeleccionado()?.propietario?.nombre || ''"
-              placeholder="Propietario del paciente"
-              readonly
-            />
-
-          </div>
-
-          <div class="form-group">
-
-            <label>Especie</label>
-
-            <input
-              type="text"
-              [value]="pacienteSeleccionado()?.especie || ''"
-              placeholder="Especie"
-              readonly
-            />
-
-          </div>
-
-          <div class="form-group">
-
-            <label>Raza</label>
-
-            <input
-              type="text"
-              [value]="pacienteSeleccionado()?.raza || ''"
-              placeholder="Raza"
-              readonly
-            />
-
-          </div>
-
-          <div class="form-group">
-
-            <label>Edad</label>
-
-            <input
-              type="text"
-              [value]="pacienteSeleccionado()?.edad_estimada || ''"
-              placeholder="Edad estimada"
-              readonly
-            />
-
-          </div>
-
-          <div class="form-group">
-
-            <label>Veterinario</label>
-
-            <select
-              [ngModel]="formulario().veterinario_id"
-              (ngModelChange)="actualizarFormulario('veterinario_id', $event)"
-            >
-              <option value="">Seleccione un veterinario (opcional)</option>
-              <option *ngFor="let vet of profesionales()" [value]="vet.id">
-                {{ vet.nombre }}
-              </option>
-            </select>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      <!-- INFORMACIÓN CLÍNICA -->
-      <section class="form-section">
-
-        <div class="section-title">
-
-          <span class="material-symbols-rounded">
-            medical_information
-          </span>
-
-          <h3>Información clínica</h3>
-
-        </div>
-
-        <div class="form-grid">
-
-          <div class="form-group full">
-
-            <label>Diagnóstico *</label>
-
-            <input
-              type="text"
-              placeholder="Diagnóstico clínico"
-              [ngModel]="formulario().diagnostico"
-              (ngModelChange)="actualizarFormulario('diagnostico', $event)"
-            />
-
-          </div>
-
-          <div class="form-group full">
-
-            <label>Observaciones</label>
-
-            <textarea
-              rows="3"
-              placeholder="Indicaciones u observaciones generales..."
-              [ngModel]="formulario().observaciones"
-              (ngModelChange)="actualizarFormulario('observaciones', $event)"
-            ></textarea>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      <!-- MEDICAMENTOS -->
-      <section class="form-section">
-
-        <div class="section-title section-title-between">
-
-          <div class="title-with-icon">
-
-            <span class="material-symbols-rounded">
-              medication
-            </span>
-
-            <h3>
-              Medicamentos
-              <span>{{ medicamentosTemporales().length }}</span>
-            </h3>
-
-          </div>
-
-          <button
- appPermiso="formulaciones.crear"            type="button"
-            class="btn-secondary"
-            (click)="abrirNuevoMedicamento()"
-          >
-            <span class="material-symbols-rounded">add</span>
-            Agregar medicamento
-          </button>
-
-        </div>
-
-        <div class="empty-medications" *ngIf="medicamentosTemporales().length === 0">
-
-          <span class="material-symbols-rounded">
-            medication
-          </span>
-
-          <strong>No hay medicamentos agregados</strong>
-
-          <p>
-            Agrega al menos un medicamento para guardar
-            la formulación.
-          </p>
-
-          <button
- appPermiso="formulaciones.crear"            type="button"
-            class="btn-primary"
-            (click)="abrirNuevoMedicamento()"
-          >
-            Agregar medicamento
-          </button>
-
-        </div>
-
-        <div class="temporary-medications" *ngIf="medicamentosTemporales().length > 0">
-
-          <article class="temporary-medication" *ngFor="let medicamento of medicamentosTemporales(); let i = index">
-
-            <div class="medication-icon">
-
-              <span class="material-symbols-rounded">
-                medication
-              </span>
-
-            </div>
-
-            <div class="temporary-medication-content">
-
-              <strong>
-                {{ medicamento.nombre }}
-              </strong>
-
-              <span>
-                {{ medicamento.concentracion }}
-                <ng-container *ngIf="medicamento.presentacion">
-                  · {{ medicamento.presentacion }}
-                </ng-container>
-              </span>
-
-              <small>
-                {{ medicamento.frecuencia }}
-                ·
-                {{ medicamento.duracion }}
-                ·
-                {{ medicamento.via }}
-              </small>
-
-            </div>
-
-            <div class="temporary-actions">
-
-              <button
- appPermiso="formulaciones.editar"                type="button"
-                title="Editar medicamento"
-                (click)="editarMedicamento(i)"
-              >
-                <span class="material-symbols-rounded">
-                  edit
-                </span>
-              </button>
-
-              <button
- appPermiso="formulaciones.anular"                type="button"
-                title="Eliminar medicamento"
-                (click)="eliminarMedicamento(i)"
-              >
-                <span class="material-symbols-rounded">
-                  delete
-                </span>
-              </button>
-
-            </div>
-
-          </article>
-
-        </div>
-
-      </section>
-
-    </div>
-
-    <div class="modal-footer">
-
-      <button
-        type="button"
-        class="btn-secondary"
-        (click)="cerrarFormulario()"
-      >
-        Cancelar
-      </button>
-
-      <button
- appPermiso="formulaciones.editar"        type="button"
-        class="btn-primary"
-        [disabled]="
-          guardando() ||
-          !formulario().paciente_id ||
-          !formulario().diagnostico ||
-          medicamentosTemporales().length === 0
-        "
-        (click)="guardarFormulacion()"
-      >
-        <span class="material-symbols-rounded">
-          save
-        </span>
-
-        Guardar formulación
-
-      </button>
 
     </div>
 

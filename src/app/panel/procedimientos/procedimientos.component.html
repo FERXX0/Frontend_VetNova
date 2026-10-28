@@ -29,13 +29,34 @@
   </header>
 
 
+  <!-- SELECTOR EMPRESA (solo super-usuario) -->
+  @if (esVistaSuperUsuario()) {
+    <div class="proc-empresa-selector">
+      <select [value]="filtroEmpresa()" (change)="onEmpresaChange($any($event.target).value)">
+        <option value="">Todas las empresas</option>
+        @for (e of empresasDisponibles(); track e.id) {
+          <option [value]="e.id">{{ e.nombre }}</option>
+        }
+      </select>
+    </div>
+  }
+
+
+  <!-- ALERTA ERROR GLOBAL -->
+  @if (error()) {
+    <div class="proc-alert-error">
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+
   <!-- ESTADÍSTICAS -->
   <section class="stats-grid">
 
     <div class="stat-card">
 
       <div class="stat-icon total">
-        🩺
+        <span class="material-symbols-rounded">stethoscope</span>
       </div>
 
       <div>
@@ -49,7 +70,7 @@
     <div class="stat-card">
 
       <div class="stat-icon programado">
-        📅
+        <span class="material-symbols-rounded">event</span>
       </div>
 
       <div>
@@ -63,7 +84,7 @@
     <div class="stat-card">
 
       <div class="stat-icon proceso">
-        ⚙️
+        <span class="material-symbols-rounded">settings</span>
       </div>
 
       <div>
@@ -77,7 +98,7 @@
     <div class="stat-card">
 
       <div class="stat-icon completado">
-        ✓
+        <span class="material-symbols-rounded">check_circle</span>
       </div>
 
       <div>
@@ -186,11 +207,7 @@
         type="text"
         placeholder="Buscar paciente, procedimiento, diagnóstico..."
         [value]="busqueda()"
-        (input)="
-          busqueda.set(
-            $any($event.target).value
-          )
-        "
+        (input)="cambiarBusqueda($any($event.target).value)"
       />
 
     </div>
@@ -198,11 +215,7 @@
 
     <select
       [value]="filtroEstado()"
-      (change)="
-        filtroEstado.set(
-          $any($event.target).value
-        )
-      "
+      (change)="cambiarFiltroEstado($any($event.target).value)"
     >
 
       <option value="Todos">
@@ -230,11 +243,7 @@
 
     <select
       [value]="filtroPrioridad()"
-      (change)="
-        filtroPrioridad.set(
-          $any($event.target).value
-        )
-      "
+      (change)="cambiarFiltroPrioridad($any($event.target).value)"
     >
 
       <option value="Todas">
@@ -262,11 +271,7 @@
 
     <select
       [value]="filtroCategoria()"
-      (change)="
-        filtroCategoria.set(
-          $any($event.target).value
-        )
-      "
+      (change)="cambiarFiltroCategoria($any($event.target).value)"
     >
 
       <option value="Todas">
@@ -298,11 +303,7 @@
 
     <select
       [value]="filtroEspecie()"
-      (change)="
-        filtroEspecie.set(
-          $any($event.target).value
-        )
-      "
+      (change)="cambiarFiltroEspecie($any($event.target).value)"
     >
 
       <option value="Todas">
@@ -343,7 +344,7 @@
         </h2>
 
         <span>
-          {{ procedimientosFiltrados().length }}
+          {{ total() }}
           registros encontrados
         </span>
 
@@ -352,229 +353,255 @@
     </div>
 
 
-    <div class="table-wrapper">
+    @if (cargando()) {
+      <p class="proc-cargando">Cargando procedimientos…</p>
+    } @else {
 
-      <table>
+      <div class="table-wrapper">
 
-        <thead>
+        <table>
 
-          <tr>
-
-            <th>Paciente</th>
-            <th>Procedimiento</th>
-            <th>Fecha / Hora</th>
-            <th>Veterinario</th>
-            <th>Sala</th>
-            <th>Prioridad</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-
-          </tr>
-
-        </thead>
-
-
-        <tbody>
-
-          @for (
-            item of procedimientosFiltrados();
-            track item.id
-          ) {
+          <thead>
 
             <tr>
 
-              <!-- PACIENTE -->
-              <td>
+              <th>Paciente</th>
+              <th>Procedimiento</th>
+              <th>Fecha / Hora</th>
+              <th>Veterinario</th>
+              <th>Sala</th>
+              <th>Prioridad</th>
+              <th>Estado</th>
+              <th>Acciones</th>
 
-                <div class="patient-cell">
+            </tr>
 
-                  <div class="patient-avatar">
-                    {{ item.paciente.charAt(0) }}
+          </thead>
+
+
+          <tbody>
+
+            @for (
+              item of procedimientos();
+              track item.id
+            ) {
+
+              <tr>
+
+                <!-- PACIENTE -->
+                <td>
+
+                  <div class="patient-cell">
+
+                    <div class="patient-avatar">
+                      {{ (item.paciente?.nombre || '?').charAt(0) }}
+                    </div>
+
+                    <div>
+
+                      <strong>
+                        {{ item.paciente?.nombre || '-' }}
+                      </strong>
+
+                      <small>
+                        {{ item.paciente?.especie || '' }}
+                        @if (item.paciente?.raza) {
+                          · {{ item.paciente!.raza }}
+                        }
+                      </small>
+
+                      <small>
+                        {{ item.propietario?.nombre || '-' }}
+                      </small>
+
+                    </div>
+
                   </div>
 
-                  <div>
+                </td>
+
+
+                <!-- PROCEDIMIENTO -->
+                <td>
+
+                  <div class="procedure-cell">
 
                     <strong>
-                      {{ item.paciente }}
+                      {{ item.procedimiento }}
                     </strong>
 
                     <small>
-                      {{ item.especie }}
-                      ·
-                      {{ item.raza }}
-                    </small>
-
-                    <small>
-                      {{ item.propietario }}
+                      {{ item.categoria }}
+                      @if (item.diagnostico) {
+                        · {{ item.diagnostico }}
+                      }
                     </small>
 
                   </div>
 
-                </div>
-
-              </td>
+                </td>
 
 
-              <!-- PROCEDIMIENTO -->
-              <td>
+                <!-- FECHA -->
+                <td>
 
-                <div class="procedure-cell">
+                  <div class="date-cell">
 
-                  <strong>
-                    {{ item.procedimiento }}
-                  </strong>
+                    <strong>
+                      {{ formatearFecha(item.fecha) }}
+                    </strong>
 
-                  <small>
-                    {{ item.categoria }}
-                    ·
-                    {{ item.diagnostico }}
-                  </small>
+                    <small>
+                      {{ item.hora }}
+                      @if (item.duracion) {
+                        · {{ item.duracion }}
+                      }
+                    </small>
 
-                </div>
+                  </div>
 
-              </td>
-
-
-              <!-- FECHA -->
-              <td>
-
-                <div class="date-cell">
-
-                  <strong>
-                    {{ formatearFecha(item.fecha) }}
-                  </strong>
-
-                  <small>
-                    {{ item.hora }}
-                    ·
-                    {{ item.duracion }}
-                  </small>
-
-                </div>
-
-              </td>
+                </td>
 
 
-              <!-- VETERINARIO -->
-              <td>
-                {{ item.veterinario }}
-              </td>
+                <!-- VETERINARIO -->
+                <td>
+                  {{ item.veterinario_nombre }}
+                </td>
 
 
-              <!-- SALA -->
-              <td>
+                <!-- SALA -->
+                <td>
 
-                <span class="room-badge">
-                  🏥 {{ item.sala }}
-                </span>
+                  <span class="room-badge">
+                    <span class="material-symbols-rounded">local_hospital</span> {{ item.sala }}
+                  </span>
 
-              </td>
-
-
-              <!-- PRIORIDAD -->
-              <td>
-
-                <span
-                  class="priority-badge"
-                  [ngClass]="
-                    obtenerClasePrioridad(
-                      item.prioridad
-                    )
-                  "
-                >
-                  {{ item.prioridad }}
-                </span>
-
-              </td>
+                </td>
 
 
-              <!-- ESTADO -->
-              <td>
+                <!-- PRIORIDAD -->
+                <td>
 
-                <span
-                  class="status-badge"
-                  [ngClass]="
-                    obtenerClaseEstado(
-                      item.estado
-                    )
-                  "
-                >
-                  {{ item.estado }}
-                </span>
-
-              </td>
-
-
-              <!-- ACCIONES -->
-              <td>
-
-                <div class="actions">
-
-                  <button
-                    type="button"
-                    class="action-view"
-                    (click)="abrirDetalle(item)"
+                  <span
+                    class="priority-badge"
+                    [ngClass]="
+                      obtenerClasePrioridad(
+                        item.prioridad
+                      )
+                    "
                   >
-                    Ver
-                  </button>
+                    {{ item.prioridad }}
+                  </span>
 
-                  <button
+                </td>
+
+
+                <!-- ESTADO -->
+                <td>
+
+                  <span
+                    class="status-badge"
+                    [ngClass]="
+                      obtenerClaseEstado(
+                        item.estado
+                      )
+                    "
+                  >
+                    {{ item.estado }}
+                  </span>
+
+                </td>
+
+
+                <!-- ACCIONES -->
+                <td>
+
+                  <div class="actions">
+
+                    <button
+                      type="button"
+                      class="action-view"
+                      (click)="abrirDetalle(item)"
+                    >
+                      Ver
+                    </button>
+
+                    <button
  appPermiso="procedimientos.editar"                    type="button"
-                    class="action-edit"
-                    (click)="editarProcedimiento(item)"
-                  >
-                    Editar
-                  </button>
+                      class="action-edit"
+                      (click)="editarProcedimiento(item)"
+                    >
+                      Editar
+                    </button>
 
-                </div>
+                  </div>
 
-              </td>
+                </td>
 
-            </tr>
+              </tr>
 
-          }
+            }
 
 
-          @if (
-            procedimientosFiltrados().length === 0
-          ) {
+            @if (procedimientos().length === 0) {
 
-            <tr>
+              <tr>
 
-              <td
-                colspan="8"
-                class="empty-state"
-              >
+                <td
+                  colspan="8"
+                  class="empty-state"
+                >
 
-                <div>
+                  <div>
 
-                  <span>🔎</span>
+                    <span class="material-symbols-rounded">search</span>
 
-                  <strong>
-                    No encontramos procedimientos
-                  </strong>
+                    <strong>
+                      No encontramos procedimientos
+                    </strong>
 
-                  <p>
-                    Intenta cambiar los filtros de búsqueda.
-                  </p>
+                    <p>
+                      Intenta cambiar los filtros de búsqueda.
+                    </p>
 
-                </div>
+                  </div>
 
-              </td>
+                </td>
 
-            </tr>
+              </tr>
 
-          }
+            }
 
-        </tbody>
+          </tbody>
 
-      </table>
+        </table>
 
-    </div>
+      </div>
+
+      <!-- PAGINACIÓN -->
+      @if (totalPaginas() > 1) {
+        <div class="proc-paginacion">
+          <span>Página {{ paginaActual() }} de {{ totalPaginas() }}</span>
+          <div>
+            <button type="button" class="btn-secondary" [disabled]="paginaActual() <= 1" (click)="irAPagina(paginaActual() - 1)">Anterior</button>
+            <button type="button" class="btn-secondary" [disabled]="paginaActual() >= totalPaginas()" (click)="irAPagina(paginaActual() + 1)">Siguiente</button>
+          </div>
+        </div>
+      }
+
+    }
 
   </section>
 
 </div>
+
+
+<!-- MENSAJE FLOTANTE -->
+@if (mensaje()) {
+  <div class="proc-toast" [ngClass]="tipoMensaje()">
+    {{ mensaje() }}
+  </div>
+}
 
 
 <!-- ====================================================== -->
@@ -603,7 +630,7 @@
         <div class="patient-header">
 
           <div class="patient-avatar large">
-            {{ procedimientoSeleccionado()!.paciente.charAt(0) }}
+            {{ (procedimientoSeleccionado()!.paciente?.nombre || '?').charAt(0) }}
           </div>
 
           <div>
@@ -629,22 +656,27 @@
 
             <p>
               Paciente:
-              {{ procedimientoSeleccionado()!.paciente }}
-              ·
-              {{ procedimientoSeleccionado()!.especie }}
-              ·
-              {{ procedimientoSeleccionado()!.raza }}
+              {{ procedimientoSeleccionado()!.paciente?.nombre || '-' }}
+              @if (procedimientoSeleccionado()!.paciente?.especie) {
+                · {{ procedimientoSeleccionado()!.paciente!.especie }}
+              }
+              @if (procedimientoSeleccionado()!.paciente?.raza) {
+                · {{ procedimientoSeleccionado()!.paciente!.raza }}
+              }
             </p>
 
             <small>
               Propietario:
-              {{ procedimientoSeleccionado()!.propietario }}
+              {{ procedimientoSeleccionado()!.propietario?.nombre || '-' }}
             </small>
 
           </div>
 
         </div>
 
+        @if (esVistaSuperUsuario() && procedimientoSeleccionado()!.empresa_nombre) {
+          <span class="proc-empresa-tag">{{ procedimientoSeleccionado()!.empresa_nombre }}</span>
+        }
 
         <button
           type="button"
@@ -769,7 +801,7 @@
             </span>
 
             <strong>
-              {{ procedimientoSeleccionado()!.veterinario }}
+              {{ procedimientoSeleccionado()!.veterinario_nombre }}
             </strong>
 
           </div>
@@ -870,77 +902,86 @@
 
         </div>
 
+        @if (procedimientoActivo()) {
 
-        <div class="state-actions">
+          <div class="state-actions">
 
-          <button
+            <button
  appPermiso="procedimientos.editar"            type="button"
-            [class.active]="
-              procedimientoSeleccionado()!.estado ===
-              'Programado'
-            "
-            (click)="
-              cambiarEstado(
-                procedimientoSeleccionado()!,
+              [class.active]="
+                procedimientoSeleccionado()!.estado ===
                 'Programado'
-              )
-            "
-          >
-            📅 Programado
-          </button>
+              "
+              (click)="
+                cambiarEstado(
+                  procedimientoSeleccionado()!,
+                  'Programado'
+                )
+              "
+            >
+              <span class="material-symbols-rounded">event</span> Programado
+            </button>
 
 
-          <button
+            <button
  appPermiso="procedimientos.editar"            type="button"
-            [class.active]="
-              procedimientoSeleccionado()!.estado ===
-              'En proceso'
-            "
-            (click)="
-              cambiarEstado(
-                procedimientoSeleccionado()!,
+              [class.active]="
+                procedimientoSeleccionado()!.estado ===
                 'En proceso'
-              )
-            "
-          >
-            ⚙️ En proceso
-          </button>
+              "
+              (click)="
+                cambiarEstado(
+                  procedimientoSeleccionado()!,
+                  'En proceso'
+                )
+              "
+            >
+              <span class="material-symbols-rounded">settings</span> En proceso
+            </button>
 
 
-          <button
- appPermiso="procedimientos.editar"            type="button"
-            [class.active]="
-              procedimientoSeleccionado()!.estado ===
-              'Completado'
-            "
-            (click)="
-              cambiarEstado(
-                procedimientoSeleccionado()!,
+            <button
+ appPermiso="procedimientos.finalizar"            type="button"
+              [class.active]="
+                procedimientoSeleccionado()!.estado ===
                 'Completado'
-              )
-            "
-          >
-            ✓ Completado
-          </button>
+              "
+              (click)="
+                cambiarEstado(
+                  procedimientoSeleccionado()!,
+                  'Completado'
+                )
+              "
+            >
+              <span class="material-symbols-rounded">check_circle</span> Completado
+            </button>
 
 
-          <button
- appPermiso="procedimientos.editar"            type="button"
-            [class.active]="
-              procedimientoSeleccionado()!.estado ===
-              'Cancelado'
-            "
-            (click)="
-              cambiarEstado(
-                procedimientoSeleccionado()!,
+            <button
+ appPermiso="procedimientos.finalizar"            type="button"
+              [class.active]="
+                procedimientoSeleccionado()!.estado ===
                 'Cancelado'
-              )
-            "
-          >
-            × Cancelado
-          </button>
+              "
+              (click)="
+                cambiarEstado(
+                  procedimientoSeleccionado()!,
+                  'Cancelado'
+                )
+              "
+            >
+              × Cancelado
+            </button>
 
-        </div>
+          </div>
+
+        } @else {
+
+          <p class="proc-cerrado-aviso">
+            Este procedimiento está cerrado y ya no puede modificarse.
+          </p>
+
+        }
 
       </section>
 
@@ -966,7 +1007,7 @@
 
 
           <button
- appPermiso="procedimientos.crear"            type="button"
+ appPermiso="procedimientos.editar"            type="button"
             class="btn-primary"
             (click)="abrirNuevaNota()"
           >
@@ -1021,7 +1062,7 @@
 
           <div class="section-empty">
 
-            <span>📝</span>
+            <span class="material-symbols-rounded">edit_note</span>
 
             <strong>
               No hay notas registradas
@@ -1042,19 +1083,6 @@
 
       <div class="modal-footer">
 
-        <button
-          type="button"
-          class="btn-danger-outline"
-          (click)="
-            eliminarProcedimiento(
-              procedimientoSeleccionado()!
-            )
-          "
-        >
-          Eliminar
-        </button>
-
-
         <div class="footer-right">
 
           <button
@@ -1065,17 +1093,19 @@
             Cerrar
           </button>
 
-          <button
+          @if (procedimientoActivo()) {
+            <button
  appPermiso="procedimientos.editar"            type="button"
-            class="btn-primary"
-            (click)="
-              editarProcedimiento(
-                procedimientoSeleccionado()!
-              )
-            "
-          >
-            Editar procedimiento
-          </button>
+              class="btn-primary"
+              (click)="
+                editarProcedimiento(
+                  procedimientoSeleccionado()!
+                )
+              "
+            >
+              Editar procedimiento
+            </button>
+          }
 
         </div>
 
@@ -1144,102 +1174,49 @@
             Paciente *
           </label>
 
-          <input
-            type="text"
-            [value]="formulario().paciente"
-            (input)="
-              actualizarFormulario(
-                'paciente',
-                $any($event.target).value
-              )
-            "
-            placeholder="Nombre del paciente"
-          />
+          @if (pacienteSeleccionado(); as pac) {
+            <div class="paciente-chip">
+              <span class="material-symbols-rounded">pets</span>
+              <span>{{ pac.nombre }}{{ pac.especie ? ' · ' + pac.especie : '' }}{{ pac.propietario ? ' · ' + pac.propietario : '' }}</span>
+              @if (!modoEdicion()) {
+                <button type="button" (click)="quitarPaciente()" aria-label="Quitar paciente">
+                  <span class="material-symbols-rounded">close</span>
+                </button>
+              }
+            </div>
+          } @else {
+            <app-buscador-paciente
+              [alcance]="alcanceFormulario()"
+              placeholder="Buscar paciente por nombre o propietario..."
+              (pacienteSeleccionado)="alSeleccionarPaciente($event)"
+            />
+          }
 
         </div>
 
 
-        <!-- PROPIETARIO -->
+        <!-- VETERINARIO -->
 
         <div class="form-group">
 
           <label>
-            Propietario *
-          </label>
-
-          <input
-            type="text"
-            [value]="formulario().propietario"
-            (input)="
-              actualizarFormulario(
-                'propietario',
-                $any($event.target).value
-              )
-            "
-            placeholder="Nombre del propietario"
-          />
-
-        </div>
-
-
-        <!-- ESPECIE -->
-
-        <div class="form-group">
-
-          <label>
-            Especie
+            Veterinario *
           </label>
 
           <select
-            [value]="formulario().especie"
+            [value]="formulario().veterinarioId"
             (change)="
               actualizarFormulario(
-                'especie',
+                'veterinarioId',
                 $any($event.target).value
               )
             "
           >
-
-            <option value="Canino">
-              Canino
-            </option>
-
-            <option value="Felino">
-              Felino
-            </option>
-
-            <option value="Ave">
-              Ave
-            </option>
-
-            <option value="Otro">
-              Otro
-            </option>
-
+            <option value="">Seleccionar veterinario…</option>
+            @for (v of profesionales(); track v.id) {
+              <option [value]="v.id">{{ v.nombre }}</option>
+            }
           </select>
-
-        </div>
-
-
-        <!-- RAZA -->
-
-        <div class="form-group">
-
-          <label>
-            Raza
-          </label>
-
-          <input
-            type="text"
-            [value]="formulario().raza"
-            (input)="
-              actualizarFormulario(
-                'raza',
-                $any($event.target).value
-              )
-            "
-            placeholder="Raza"
-          />
 
         </div>
 
@@ -1400,29 +1377,6 @@
         </div>
 
 
-        <!-- VETERINARIO -->
-
-        <div class="form-group">
-
-          <label>
-            Veterinario *
-          </label>
-
-          <input
-            type="text"
-            [value]="formulario().veterinario"
-            (input)="
-              actualizarFormulario(
-                'veterinario',
-                $any($event.target).value
-              )
-            "
-            placeholder="Veterinario responsable"
-          />
-
-        </div>
-
-
         <!-- SALA -->
 
         <div class="form-group">
@@ -1511,14 +1465,6 @@
               En proceso
             </option>
 
-            <option value="Completado">
-              Completado
-            </option>
-
-            <option value="Cancelado">
-              Cancelado
-            </option>
-
           </select>
 
         </div>
@@ -1571,6 +1517,11 @@
 
       </div>
 
+      @if (errorFormulario()) {
+        <div class="proc-alert-error">
+          <span>{{ errorFormulario() }}</span>
+        </div>
+      }
 
       <div class="modal-footer">
 
@@ -1585,12 +1536,15 @@
         <button
  appPermiso="procedimientos.editar"          type="button"
           class="btn-primary"
+          [disabled]="guardando()"
           (click)="guardarProcedimiento()"
         >
           {{
-            modoEdicion()
-              ? 'Guardar cambios'
-              : 'Registrar procedimiento'
+            guardando()
+              ? 'Guardando…'
+              : modoEdicion()
+                ? 'Guardar cambios'
+                : 'Registrar procedimiento'
           }}
         </button>
 
@@ -1628,7 +1582,7 @@
           </h2>
 
           <p>
-            {{ procedimientoSeleccionado()?.paciente }}
+            {{ procedimientoSeleccionado()?.paciente?.nombre }}
           </p>
 
         </div>
@@ -1668,6 +1622,11 @@
 
       </div>
 
+      @if (errorNota()) {
+        <div class="proc-alert-error">
+          <span>{{ errorNota() }}</span>
+        </div>
+      }
 
       <div class="modal-footer">
 
@@ -1682,9 +1641,10 @@
         <button
  appPermiso="procedimientos.editar"          type="button"
           class="btn-primary"
+          [disabled]="guardando()"
           (click)="guardarNota()"
         >
-          Guardar nota
+          {{ guardando() ? 'Guardando…' : 'Guardar nota' }}
         </button>
 
       </div>

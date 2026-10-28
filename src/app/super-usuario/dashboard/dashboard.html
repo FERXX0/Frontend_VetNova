@@ -225,15 +225,8 @@
         <div class="panel-card__header">
 
           <h3>
-            Reportes
+            Empresas nuevas por mes
           </h3>
-
-          <button
-            type="button"
-            aria-label="Más opciones"
-          >
-            ⋯
-          </button>
 
         </div>
 
@@ -243,7 +236,7 @@
           <div class="line-chart__grid">
 
             @for (
-              linea of [100, 80, 60, 40, 20, 0];
+              linea of escalaReporte();
               track linea
             ) {
 
@@ -279,7 +272,7 @@
           @if (!hayDatosReporte()) {
 
             <div class="line-chart__empty">
-              Aún no hay datos de reportes
+              Aún no hay empresas registradas en estos meses
             </div>
 
           }
@@ -291,11 +284,11 @@
 
           @for (
             label of reporteLabels();
-            track label.hora
+            track $index
           ) {
 
             <span>
-              {{ label.hora }}
+              {{ label.etiqueta }}
             </span>
 
           }

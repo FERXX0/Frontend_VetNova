@@ -25,7 +25,7 @@ interface StatCard {
 }
 
 interface ReporteLabel {
-  hora: string;
+  etiqueta: string;
 }
 
 @Component({
@@ -144,22 +144,19 @@ export class DashboardComponent implements OnInit {
     0,
     0,
     0,
-    0,
     0
   ]);
 
   reporteLabels = signal<ReporteLabel[]>([
-    { hora: '10am' },
-    { hora: '11am' },
-    { hora: '12pm' },
-    { hora: '01pm' },
-    { hora: '02pm' },
-    { hora: '03pm' },
-    { hora: '04pm' },
-    { hora: '05pm' },
-    { hora: '06pm' },
-    { hora: '07pm' }
+    { etiqueta: '' },
+    { etiqueta: '' },
+    { etiqueta: '' },
+    { etiqueta: '' },
+    { etiqueta: '' },
+    { etiqueta: '' }
   ]);
+
+  escalaReporte = signal<number[]>([5, 4, 3, 2, 1, 0]);
 
   // =========================================================
   // INICIO
@@ -195,6 +192,16 @@ export class DashboardComponent implements OnInit {
 
         const nuevasEmpresas =
           res.empresas?.nuevas_este_mes ?? 0;
+
+        const serie = res.empresas?.por_mes ?? [];
+        const valores = serie.map((p) => p.total);
+        const maximo = Math.max(0, ...valores);
+        const tope = Math.max(5, Math.ceil(maximo / 5) * 5);
+
+        this.puntosReporte.set(valores);
+        this.reporteLabels.set(serie.map((p) => ({ etiqueta: this.etiquetaMes(p.mes) })));
+        this.escalaReporte.set([0, 1, 2, 3, 4, 5].map((n) => tope - (tope / 5) * n));
+        this.hayDatosReporte.set(maximo > 0);
 
         // -----------------------------------------------------
         // USUARIOS
@@ -437,7 +444,7 @@ export class DashboardComponent implements OnInit {
     }
 
     const max =
-      Math.max(...datos, 100);
+      this.escalaReporte()[0];
 
     const pasoX =
       ancho / (datos.length - 1);
@@ -461,6 +468,12 @@ export class DashboardComponent implements OnInit {
   // =========================================================
   // FECHA
   // =========================================================
+
+  private etiquetaMes(mes: string): string {
+    const [anio, numero] = mes.split('-').map(Number);
+    const texto = new Intl.DateTimeFormat('es-CO', { month: 'short' }).format(new Date(anio, numero - 1, 1));
+    return texto.replace('.', '');
+  }
 
   private formatearFecha(
     fecha: Date

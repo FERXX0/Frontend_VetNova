@@ -10,7 +10,6 @@ import { Paciente } from '../../core/models/paciente.model';
 import { EmpresaOpcion } from '../../core/models/empresa.model';
 import { EmpresaService } from '../../core/services/empresa.service';
 import { BuscadorPacienteComponent } from '../../shared/components/buscador-paciente/buscador-paciente';
-import { DispensacionFormulacionesComponent } from './dispensacion/dispensacion.component';
 import { RegistroPacienteFarmaciaComponent } from './registro-paciente/registro-paciente.component';
 import { SessionService } from '../../core/services/session.service';
 import { fechaHoyIso } from '../../core/utils/periodo-suscripcion';
@@ -18,7 +17,7 @@ import { fechaHoyIso } from '../../core/utils/periodo-suscripcion';
 @Component({
   selector: 'app-farmacia',
   standalone: true,
-  imports: [PermisoDirective, CommonModule, FormsModule, BuscadorPacienteComponent, DispensacionFormulacionesComponent, RegistroPacienteFarmaciaComponent],
+  imports: [PermisoDirective, CommonModule, FormsModule, BuscadorPacienteComponent, RegistroPacienteFarmaciaComponent],
   templateUrl: './farmacia.component.html',
   styleUrl: './farmacia.component.scss',
 })
@@ -29,7 +28,6 @@ export class FarmaciaComponent implements OnInit {
   private empresaService = inject(EmpresaService);
 
   readonly hoyIso = fechaHoyIso();
-  readonly pendientesDispensar = signal(0);
 
   readonly responsableActual = computed(() => this.session.usuario()?.nombre ?? '');
 
@@ -76,12 +74,8 @@ export class FarmaciaComponent implements OnInit {
   readonly formulario = signal<FormularioMedicamento>(this.formularioVacio());
   readonly formularioMovimiento = signal<FormularioMovimiento>(this.movimientoVacio());
 
-  readonly vista = signal<'inventario' | 'dispensacion' | 'registro'>(this.vistaInicial());
+  readonly vista = signal<'inventario' | 'registro'>('inventario');
   readonly pacienteMovimiento = signal<Paciente | null>(null);
-
-  private vistaInicial(): 'inventario' | 'dispensacion' | 'registro' {
-    return this.session.codigoRol() === 'farmacia' ? 'dispensacion' : 'inventario';
-  }
 
   readonly categorias = computed(() => {
     const backendCats = this.resumen()?.categorias ?? [];
@@ -111,7 +105,6 @@ export class FarmaciaComponent implements OnInit {
       this.cargarEmpresas();
     }
     this.cargarDatos();
-    this.cargarPendientes();
   }
 
   cargarEmpresas(): void {
@@ -126,22 +119,9 @@ export class FarmaciaComponent implements OnInit {
     this.paginaActual.set(1);
     this.filtroCategoria.set('Todas');
     this.cargarDatos();
-    this.cargarPendientes();
   }
 
-  cargarPendientes(): void {
-    this.farmaciaService
-      .obtenerFormulaciones(this.alcanceActual(), { dispensacion: 'pendientes', per_page: 1 })
-      .subscribe({
-        next: (resp) => this.pendientesDispensar.set(resp.total),
-        error: () => this.pendientesDispensar.set(0),
-      });
-  }
-
-  alDispensar(): void {
-    this.cargarDatos();
-    this.cargarPendientes();
-  }
+  
 
   actualizarBanderaMovimiento(valor: boolean): void {
     this.formularioMovimiento.update((actual) => ({
@@ -218,7 +198,7 @@ export class FarmaciaComponent implements OnInit {
     }
   }
 
-  cambiarVista(v: 'inventario' | 'dispensacion' | 'registro'): void {
+  cambiarVista(v: 'inventario' | 'registro'): void {
     this.vista.set(v);
   }
 

@@ -53,17 +53,7 @@
       <span class="material-symbols-rounded">inventory_2</span>
       Inventario
     </button>
-    <button
-      type="button"
-      [class.active]="vista() === 'dispensacion'"
-      (click)="cambiarVista('dispensacion')"
-    >
-      <span class="material-symbols-rounded">medication_liquid</span>
-      Dispensación
-      @if (pendientesDispensar() > 0) {
-        <span class="tab-contador">{{ pendientesDispensar() }}</span>
-      }
-    </button>
+
     <button
       type="button"
       [class.active]="vista() === 'registro'"
@@ -590,8 +580,7 @@
 
   </section>
 
-  } @else if (vista() === 'dispensacion') {
-    <app-farmacia-dispensacion [alcance]="alcanceActual()" (dispensado)="alDispensar()" />
+
   } @else if (vista() === 'registro') {
     <app-farmacia-registro-paciente [alcance]="alcanceActual()" />
   }

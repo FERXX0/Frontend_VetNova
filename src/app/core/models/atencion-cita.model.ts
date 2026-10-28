@@ -63,10 +63,17 @@ export interface HistorialAgendaItem {
   observaciones: string | null;
 }
 
+export interface DiagnosticoAnterior {
+  fecha: string | null;
+  principal_id: string;
+  diagnosticos: Array<{ id: string; label: string; description: string }>;
+}
+
 export interface AtencionCitaResponse {
   cita: Cita;
   tipo_formato: 'general' | 'vacunacion' | 'desparasitacion' | 'control' | 'cirugia' | 'urgencia' | 'estetica';
   atencion: unknown | null;
   historial_agenda: HistorialAgendaItem[];
   medicamentos: MedicamentoAtencion[];
+  diagnostico_anterior: DiagnosticoAnterior | null;
 }

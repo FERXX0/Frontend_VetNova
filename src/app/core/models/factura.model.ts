@@ -21,4 +21,5 @@ export interface Factura {
   total: number;
   observaciones?: string | null;
   detalles: FacturaDetalle[];
+  empresa?: { id: string; nombre: string } | null;
 }

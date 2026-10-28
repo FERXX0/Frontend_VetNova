@@ -29,6 +29,9 @@ export class LaboratorioService {
             estado?: string;
             prioridad?: string;
             categoria?: string;
+            paciente_id?: string;
+            desde?: string;
+            hasta?: string;
             page?: number;
             per_page?: number;
         },
@@ -39,6 +42,9 @@ export class LaboratorioService {
         if (params.estado) httpParams = httpParams.set('estado', params.estado);
         if (params.prioridad) httpParams = httpParams.set('prioridad', params.prioridad);
         if (params.categoria) httpParams = httpParams.set('categoria', params.categoria);
+        if (params.paciente_id) httpParams = httpParams.set('paciente_id', params.paciente_id);
+        if (params.desde) httpParams = httpParams.set('desde', params.desde);
+        if (params.hasta) httpParams = httpParams.set('hasta', params.hasta);
         if (params.page) httpParams = httpParams.set('page', params.page.toString());
         if (params.per_page) httpParams = httpParams.set('per_page', params.per_page.toString());
 
@@ -93,6 +99,19 @@ export class LaboratorioService {
         alcance?: AlcanceApi
     ): Observable<SolicitudLaboratorio> {
         return this.http.post<SolicitudLaboratorio>(`${this.url(alcance)}/${id}/notas`, payload);
+    }
+
+    actualizarResultado(
+        id: string,
+        resultadoId: string,
+        payload: ResultadoPayload,
+        alcance?: AlcanceApi
+    ): Observable<SolicitudLaboratorio> {
+        return this.http.put<SolicitudLaboratorio>(`${this.url(alcance)}/${id}/resultados/${resultadoId}`, payload);
+    }
+
+    eliminarResultado(id: string, resultadoId: string, alcance?: AlcanceApi): Observable<SolicitudLaboratorio> {
+        return this.http.delete<SolicitudLaboratorio>(`${this.url(alcance)}/${id}/resultados/${resultadoId}`);
     }
 
     eliminar(id: string, alcance?: AlcanceApi): Observable<void> {

@@ -465,6 +465,11 @@ td {
   gap: 0.25rem;
   padding: 0.2rem 0.65rem;
   border-radius: 999px;
+
+  .material-symbols-rounded {
+    font-size: 1.1em;
+    vertical-align: middle;
+  }
   background: var(--vn-surface, #f6f9fa);
   border: 1px solid var(--vn-border, #e5e9ec);
   color: var(--vn-text-dark, #1c2b36);
@@ -1001,6 +1006,142 @@ td {
 
     button {
       flex: 1;
+    }
+  }
+}
+
+.proc-empresa-selector {
+  margin-bottom: 1rem;
+
+  select {
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--vn-border, #e5e9ec);
+    border-radius: 0.5rem;
+    font-size: 0.88rem;
+    background: var(--vn-white, #ffffff);
+    color: var(--vn-text-dark, #1c2b36);
+  }
+}
+
+.proc-alert-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--vn-danger-bg, #fdeceb);
+  border: 1px solid rgba(224, 85, 79, 0.25);
+  border-radius: 0.75rem;
+  color: var(--vn-danger, #e0554f);
+  font-size: 0.88rem;
+  margin-bottom: 1rem;
+}
+
+.proc-cargando {
+  text-align: center;
+  padding: 2rem;
+  color: var(--vn-text-muted, #8a97a1);
+  font-size: 0.88rem;
+}
+
+.proc-paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  font-size: 0.85rem;
+  color: var(--vn-text-muted, #8a97a1);
+
+  div {
+    display: flex;
+    gap: 0.5rem;
+  }
+}
+
+.proc-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.65rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  z-index: 9999;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  &.success {
+    background: #ecfdf5;
+    color: #0e8f5f;
+    border: 1px solid rgba(14, 143, 95, 0.25);
+  }
+
+  &.error {
+    background: var(--vn-danger-bg, #fdeceb);
+    color: var(--vn-danger, #e0554f);
+    border: 1px solid rgba(224, 85, 79, 0.25);
+  }
+}
+
+.proc-empresa-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(26, 167, 160, 0.12);
+  color: var(--vn-teal-dark, #0e7c86);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.proc-cerrado-aviso {
+  font-size: 0.88rem;
+  color: var(--vn-text-muted, #8a97a1);
+  font-style: italic;
+  padding: 0.5rem 0;
+}
+
+.state-actions {
+  .material-symbols-rounded {
+    font-size: 1.1em;
+    vertical-align: middle;
+  }
+}
+
+.paciente-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.75rem;
+  background: rgba(26, 167, 160, 0.1);
+  border: 1.5px solid rgba(26, 167, 160, 0.35);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--vn-teal-dark, #0e7c86);
+
+  > .material-symbols-rounded {
+    font-size: 1rem;
+  }
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.3rem;
+    height: 1.3rem;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--vn-teal-dark, #0e7c86);
+    cursor: pointer;
+    padding: 0;
+
+    .material-symbols-rounded {
+      font-size: 0.9rem;
+    }
+
+    &:hover {
+      background: rgba(26, 167, 160, 0.18);
     }
   }
 }

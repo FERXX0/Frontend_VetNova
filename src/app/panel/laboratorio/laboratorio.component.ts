@@ -5,7 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 import { LaboratorioService } from '../../core/services/laboratorio.service';
-import { PacienteService } from '../../core/services/paciente.service';
+import { BuscadorPacienteComponent } from '../../shared/components/buscador-paciente/buscador-paciente';
+import { Paciente } from '../../core/models/paciente.model';
 import { EmpresaService } from '../../core/services/empresa.service';
 import { SessionService } from '../../core/services/session.service';
 import { EmpresaOpcion } from '../../core/models/empresa.model';
@@ -15,6 +16,7 @@ import {
   EstadoSolicitud,
   PrioridadSolicitud,
   ResumenLaboratorio,
+  ResultadoLaboratorio,
   SolicitudLaboratorio,
   SolicitudPayload,
 } from '../../core/models/laboratorio.model';
@@ -53,13 +55,12 @@ interface FormularioResultado {
 @Component({
   selector: 'app-laboratorio',
   standalone: true,
-  imports: [PermisoDirective, CommonModule, FormsModule],
+  imports: [PermisoDirective, CommonModule, FormsModule, BuscadorPacienteComponent],
   templateUrl: './laboratorio.component.html',
   styleUrl: './laboratorio.component.scss',
 })
 export class LaboratorioComponent implements OnInit {
   private readonly laboratorioService = inject(LaboratorioService);
-  private readonly pacienteService = inject(PacienteService);
   private readonly empresaService = inject(EmpresaService);
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
@@ -81,6 +82,9 @@ export class LaboratorioComponent implements OnInit {
   readonly filtroEstado = signal('Todos');
   readonly filtroPrioridad = signal('Todas');
   readonly filtroCategoria = signal('Todas');
+  readonly filtroDesde = signal('');
+  readonly filtroHasta = signal('');
+  readonly resultadoEditandoId = signal<string | null>(null);
 
   readonly modalDetalleAbierto = signal(false);
   readonly modalFormularioAbierto = signal(false);
@@ -93,7 +97,8 @@ export class LaboratorioComponent implements OnInit {
   readonly solicitudEditandoId = signal<string | null>(null);
   readonly empresaFormulario = signal<string | null>(null);
 
-  readonly pacientes = signal<OpcionPaciente[]>([]);
+  readonly pacienteSeleccionado = signal<OpcionPaciente | null>(null);
+  readonly alcanceFormulario = computed(() => this.alcanceEmpresa(this.empresaFormulario()));
   readonly profesionales = signal<Profesional[]>([]);
 
   readonly guardando = signal(false);
@@ -134,6 +139,11 @@ export class LaboratorioComponent implements OnInit {
   /** En la vista super-usuario solo se puede crear con una empresa elegida. */
   readonly puedeCrear = computed(() => !this.esVistaSuperUsuario() || !!this.filtroEmpresa());
 
+  readonly resultadosEditables = computed(() => {
+    const e = this.solicitudSeleccionada()?.estado;
+    return e !== 'Finalizado' && e !== 'Cancelado';
+  });
+
   ngOnInit(): void {
     if (this.esVistaSuperUsuario()) {
       this.empresaService.listarOpciones().subscribe({
@@ -163,6 +173,8 @@ export class LaboratorioComponent implements OnInit {
       estado: this.filtroEstado() === 'Todos' ? undefined : this.filtroEstado(),
       prioridad: this.filtroPrioridad() === 'Todas' ? undefined : this.filtroPrioridad(),
       categoria: this.filtroCategoria() === 'Todas' ? undefined : this.filtroCategoria(),
+      desde: this.filtroDesde() || undefined,
+      hasta: this.filtroHasta() || undefined,
       page: pagina,
       per_page: 15,
     };
@@ -235,8 +247,20 @@ export class LaboratorioComponent implements OnInit {
     this.filtroEstado.set('Todos');
     this.filtroPrioridad.set('Todas');
     this.filtroCategoria.set('Todas');
+    this.filtroDesde.set('');
+    this.filtroHasta.set('');
     this.filtroEmpresa.set('');
     this.recargarTodo(1);
+  }
+
+  cambiarFiltroDesde(valor: string): void {
+    this.filtroDesde.set(valor);
+    this.cargarSolicitudes(1);
+  }
+
+  cambiarFiltroHasta(valor: string): void {
+    this.filtroHasta.set(valor);
+    this.cargarSolicitudes(1);
   }
 
   // ---------------------------------------------------------------
@@ -295,25 +319,11 @@ export class LaboratorioComponent implements OnInit {
     const alcance = this.alcanceEmpresa(empresaId);
 
     forkJoin({
-      pacientes: this.pacienteService
-        .listar({ per_page: 100 }, alcance)
-        .pipe(catchError(() => of(null))),
       profesionales: this.laboratorioService
         .profesionales(alcance)
         .pipe(catchError(() => of([] as Profesional[]))),
-    }).subscribe(({ pacientes, profesionales }) => {
-      const opciones: OpcionPaciente[] = (pacientes?.data ?? []).map((p) => ({
-        id: p.id,
-        nombre: p.nombre,
-        especie: p.especie,
-        propietario: p.propietario?.nombre ?? '',
-      }));
-
-      if (pacienteActual && !opciones.some((o) => o.id === pacienteActual.id)) {
-        opciones.unshift(pacienteActual);
-      }
-
-      this.pacientes.set(opciones);
+    }).subscribe(({ profesionales }) => {
+      this.pacienteSeleccionado.set(pacienteActual);
       this.profesionales.set(profesionales);
       alTerminar(profesionales);
     });
@@ -383,6 +393,21 @@ export class LaboratorioComponent implements OnInit {
   cerrarFormulario(): void {
     this.modalFormularioAbierto.set(false);
     this.errorFormulario.set(null);
+  }
+
+  alSeleccionarPaciente(paciente: Paciente): void {
+    this.pacienteSeleccionado.set({
+      id: paciente.id,
+      nombre: paciente.nombre,
+      especie: paciente.especie,
+      propietario: paciente.propietario?.nombre ?? '',
+    });
+    this.actualizarFormulario('pacienteId', paciente.id);
+  }
+
+  quitarPaciente(): void {
+    this.pacienteSeleccionado.set(null);
+    this.actualizarFormulario('pacienteId', '');
   }
 
   actualizarFormulario(campo: keyof FormularioLaboratorio, valor: string): void {
@@ -520,6 +545,7 @@ export class LaboratorioComponent implements OnInit {
   // ---------------------------------------------------------------
 
   abrirNuevoResultado(): void {
+    this.resultadoEditandoId.set(null);
     this.formularioResultado.set({
       parametro: '',
       resultado: '',
@@ -531,9 +557,23 @@ export class LaboratorioComponent implements OnInit {
     this.modalResultadoAbierto.set(true);
   }
 
+  editarResultado(resultado: ResultadoLaboratorio): void {
+    this.resultadoEditandoId.set(resultado.id);
+    this.formularioResultado.set({
+      parametro: resultado.parametro,
+      resultado: resultado.resultado,
+      unidad: resultado.unidad || '',
+      referencia: resultado.referencia || '',
+      observacion: resultado.observacion || '',
+    });
+    this.errorResultado.set(null);
+    this.modalResultadoAbierto.set(true);
+  }
+
   cerrarResultado(): void {
     this.modalResultadoAbierto.set(false);
     this.errorResultado.set(null);
+    this.resultadoEditandoId.set(null);
   }
 
   actualizarResultado(campo: keyof FormularioResultado, valor: string): void {
@@ -543,6 +583,7 @@ export class LaboratorioComponent implements OnInit {
   guardarResultado(): void {
     const solicitud = this.solicitudSeleccionada();
     const f = this.formularioResultado();
+    const editandoId = this.resultadoEditandoId();
 
     if (!solicitud) return;
 
@@ -559,31 +600,52 @@ export class LaboratorioComponent implements OnInit {
     this.guardando.set(true);
     this.errorResultado.set(null);
 
+    const payload = {
+      parametro: f.parametro.trim(),
+      resultado: f.resultado.trim(),
+      unidad: f.unidad.trim() || null,
+      referencia: f.referencia.trim() || null,
+      observacion: f.observacion.trim() || null,
+    };
+
+    const peticion$ = editandoId
+      ? this.laboratorioService.actualizarResultado(solicitud.id, editandoId, payload, this.alcanceEmpresa(solicitud.empresa_id))
+      : this.laboratorioService.agregarResultado(solicitud.id, payload, this.alcanceEmpresa(solicitud.empresa_id));
+
+    const mensajeExito = editandoId ? 'Resultado actualizado correctamente.' : 'Resultado registrado correctamente.';
+
+    peticion$.subscribe({
+      next: (res) => {
+        this.guardando.set(false);
+        this.cerrarResultado();
+        this.reemplazarSolicitud(res);
+        this.cargarResumen();
+        this.mostrarMensaje(mensajeExito, 'success');
+      },
+      error: (err) => {
+        this.guardando.set(false);
+        this.errorResultado.set(
+          this.mensajeError(err, 'No se pudo guardar el resultado. Intenta de nuevo.')
+        );
+      },
+    });
+  }
+
+  eliminarResultado(resultado: ResultadoLaboratorio): void {
+    const solicitud = this.solicitudSeleccionada();
+    if (!solicitud) return;
+    if (!confirm('¿Deseas eliminar este resultado?')) return;
+
     this.laboratorioService
-      .agregarResultado(
-        solicitud.id,
-        {
-          parametro: f.parametro.trim(),
-          resultado: f.resultado.trim(),
-          unidad: f.unidad.trim() || null,
-          referencia: f.referencia.trim() || null,
-          observacion: f.observacion.trim() || null,
-        },
-        this.alcanceEmpresa(solicitud.empresa_id)
-      )
+      .eliminarResultado(solicitud.id, resultado.id, this.alcanceEmpresa(solicitud.empresa_id))
       .subscribe({
         next: (res) => {
-          this.guardando.set(false);
-          this.cerrarResultado();
           this.reemplazarSolicitud(res);
           this.cargarResumen();
-          this.mostrarMensaje('Resultado registrado correctamente.', 'success');
+          this.mostrarMensaje('Resultado eliminado correctamente.', 'success');
         },
         error: (err) => {
-          this.guardando.set(false);
-          this.errorResultado.set(
-            this.mensajeError(err, 'No se pudo registrar el resultado. Intenta de nuevo.')
-          );
+          this.mostrarMensaje(this.mensajeError(err, 'No se pudo eliminar el resultado.'), 'error');
         },
       });
   }

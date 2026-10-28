@@ -13,13 +13,24 @@ export interface RespuestaFacturas {
   total: number;
 }
 
+export interface FiltrosFacturas {
+  buscar?: string;
+  desde?: string;
+  hasta?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FacturacionService {
   private readonly http = inject(HttpClient);
 
-  listar(alcance?: AlcanceApi, page = 1): Observable<RespuestaFacturas> {
+  listar(alcance?: AlcanceApi, filtros: FiltrosFacturas = {}, page = 1): Observable<RespuestaFacturas> {
     const url = urlRecurso(environment.apiUrl, 'facturacion', alcance);
-    const params = new HttpParams().set('page', page.toString()).set('per_page', '15');
+    let params = new HttpParams().set('page', page.toString()).set('per_page', '15');
+
+    if (filtros.buscar) { params = params.set('buscar', filtros.buscar); }
+    if (filtros.desde) { params = params.set('desde', filtros.desde); }
+    if (filtros.hasta) { params = params.set('hasta', filtros.hasta); }
+
     return this.http.get<RespuestaFacturas>(url, { params });
   }
 

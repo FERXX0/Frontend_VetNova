@@ -8,7 +8,7 @@
     </div>
     <div class="header-text">
       <h1>Configuración Global</h1>
-      <p>Configura los parámetros generales de la plataforma VetNova</p>
+      <p>Registra empresas y asigna el plan de cada una.</p>
     </div>
   </div>
 </div>
@@ -47,63 +47,6 @@
     <button type="button" class="btn-primary" (click)="abrirModalPlan()">Asignar o cambiar plan</button>
   </div>
 
-  <!-- Parámetros del Sistema -->
-  <div class="card setting-card">
-    <div class="setting-header">
-      <div class="setting-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-          <line x1="8" y1="21" x2="16" y2="21"></line>
-          <line x1="12" y1="17" x2="12" y2="21"></line>
-        </svg>
-      </div>
-      <h3>Parámetros del Sistema</h3>
-    </div>
-    <p>Ajustes de dominio, reglas de seguridad, y parámetros core de la plataforma.</p>
-    <button class="btn-primary" disabled>Configurar</button>
-  </div>
-
-
-  <!-- Catálogo de Módulos -->
-  <div class="card setting-card">
-    <div class="setting-header">
-      <div class="setting-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="7" height="7"></rect>
-          <rect x="14" y="3" width="7" height="7"></rect>
-          <rect x="14" y="14" width="7" height="7"></rect>
-          <rect x="3" y="14" width="7" height="7"></rect>
-        </svg>
-      </div>
-      <h3>Catálogo de Módulos</h3>
-    </div>
-    <p>Activa o desactiva módulos globales, y gestiona complementos.</p>
-    <button class="btn-primary" disabled>Configurar</button>
-  </div>
-
-  <!-- Notificaciones -->
-  <div class="card setting-card">
-    <div class="setting-header">
-      <div class="setting-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-        </svg>
-      </div>
-      <h3>Notificaciones</h3>
-    </div>
-    <p>Configura las plantillas de email globales, SMS y canales de alerta.</p>
-    <button class="btn-primary" disabled>Configurar</button>
-  </div>
-</div>
-
-<div class="info-banner">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="10"></circle>
-    <line x1="12" y1="16" x2="12" y2="12"></line>
-    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-  </svg>
-  <span>Este módulo estará disponible cuando el backend exponga el endpoint GET /configuracion-global</span>
 </div>
 
 

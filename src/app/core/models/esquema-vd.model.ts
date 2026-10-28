@@ -20,6 +20,8 @@ export interface Vacuna {
   fecha_aplicacion: string;
   proxima_fecha: string;
   observaciones: string | null;
+  vigente?: boolean;
+  estado?: 'Vencida' | 'Próxima' | 'Al día' | 'Anterior';
   creado_en?: string;
   actualizado_en?: string;
 }
@@ -35,6 +37,8 @@ export interface Desparasitacion {
   fecha_aplicacion: string;
   proxima_fecha: string;
   observaciones: string | null;
+  vigente?: boolean;
+  estado?: 'Vencida' | 'Próxima' | 'Al día' | 'Anterior';
   creado_en?: string;
   actualizado_en?: string;
 }
@@ -50,6 +54,8 @@ export interface EsquemaPacienteFila {
   propietario: PropietarioResumen | null;
   ultima_vacuna: string | null;
   proxima_vacuna: string | null;
+  ultima_desparasitacion: string | null;
+  proxima_desparasitacion: string | null;
   total_vacunas: number;
   total_desparasitaciones: number;
   estado: EstadoEsquemaVD;

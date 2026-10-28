@@ -418,6 +418,11 @@ td {
   padding: 6px 8px;
   font-size: 11px;
   color: var(--vn-text-muted, #8a97a1);
+
+  .material-symbols-rounded {
+    font-size: 1.1em;
+    vertical-align: middle;
+  }
 }
 
 .priority-badge {
@@ -969,4 +974,157 @@ td {
     }
   }
 
+}
+
+/* ==========================================================
+   REGLAS COPIADAS DE LABORATORIO (empresa, error, toast, paginación)
+   ========================================================== */
+
+.toast {
+  min-height: 46px;
+  margin-bottom: 20px;
+  padding: 0 15px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.toast--success {
+  color: #0e8f5f;
+  background: rgba(79, 214, 168, 0.16);
+  border: 1px solid rgba(79, 214, 168, 0.4);
+}
+
+.toast--error {
+  color: var(--vn-danger, #e0554f);
+  background: var(--vn-danger-bg, #fdeceb);
+  border: 1px solid rgba(224, 85, 79, 0.35);
+}
+
+.alert-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  background: var(--vn-danger-bg, #fdeceb);
+  border: 1px solid rgba(224, 85, 79, 0.35);
+  color: var(--vn-danger, #e0554f);
+  font-size: 13px;
+  font-weight: 600;
+
+  button {
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+}
+
+.empresa-tag {
+  display: inline-block;
+  font-size: 10px;
+  color: var(--vn-teal-dark, #0e7c86);
+  background: rgba(26, 167, 160, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+.error-texto {
+  font-size: 11px;
+  color: var(--vn-danger, #e0554f);
+  margin-top: 4px;
+  display: block;
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid var(--vn-border, #e5e9ec);
+  background: var(--vn-surface, #f6f9fa);
+}
+
+.paginacion-info {
+  font-size: 12px;
+  color: var(--vn-text-muted, #8a97a1);
+  font-weight: 600;
+}
+
+.btn-paginacion {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid var(--vn-border, #e5e9ec);
+  background: var(--vn-white, #fff);
+  color: var(--vn-text-dark, #1c2b36);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--vn-surface, #f6f9fa);
+    border-color: var(--vn-teal, #1aa7a0);
+    color: var(--vn-teal-dark, #0e7c86);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.paciente-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.75rem;
+  background: rgba(26, 167, 160, 0.1);
+  border: 1.5px solid rgba(26, 167, 160, 0.35);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--vn-teal-dark, #0e7c86);
+
+  > .material-symbols-rounded {
+    font-size: 1rem;
+  }
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.3rem;
+    height: 1.3rem;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--vn-teal-dark, #0e7c86);
+    cursor: pointer;
+    padding: 0;
+
+    .material-symbols-rounded {
+      font-size: 0.9rem;
+    }
+
+    &:hover {
+      background: rgba(26, 167, 160, 0.18);
+    }
+  }
 }

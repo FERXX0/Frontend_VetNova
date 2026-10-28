@@ -238,13 +238,18 @@ export class EsquemaVDComponent {
     this.modalPacienteAbierto.set(true);
 
     const alcance = this.alcancePaciente(paciente.empresa_id);
+    this.esquemaVDService.profesionales(alcance).subscribe({
+      next: (lista) => this.profesionales.set(lista),
+      error: () => this.profesionales.set([]),
+    });
+
     this.esquemaVDService.obtener(paciente.id, alcance).subscribe({
       next: (detalle) => {
         this.pacienteSeleccionado.set(detalle);
         this.cargandoDetalle.set(false);
       },
       error: (err) => {
-        this.mostrarToast(err.error?.message || 'Error al cargar el esquema del paciente.', 'error');
+        this.mostrarToast(this.mensajeError(err, 'Error al cargar el esquema del paciente.'), 'error');
         this.modalPacienteAbierto.set(false);
         this.cargandoDetalle.set(false);
       },
@@ -362,7 +367,7 @@ export class EsquemaVDComponent {
         },
         error: (err) => {
           this.guardando.set(false);
-          this.errorFormulario.set(err.error?.message || 'Error al guardar la vacuna.');
+          this.errorFormulario.set(this.mensajeError(err, 'Error al guardar la vacuna.'));
         },
       });
     } else {
@@ -388,7 +393,7 @@ export class EsquemaVDComponent {
         },
         error: (err) => {
           this.guardando.set(false);
-          this.errorFormulario.set(err.error?.message || 'Error al guardar la desparasitación.');
+          this.errorFormulario.set(this.mensajeError(err, 'Error al guardar la desparasitación.'));
         },
       });
     }
@@ -407,7 +412,7 @@ export class EsquemaVDComponent {
         this.recargarTodo(paciente.id);
       },
       error: (err) => {
-        this.mostrarToast(err.error?.message || 'Error al eliminar la vacuna.', 'error');
+        this.mostrarToast(this.mensajeError(err, 'Error al eliminar la vacuna.'), 'error');
       },
     });
   }
@@ -425,7 +430,7 @@ export class EsquemaVDComponent {
         this.recargarTodo(paciente.id);
       },
       error: (err) => {
-        this.mostrarToast(err.error?.message || 'Error al eliminar la desparasitación.', 'error');
+        this.mostrarToast(this.mensajeError(err, 'Error al eliminar la desparasitación.'), 'error');
       },
     });
   }
@@ -440,12 +445,17 @@ export class EsquemaVDComponent {
     });
   }
 
+  private mensajeError(err: any, porDefecto: string): string {
+    const errores = err?.error?.errors;
+    if (errores && typeof errores === 'object') {
+      const primero = Object.values(errores)[0];
+      if (Array.isArray(primero) && primero.length > 0) return String(primero[0]);
+    }
+    return err?.error?.message || porDefecto;
+  }
+
   obtenerClaseEstado(estado: string): string {
-    return (estado || '')
-      .toLowerCase()
-      .replace(/ /g, '-')
-      .replace(/í/g, 'i')
-      .replace(/á/g, 'a');
+    return (estado || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/ /g, '-');
   }
 
   formatearFecha(fecha: string | null): string {

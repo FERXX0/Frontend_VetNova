@@ -19,6 +19,7 @@ import { RouterLink } from '@angular/router';
 import { SessionService } from '../../core/services/session.service';
 import { CitaService } from '../../core/services/cita.service';
 import { PacienteService } from '../../core/services/paciente.service';
+import { fechaHoyIso } from '../../core/utils/periodo-suscripcion';
 
 registerLocaleData(localeEs);
 
@@ -120,7 +121,7 @@ export class PanelDashboardComponent implements OnInit {
       ) || today.toDateString()
     );
 
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = fechaHoyIso();
 
     const tieneCitas = this.tieneModulo('citas');
     const tienePacientes = this.tieneModulo('clientes_pacientes');

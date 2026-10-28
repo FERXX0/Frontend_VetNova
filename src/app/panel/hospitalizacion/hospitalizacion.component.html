@@ -16,8 +16,11 @@
     </div>
 
     <button
- appPermiso="hospitalizacion.ingresar"      type="button"
+      appPermiso="hospitalizacion.ingresar"
+      type="button"
       class="btn-primary"
+      [disabled]="!puedeCrear()"
+      [title]="puedeCrear() ? '' : 'Selecciona una empresa para registrar el ingreso'"
       (click)="abrirNuevaHospitalizacion()"
     >
       + Nueva hospitalización
@@ -25,6 +28,16 @@
 
   </header>
 
+  <!-- MENSAJE -->
+  @if (mensaje()) {
+    <div
+      class="toast"
+      [class.toast--success]="tipoMensaje() === 'success'"
+      [class.toast--error]="tipoMensaje() === 'error'"
+    >
+      <span>{{ mensaje() }}</span>
+    </div>
+  }
 
   <!-- ESTADÍSTICAS -->
   <section class="stats-grid">
@@ -32,7 +45,7 @@
     <div class="stat-card">
 
       <div class="stat-icon hospitalizados">
-        🏥
+        <span class="material-symbols-rounded">local_hospital</span>
       </div>
 
       <div>
@@ -46,7 +59,7 @@
     <div class="stat-card">
 
       <div class="stat-icon observacion">
-        👁️
+        <span class="material-symbols-rounded">visibility</span>
       </div>
 
       <div>
@@ -60,7 +73,7 @@
     <div class="stat-card">
 
       <div class="stat-icon salida">
-        ✓
+        <span class="material-symbols-rounded">check_circle</span>
       </div>
 
       <div>
@@ -74,7 +87,7 @@
     <div class="stat-card">
 
       <div class="stat-icon critico">
-        ⚠️
+        <span class="material-symbols-rounded">warning</span>
       </div>
 
       <div>
@@ -181,15 +194,25 @@
         type="text"
         placeholder="Buscar paciente, propietario, diagnóstico..."
         [value]="busqueda()"
-        (input)="busqueda.set($any($event.target).value)"
+        (input)="cambiarBusqueda($any($event.target).value)"
       />
 
     </div>
 
+    @if (esVistaSuperUsuario()) {
+      <select [value]="filtroEmpresa()" (change)="onEmpresaChange($any($event.target).value)">
+        <option value="">Todas las empresas</option>
+        @for (empresa of empresasDisponibles(); track empresa.id) {
+          <option [value]="empresa.id" [selected]="empresa.id === filtroEmpresa()">
+            {{ empresa.nombre }}
+          </option>
+        }
+      </select>
+    }
 
     <select
       [value]="filtroEstado()"
-      (change)="filtroEstado.set($any($event.target).value)"
+      (change)="cambiarFiltroEstado($any($event.target).value)"
     >
 
       <option value="Todos">
@@ -217,7 +240,7 @@
 
     <select
       [value]="filtroPrioridad()"
-      (change)="filtroPrioridad.set($any($event.target).value)"
+      (change)="cambiarFiltroPrioridad($any($event.target).value)"
     >
 
       <option value="Todas">
@@ -245,7 +268,7 @@
 
     <select
       [value]="filtroEspecie()"
-      (change)="filtroEspecie.set($any($event.target).value)"
+      (change)="cambiarFiltroEspecie($any($event.target).value)"
     >
 
       <option value="Todas">
@@ -283,13 +306,19 @@
         <h2>Pacientes hospitalizados</h2>
 
         <span>
-          {{ hospitalizacionesFiltradas().length }}
+          {{ total() }}
           registros encontrados
         </span>
       </div>
 
     </div>
 
+    @if (error()) {
+      <div class="alert-error">
+        <span>{{ error() }}</span>
+        <button type="button" (click)="cargarHospitalizaciones(paginaActual())">Reintentar</button>
+      </div>
+    }
 
     <div class="table-wrapper">
 
@@ -315,181 +344,202 @@
 
         <tbody>
 
-          @for (
-            item of hospitalizacionesFiltradas();
-            track item.id
-          ) {
-
+          @if (cargando()) {
             <tr>
+              <td colspan="8" class="empty-state">
+                <div>
+                  <strong>Cargando hospitalizaciones...</strong>
+                </div>
+              </td>
+            </tr>
+          } @else {
 
-              <!-- PACIENTE -->
-              <td>
+            @for (
+              item of hospitalizaciones();
+              track item.id
+            ) {
 
-                <div class="patient-cell">
+              <tr>
 
-                  <div class="patient-avatar">
-                    {{ item.paciente.charAt(0) }}
+                <!-- PACIENTE -->
+                <td>
+
+                  <div class="patient-cell">
+
+                    <div class="patient-avatar">
+                      {{ item.paciente?.nombre?.charAt(0) || '?' }}
+                    </div>
+
+                    <div>
+
+                      <strong>
+                        {{ item.paciente?.nombre || '-' }}
+                      </strong>
+
+                      <small>
+                        {{ item.paciente?.especie || '-' }}
+                        ·
+                        {{ item.paciente?.raza || 'Sin raza' }}
+                      </small>
+
+                      <small>
+                        {{ item.propietario?.nombre || '-' }}
+                      </small>
+
+                      @if (esVistaSuperUsuario() && item.empresa_nombre) {
+                        <span class="empresa-tag">
+                          {{ item.empresa_nombre }}
+                        </span>
+                      }
+
+                    </div>
+
                   </div>
 
-                  <div>
+                </td>
+
+
+                <!-- MOTIVO -->
+                <td>
+
+                  <div class="diagnosis-cell">
 
                     <strong>
-                      {{ item.paciente }}
+                      {{ item.motivo }}
                     </strong>
 
                     <small>
-                      {{ item.especie }}
-                      ·
-                      {{ item.raza }}
-                    </small>
-
-                    <small>
-                      {{ item.propietario }}
+                      {{ item.diagnostico || '-' }}
                     </small>
 
                   </div>
 
-                </div>
-
-              </td>
+                </td>
 
 
-              <!-- MOTIVO -->
-              <td>
+                <!-- INGRESO -->
+                <td>
 
-                <div class="diagnosis-cell">
+                  <div class="date-cell">
 
-                  <strong>
-                    {{ item.motivo }}
-                  </strong>
+                    <strong>
+                      {{ formatearFecha(item.fecha_ingreso) }}
+                    </strong>
 
-                  <small>
-                    {{ item.diagnostico }}
-                  </small>
+                    <small>
+                      {{ item.hora_ingreso }}
+                    </small>
 
-                </div>
+                  </div>
 
-              </td>
-
-
-              <!-- INGRESO -->
-              <td>
-
-                <div class="date-cell">
-
-                  <strong>
-                    {{ formatearFecha(item.fechaIngreso) }}
-                  </strong>
-
-                  <small>
-                    {{ item.horaIngreso }}
-                  </small>
-
-                </div>
-
-              </td>
+                </td>
 
 
-              <!-- SALIDA -->
-              <td>
-                {{ formatearFecha(item.fechaSalidaEstimada) }}
-              </td>
+                <!-- SALIDA -->
+                <td>
+                  {{ formatearFecha(item.fecha_salida_estimada) }}
+                </td>
 
 
-              <!-- UBICACIÓN -->
-              <td>
+                <!-- UBICACIÓN -->
+                <td>
 
-                <span class="location-badge">
-                  🛏️ {{ item.ubicacion }}
-                </span>
+                  <span class="location-badge">
+                    <span class="material-symbols-rounded">bed</span> {{ item.ubicacion }}
+                  </span>
 
-              </td>
-
-
-              <!-- PRIORIDAD -->
-              <td>
-
-                <span
-                  class="priority-badge"
-                  [ngClass]="obtenerClasePrioridad(item.prioridad)"
-                >
-                  {{ item.prioridad }}
-                </span>
-
-              </td>
+                </td>
 
 
-              <!-- ESTADO -->
-              <td>
+                <!-- PRIORIDAD -->
+                <td>
 
-                <span
-                  class="status-badge"
-                  [ngClass]="obtenerClaseEstado(item.estado)"
-                >
-                  {{ item.estado }}
-                </span>
-
-              </td>
-
-
-              <!-- ACCIONES -->
-              <td>
-
-                <div class="actions">
-
-                  <button
-                    type="button"
-                    class="action-view"
-                    (click)="abrirDetalle(item)"
+                  <span
+                    class="priority-badge"
+                    [ngClass]="obtenerClasePrioridad(item.prioridad)"
                   >
-                    Ver
-                  </button>
+                    {{ item.prioridad }}
+                  </span>
 
-                  <button
- appPermiso="hospitalizacion.actualizar"                    type="button"
-                    class="action-edit"
-                    (click)="editarHospitalizacion(item)"
+                </td>
+
+
+                <!-- ESTADO -->
+                <td>
+
+                  <span
+                    class="status-badge"
+                    [ngClass]="obtenerClaseEstado(item.estado)"
                   >
-                    Editar
-                  </button>
+                    {{ item.estado }}
+                  </span>
 
-                </div>
-
-              </td>
-
-            </tr>
-
-          }
+                </td>
 
 
-          @if (
-            hospitalizacionesFiltradas().length === 0
-          ) {
+                <!-- ACCIONES -->
+                <td>
 
-            <tr>
+                  <div class="actions">
 
-              <td
-                colspan="8"
-                class="empty-state"
-              >
+                    <button
+                      type="button"
+                      class="action-view"
+                      (click)="abrirDetalle(item)"
+                    >
+                      Ver
+                    </button>
 
-                <div>
+                    @if (item.estado !== 'Finalizado') {
+                      <button
+                        appPermiso="hospitalizacion.actualizar"
+                        type="button"
+                        class="action-edit"
+                        (click)="editarHospitalizacion(item)"
+                      >
+                        Editar
+                      </button>
+                    }
 
-                  <span>🔎</span>
+                  </div>
 
-                  <strong>
-                    No encontramos hospitalizaciones
-                  </strong>
+                </td>
 
-                  <p>
-                    Intenta cambiar los filtros de búsqueda.
-                  </p>
+              </tr>
 
-                </div>
+            }
 
-              </td>
 
-            </tr>
+            @if (
+              hospitalizaciones().length === 0
+            ) {
+
+              <tr>
+
+                <td
+                  colspan="8"
+                  class="empty-state"
+                >
+
+                  <div>
+
+                    <span class="material-symbols-rounded">search</span>
+
+                    <strong>
+                      No encontramos hospitalizaciones
+                    </strong>
+
+                    <p>
+                      Intenta cambiar los filtros de búsqueda.
+                    </p>
+
+                  </div>
+
+                </td>
+
+              </tr>
+
+            }
 
           }
 
@@ -498,6 +548,32 @@
       </table>
 
     </div>
+
+    @if (totalPaginas() > 1) {
+      <div class="paginacion">
+        <button
+          type="button"
+          class="btn-paginacion"
+          [disabled]="paginaActual() <= 1"
+          (click)="irAPagina(paginaActual() - 1)"
+        >
+          ‹ Anterior
+        </button>
+
+        <span class="paginacion-info">
+          Página {{ paginaActual() }} de {{ totalPaginas() }} ({{ total() }} hospitalización(es))
+        </span>
+
+        <button
+          type="button"
+          class="btn-paginacion"
+          [disabled]="paginaActual() >= totalPaginas()"
+          (click)="irAPagina(paginaActual() + 1)"
+        >
+          Siguiente ›
+        </button>
+      </div>
+    }
 
   </section>
 
@@ -529,7 +605,7 @@
         <div class="patient-header">
 
           <div class="patient-avatar large">
-            {{ hospitalizacionSeleccionada()!.paciente.charAt(0) }}
+            {{ hospitalizacionSeleccionada()!.paciente?.nombre?.charAt(0) || '?' }}
           </div>
 
           <div>
@@ -537,7 +613,7 @@
             <div class="patient-title-row">
 
               <h2>
-                {{ hospitalizacionSeleccionada()!.paciente }}
+                {{ hospitalizacionSeleccionada()!.paciente?.nombre || '-' }}
               </h2>
 
               <span
@@ -554,16 +630,16 @@
             </div>
 
             <p>
-              {{ hospitalizacionSeleccionada()!.especie }}
+              {{ hospitalizacionSeleccionada()!.paciente?.especie || '-' }}
               ·
-              {{ hospitalizacionSeleccionada()!.raza }}
+              {{ hospitalizacionSeleccionada()!.paciente?.raza || 'Sin raza' }}
               ·
-              {{ hospitalizacionSeleccionada()!.edad }}
+              {{ hospitalizacionSeleccionada()!.paciente?.edad_estimada || '-' }}
             </p>
 
             <small>
               Propietario:
-              {{ hospitalizacionSeleccionada()!.propietario }}
+              {{ hospitalizacionSeleccionada()!.propietario?.nombre || '-' }}
             </small>
 
           </div>
@@ -618,7 +694,7 @@
             <span>Diagnóstico</span>
 
             <strong>
-              {{ hospitalizacionSeleccionada()!.diagnostico }}
+              {{ hospitalizacionSeleccionada()!.diagnostico || '-' }}
             </strong>
 
           </div>
@@ -631,11 +707,11 @@
             <strong>
               {{
                 formatearFecha(
-                  hospitalizacionSeleccionada()!.fechaIngreso
+                  hospitalizacionSeleccionada()!.fecha_ingreso
                 )
               }}
               ·
-              {{ hospitalizacionSeleccionada()!.horaIngreso }}
+              {{ hospitalizacionSeleccionada()!.hora_ingreso }}
             </strong>
 
           </div>
@@ -648,7 +724,7 @@
             <strong>
               {{
                 formatearFecha(
-                  hospitalizacionSeleccionada()!.fechaSalidaEstimada
+                  hospitalizacionSeleccionada()!.fecha_salida_estimada
                 )
               }}
             </strong>
@@ -661,7 +737,7 @@
             <span>Veterinario responsable</span>
 
             <strong>
-              {{ hospitalizacionSeleccionada()!.veterinario }}
+              {{ hospitalizacionSeleccionada()!.veterinario_nombre }}
             </strong>
 
           </div>
@@ -672,7 +748,7 @@
             <span>Ubicación</span>
 
             <strong>
-              🛏️
+              <span class="material-symbols-rounded">bed</span>
               {{ hospitalizacionSeleccionada()!.ubicacion }}
             </strong>
 
@@ -695,6 +771,18 @@
             </span>
 
           </div>
+
+          @if (hospitalizacionSeleccionada()!.fecha_alta) {
+            <div class="detail-item">
+
+              <span>Salida registrada</span>
+
+              <strong>
+                Salida registrada: {{ formatearFecha(hospitalizacionSeleccionada()!.fecha_alta) }} · {{ hospitalizacionSeleccionada()!.hora_alta }}
+              </strong>
+
+            </div>
+          }
 
         </div>
 
@@ -735,13 +823,16 @@
           </div>
 
 
-          <button
- appPermiso="hospitalizacion.ingresar"            type="button"
-            class="btn-primary"
-            (click)="abrirNuevaEvolucion()"
-          >
-            + Registrar evolución
-          </button>
+          @if (hospitalizacionActiva()) {
+            <button
+              appPermiso="hospitalizacion.actualizar"
+              type="button"
+              class="btn-primary"
+              (click)="abrirNuevaEvolucion()"
+            >
+              + Registrar evolución
+            </button>
+          }
 
         </div>
 
@@ -772,7 +863,7 @@
                       </strong>
 
                       <span>
-                        {{ evolucion.veterinario }}
+                        {{ evolucion.usuario }}
                       </span>
 
                     </div>
@@ -801,7 +892,7 @@
 
           <div class="section-empty">
 
-            <span>📋</span>
+            <span class="material-symbols-rounded">assignment</span>
 
             <strong>
               No hay evoluciones registradas
@@ -823,12 +914,11 @@
 
         <div class="footer-left">
 
-          @if (
-            hospitalizacionSeleccionada()!.estado !== 'Finalizado'
-          ) {
+          @if (hospitalizacionActiva()) {
 
             <button
- appPermiso="hospitalizacion.ingresar"              type="button"
+              appPermiso="hospitalizacion.dar_alta"
+              type="button"
               class="btn-danger-outline"
               (click)="
                 registrarSalida(
@@ -854,17 +944,20 @@
             Cerrar
           </button>
 
-          <button
- appPermiso="hospitalizacion.actualizar"            type="button"
-            class="btn-primary"
-            (click)="
-              editarHospitalizacion(
-                hospitalizacionSeleccionada()!
-              )
-            "
-          >
-            Editar hospitalización
-          </button>
+          @if (hospitalizacionActiva()) {
+            <button
+              appPermiso="hospitalizacion.actualizar"
+              type="button"
+              class="btn-primary"
+              (click)="
+                editarHospitalizacion(
+                  hospitalizacionSeleccionada()!
+                )
+              "
+            >
+              Editar hospitalización
+            </button>
+          }
 
         </div>
 
@@ -922,127 +1015,41 @@
 
       </div>
 
+      @if (errorFormulario()) {
+        <div class="alert-error" style="margin: 0 1.5rem 1rem;">
+          <span>{{ errorFormulario() }}</span>
+        </div>
+      }
 
       <div class="form-grid">
 
         <!-- PACIENTE -->
-        <div class="form-group">
+        <div class="form-group full">
 
           <label>Paciente *</label>
 
-          <input
-            type="text"
-            [value]="formulario().paciente"
-            (input)="
-              actualizarFormulario(
-                'paciente',
-                $any($event.target).value
-              )
-            "
-            placeholder="Nombre del paciente"
-          />
+          @if (pacienteSeleccionado(); as pac) {
+            <div class="paciente-chip">
+              <span class="material-symbols-rounded">pets</span>
+              <span>{{ pac.nombre }}{{ pac.especie ? ' · ' + pac.especie : '' }}{{ pac.propietario ? ' · ' + pac.propietario : '' }}</span>
+              @if (!modoEdicion()) {
+                <button type="button" (click)="quitarPaciente()" aria-label="Quitar paciente">
+                  <span class="material-symbols-rounded">close</span>
+                </button>
+              }
+            </div>
+          } @else {
+            <app-buscador-paciente
+              [alcance]="alcanceFormulario()"
+              placeholder="Buscar paciente por nombre o propietario..."
+              (pacienteSeleccionado)="alSeleccionarPaciente($event)"
+            />
+          }
 
         </div>
-
-
-        <!-- PROPIETARIO -->
-        <div class="form-group">
-
-          <label>Propietario *</label>
-
-          <input
-            type="text"
-            [value]="formulario().propietario"
-            (input)="
-              actualizarFormulario(
-                'propietario',
-                $any($event.target).value
-              )
-            "
-            placeholder="Nombre del propietario"
-          />
-
-        </div>
-
-
-        <!-- ESPECIE -->
-        <div class="form-group">
-
-          <label>Especie</label>
-
-          <select
-            [value]="formulario().especie"
-            (change)="
-              actualizarFormulario(
-                'especie',
-                $any($event.target).value
-              )
-            "
-          >
-
-            <option value="Canino">
-              Canino
-            </option>
-
-            <option value="Felino">
-              Felino
-            </option>
-
-            <option value="Ave">
-              Ave
-            </option>
-
-            <option value="Otro">
-              Otro
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <!-- RAZA -->
-        <div class="form-group">
-
-          <label>Raza</label>
-
-          <input
-            type="text"
-            [value]="formulario().raza"
-            (input)="
-              actualizarFormulario(
-                'raza',
-                $any($event.target).value
-              )
-            "
-            placeholder="Raza"
-          />
-
-        </div>
-
-
-        <!-- EDAD -->
-        <div class="form-group">
-
-          <label>Edad</label>
-
-          <input
-            type="text"
-            [value]="formulario().edad"
-            (input)="
-              actualizarFormulario(
-                'edad',
-                $any($event.target).value
-              )
-            "
-            placeholder="Ej. 4 años"
-          />
-
-        </div>
-
 
         <!-- MOTIVO -->
-        <div class="form-group">
+        <div class="form-group full">
 
           <label>Motivo de hospitalización *</label>
 
@@ -1143,17 +1150,31 @@
 
           <label>Veterinario responsable *</label>
 
-          <input
-            type="text"
-            [value]="formulario().veterinario"
-            (input)="
+          <select
+            [value]="formulario().veterinarioId"
+            (change)="
               actualizarFormulario(
-                'veterinario',
+                'veterinarioId',
                 $any($event.target).value
               )
             "
-            placeholder="Nombre del veterinario"
-          />
+          >
+            <option value="">
+              Seleccionar veterinario
+            </option>
+
+            @for (prof of profesionales(); track prof.id) {
+              <option [value]="prof.id" [selected]="prof.id === formulario().veterinarioId">
+                {{ prof.nombre }}
+              </option>
+            }
+          </select>
+
+          @if (profesionales().length === 0) {
+            <span class="error-texto" style="font-size: 0.8rem; color: var(--vn-danger, #e0554f);">
+              No hay profesionales habilitados para hospitalización en esta empresa.
+            </span>
+          }
 
         </div>
 
@@ -1279,14 +1300,18 @@
         </button>
 
         <button
- appPermiso="hospitalizacion.actualizar"          type="button"
+          appPermiso="hospitalizacion.actualizar"
+          type="button"
           class="btn-primary"
+          [disabled]="guardando()"
           (click)="guardarHospitalizacion()"
         >
           {{
-            modoEdicion()
-              ? 'Guardar cambios'
-              : 'Registrar hospitalización'
+            guardando()
+              ? 'Guardando…'
+              : modoEdicion()
+                ? 'Guardar cambios'
+                : 'Registrar hospitalización'
           }}
         </button>
 
@@ -1322,7 +1347,7 @@
           <h2>Registrar evolución</h2>
 
           <p>
-            {{ hospitalizacionSeleccionada()?.paciente }}
+            {{ hospitalizacionSeleccionada()?.paciente?.nombre }}
           </p>
 
         </div>
@@ -1338,6 +1363,11 @@
 
       </div>
 
+      @if (errorEvolucion()) {
+        <div class="alert-error" style="margin: 0 1.5rem 1rem;">
+          <span>{{ errorEvolucion() }}</span>
+        </div>
+      }
 
       <div class="form-grid single">
 
@@ -1420,11 +1450,13 @@
         </button>
 
         <button
- appPermiso="hospitalizacion.actualizar"          type="button"
+          appPermiso="hospitalizacion.actualizar"
+          type="button"
           class="btn-primary"
+          [disabled]="guardando()"
           (click)="guardarEvolucion()"
         >
-          Guardar evolución
+          {{ guardando() ? 'Guardando…' : 'Guardar evolución' }}
         </button>
 
       </div>

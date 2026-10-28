@@ -9,7 +9,6 @@ import {
   AgregarMedicamentoPayload,
   EvolucionFormulacion,
   FormulacionFila,
-  FormulacionPayload,
   ResumenFormulaciones,
 } from '../models/formulacion.model';
 
@@ -26,6 +25,7 @@ export class FormulacionService {
       buscar?: string;
       especie?: string;
       estado?: string;
+      dispensacion?: 'pendientes' | 'completas' | 'todas';
       page?: number;
       per_page?: number;
     },
@@ -35,6 +35,7 @@ export class FormulacionService {
     if (params.buscar) httpParams = httpParams.set('buscar', params.buscar);
     if (params.especie) httpParams = httpParams.set('especie', params.especie);
     if (params.estado) httpParams = httpParams.set('estado', params.estado);
+    if (params.dispensacion) httpParams = httpParams.set('dispensacion', params.dispensacion);
     if (params.page) httpParams = httpParams.set('page', params.page.toString());
     if (params.per_page) httpParams = httpParams.set('per_page', params.per_page.toString());
 
@@ -55,8 +56,11 @@ export class FormulacionService {
     return this.http.get<FormulacionFila>(`${this.url(alcance)}/${id}`);
   }
 
-  crear(payload: FormulacionPayload, alcance?: AlcanceApi): Observable<FormulacionFila> {
-    return this.http.post<FormulacionFila>(this.url(alcance), payload);
+  dispensar(id: string, lineaId: string): Observable<FormulacionFila> {
+    return this.http.post<FormulacionFila>(
+      `${this.url()}/${id}/medicamentos/${lineaId}/dispensar`,
+      {}
+    );
   }
 
   cambiarEstado(

@@ -1,22 +1,18 @@
 import { PermisoDirective } from '../../core/directives/permiso.directive';
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { EmpresaOpcion } from '../../core/models/empresa.model';
-import { Paciente } from '../../core/models/paciente.model';
-import { Profesional } from '../../core/models/cita.model';
 import {
   AgregarMedicamentoPayload,
   EvolucionFormulacion,
   FormulacionFila,
-  FormulacionPayload,
   MedicamentoFormulacion,
   ResumenFormulaciones,
 } from '../../core/models/formulacion.model';
 import { EmpresaService } from '../../core/services/empresa.service';
 import { FormulacionService } from '../../core/services/formulacion.service';
-import { PacienteService } from '../../core/services/paciente.service';
 import { AlcanceApi } from '../../core/utils/alcance-api';
 import { FarmaciaService } from '../../core/services/farmacia.service';
 import { Medicamento } from '../../core/models/farmacia.model';
@@ -38,13 +34,6 @@ interface FormularioMedicamento {
   indicaciones: string;
 }
 
-interface FormularioFormulacion {
-  paciente_id: string;
-  veterinario_id: string;
-  diagnostico: string;
-  observaciones: string;
-}
-
 @Component({
   selector: 'app-formulaciones',
   standalone: true,
@@ -55,7 +44,6 @@ interface FormularioFormulacion {
 export class FormulacionesComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly formulacionService = inject(FormulacionService);
-  private readonly pacienteService = inject(PacienteService);
   private readonly empresaService = inject(EmpresaService);
   private readonly farmaciaService = inject(FarmaciaService);
 
@@ -70,15 +58,16 @@ export class FormulacionesComponent implements OnInit {
     activas: 0,
     finalizadas: 0,
     total_medicamentos: 0,
+    pendientes_dispensar: 0,
   });
 
-  readonly pacientes = signal<Paciente[]>([]);
-  readonly profesionales = signal<Profesional[]>([]);
   readonly medicamentosDisponibles = signal<Medicamento[]>([]);
 
   readonly busqueda = signal('');
   readonly filtroEstado = signal('Todos');
   readonly filtroEspecie = signal('Todas');
+  readonly filtroDispensacion = signal<'pendientes' | 'completas' | 'todas'>('pendientes');
+  readonly dispensandoLineaId = signal<string | null>(null);
 
   readonly paginaActual = signal(1);
   readonly totalPaginas = signal(1);
@@ -87,11 +76,9 @@ export class FormulacionesComponent implements OnInit {
 
   readonly cargando = signal(false);
   readonly guardando = signal(false);
-  readonly errorModal = signal<string | null>(null);
   readonly mensajeToast = signal<string | null>(null);
 
   readonly modalDetalleAbierto = signal(false);
-  readonly modalFormularioAbierto = signal(false);
   readonly modalMedicamentoAbierto = signal(false);
 
   readonly formulacionSeleccionada = signal<FormulacionFila | null>(null);
@@ -102,14 +89,7 @@ export class FormulacionesComponent implements OnInit {
   readonly guardandoMedicamento = signal(false);
   readonly errorMedicamento = signal<string | null>(null);
 
-  readonly formulario = signal<FormularioFormulacion>(this.formularioVacio());
   readonly medicamentoFormulario = signal<FormularioMedicamento>(this.medicamentoVacio());
-  readonly medicamentosTemporales = signal<MedicamentoFormulacion[]>([]);
-
-  readonly pacienteSeleccionado = computed(() => {
-    const id = this.formulario().paciente_id;
-    return this.pacientes().find((p) => p.id === id) ?? null;
-  });
 
   private debounceTimer: any;
   private toastTimer: any;
@@ -150,6 +130,7 @@ export class FormulacionesComponent implements OnInit {
           buscar: this.busqueda().trim() || undefined,
           estado: this.filtroEstado() !== 'Todos' ? this.filtroEstado() : undefined,
           especie: this.filtroEspecie() !== 'Todas' ? this.filtroEspecie() : undefined,
+          dispensacion: this.filtroDispensacion(),
           page: this.paginaActual(),
           per_page: this.perPage,
         },
@@ -163,86 +144,60 @@ export class FormulacionesComponent implements OnInit {
           this.total.set(resp.total);
           this.cargando.set(false);
         },
-        error: () => {
-          this.formulaciones.set([]);
+        error: (err) => {
           this.cargando.set(false);
+          this.mostrarToast(this.mensajeError(err, 'Error al cargar las formulaciones.'));
         },
       });
 
     this.formulacionService.resumen(alcance).subscribe({
-      next: (data) => this.resumen.set(data),
-      error: () =>
-        this.resumen.set({
-          total: 0,
-          activas: 0,
-          finalizadas: 0,
-          total_medicamentos: 0,
-        }),
+      next: (resumen) => this.resumen.set(resumen),
+      error: () => {},
     });
 
-    this.pacienteService.listar({ per_page: 100 }, alcance).subscribe({
-      next: (resp) => this.pacientes.set(resp.data),
-      error: () => this.pacientes.set([]),
-    });
-
-    this.formulacionService.profesionales(alcance).subscribe({
-      next: (data) => this.profesionales.set(data),
-      error: () => this.profesionales.set([]),
-    });
-
-    this.cargarMedicamentosDisponibles(alcance);
-  }
-
-  private cargarMedicamentosDisponibles(alcance?: AlcanceApi): void {
-    this.farmaciaService
-      .obtenerMedicamentos(alcance, { estado: 'Activo', per_page: 100 })
-      .subscribe({
-        next: (resp) =>
-          this.medicamentosDisponibles.set((resp.data || []).filter((med) => med.stock > 0)),
-        error: () => this.medicamentosDisponibles.set([]),
-      });
-  }
-
-  /** Alcance de la API para operar sobre una formulación concreta, según su empresa. */
-  private alcanceDe(formulacion: FormulacionFila): AlcanceApi | undefined {
-    if (!this.esSuperUsuario()) return undefined;
-
-    return {
-      plataforma: true,
-      empresaId: formulacion.empresa_id || this.empresaIdSeleccionada() || undefined,
-    };
-  }
-
-  private mensajeError(err: any, porDefecto: string): string {
-    const errores = err?.error?.errors;
-
-    if (errores) {
-      const primero = Object.values(errores)[0] as string[] | undefined;
-
-      if (primero?.length) {
-        return primero[0];
-      }
+    if (!this.esSuperUsuario()) {
+      this.cargarMedicamentosDisponibles();
     }
+  }
 
-    return err?.error?.message || porDefecto;
+  cargarMedicamentosDisponibles(alcance?: AlcanceApi): void {
+    this.farmaciaService.obtenerMedicamentos(alcance, { per_page: 100, estado: 'Activo' }).subscribe({
+      next: (resp) => this.medicamentosDisponibles.set(resp.data),
+      error: () => this.medicamentosDisponibles.set([]),
+    });
+  }
+
+  alcanceDe(formulacion: FormulacionFila): AlcanceApi | undefined {
+    if (!this.esSuperUsuario()) return undefined;
+    return { plataforma: true, empresaId: formulacion.empresa_id };
+  }
+
+  mensajeError(err: any, porDefecto: string): string {
+    return err?.error?.message ?? porDefecto;
   }
 
   iconoEvolucion(tipo: string): string {
-    const iconos: Record<string, string> = {
-      creada: 'add_circle',
-      actualizada: 'edit',
-      medicamento_agregado: 'add',
-      medicamento_retirado: 'remove_circle',
-      medicamento_dispensado: 'inventory_2',
-      estado_cambiado: 'swap_horiz',
-    };
-
-    return iconos[tipo] ?? 'history';
+    switch (tipo) {
+      case 'creada':
+        return 'add_circle';
+      case 'medicamento_agregado':
+        return 'medication';
+      case 'medicamento_retirado':
+        return 'delete';
+      case 'medicamento_dispensado':
+        return 'check_circle';
+      case 'finalizada':
+        return 'task_alt';
+      case 'cancelada':
+        return 'cancel';
+      default:
+        return 'history';
+    }
   }
 
   alBuscar(texto: string): void {
-    this.busqueda.set(texto);
     clearTimeout(this.debounceTimer);
+    this.busqueda.set(texto);
     this.debounceTimer = setTimeout(() => {
       this.paginaActual.set(1);
       this.cargarDatos();
@@ -261,43 +216,41 @@ export class FormulacionesComponent implements OnInit {
     this.cargarDatos();
   }
 
+  alCambiarFiltroDispensacion(disp: 'pendientes' | 'completas' | 'todas'): void {
+    this.filtroDispensacion.set(disp);
+    this.paginaActual.set(1);
+    this.cargarDatos();
+  }
+
   limpiarFiltros(): void {
     this.busqueda.set('');
     this.filtroEstado.set('Todos');
     this.filtroEspecie.set('Todas');
+    this.filtroDispensacion.set('pendientes');
     this.paginaActual.set(1);
     this.cargarDatos();
   }
 
   irAPagina(page: number): void {
-    if (page < 1 || page > this.totalPaginas()) return;
+    if (page < 1 || page > this.totalPaginas() || page === this.paginaActual()) return;
     this.paginaActual.set(page);
     this.cargarDatos();
   }
 
-  private formularioVacio(): FormularioFormulacion {
+  medicamentoVacio(): FormularioMedicamento {
     return {
-      paciente_id: '',
-      veterinario_id: '',
-      diagnostico: '',
-      observaciones: '',
-    };
-  }
-
-  private medicamentoVacio(): FormularioMedicamento {
-    return {
+      medicamento_id: '',
       nombre: '',
       concentracion: '',
       presentacion: '',
       cantidad: 1,
-      medicamento_id: '',
-      unidad: 'Tableta',
       dosis_cantidad: 1,
-      dosis_unidad: 'dosis',
+      dosis_unidad: '',
       frecuencia_horas: 8,
-      duracion_dias: 1,
+      duracion_dias: 5,
+      unidad: '',
       frecuencia: 'Cada 8 horas',
-      duracion: '1 días',
+      duracion: '5 días',
       via: 'Oral',
       indicaciones: '',
     };
@@ -305,44 +258,28 @@ export class FormulacionesComponent implements OnInit {
 
   abrirDetalle(formulacion: FormulacionFila): void {
     this.formulacionSeleccionada.set(formulacion);
-    this.evoluciones.set([]);
     this.modalDetalleAbierto.set(true);
     this.cargarEvoluciones(formulacion);
   }
 
-  private cargarEvoluciones(formulacion: FormulacionFila): void {
+  cargarEvoluciones(formulacion: FormulacionFila): void {
     this.cargandoEvoluciones.set(true);
-
     this.formulacionService.evoluciones(formulacion.id, this.alcanceDe(formulacion)).subscribe({
-      next: (lista) => {
-        this.evoluciones.set(lista);
+      next: (data) => {
+        this.evoluciones.set(data);
         this.cargandoEvoluciones.set(false);
       },
-      error: () => this.cargandoEvoluciones.set(false),
+      error: () => {
+        this.evoluciones.set([]);
+        this.cargandoEvoluciones.set(false);
+      },
     });
   }
 
   cerrarDetalle(): void {
     this.modalDetalleAbierto.set(false);
-  }
-
-  abrirNuevaFormulacion(): void {
-    this.errorModal.set(null);
-    this.formulario.set(this.formularioVacio());
-    this.medicamentosTemporales.set([]);
-    this.modalFormularioAbierto.set(true);
-  }
-
-  cerrarFormulario(): void {
-    this.modalFormularioAbierto.set(false);
-    this.errorModal.set(null);
-  }
-
-  actualizarFormulario(campo: keyof FormularioFormulacion, valor: string): void {
-    this.formulario.update((actual) => ({
-      ...actual,
-      [campo]: valor,
-    }));
+    this.formulacionSeleccionada.set(null);
+    this.evoluciones.set([]);
   }
 
   abrirAgregarMedicamento(formulacion: FormulacionFila): void {
@@ -358,59 +295,40 @@ export class FormulacionesComponent implements OnInit {
   }
 
   cerrarModalMedicamento(): void {
-    const eraAgregarAFormulacion = this.modoAgregarAFormulacion();
-
     this.modalMedicamentoAbierto.set(false);
     this.modoAgregarAFormulacion.set(false);
     this.errorMedicamento.set(null);
-
-    if (eraAgregarAFormulacion && this.esSuperUsuario()) {
-      this.cargarMedicamentosDisponibles(this.alcanceActual());
-    }
   }
 
-  private agregarMedicamentoAFormulacion(payload: AgregarMedicamentoPayload): void {
-    const formulacion = this.formulacionSeleccionada();
-
-    if (!formulacion) return;
-
-    const yaExiste = formulacion.medicamentos.some(
-      (item) => item.medicamento_id === payload.medicamento_id
-    );
-
-    if (yaExiste) {
-      this.errorMedicamento.set('Este medicamento ya está en la formulación.');
-      return;
-    }
+  agregarMedicamentoAFormulacion(payload: AgregarMedicamentoPayload): void {
+    const seleccionada = this.formulacionSeleccionada();
+    if (!seleccionada) return;
 
     this.guardandoMedicamento.set(true);
     this.errorMedicamento.set(null);
 
     this.formulacionService
-      .agregarMedicamento(formulacion.id, payload, this.alcanceDe(formulacion))
+      .agregarMedicamento(seleccionada.id, payload, this.alcanceDe(seleccionada))
       .subscribe({
         next: (actualizada) => {
           this.guardandoMedicamento.set(false);
-          this.formulacionSeleccionada.set(actualizada);
           this.cerrarModalMedicamento();
+          this.formulacionSeleccionada.set(actualizada);
           this.cargarEvoluciones(actualizada);
-          this.mostrarToast('Medicamento agregado a la formulación.');
           this.cargarDatos();
+          this.mostrarToast('Medicamento agregado correctamente.');
         },
         error: (err) => {
           this.guardandoMedicamento.set(false);
-          this.errorMedicamento.set(this.mensajeError(err, 'No se pudo agregar el medicamento.'));
+          this.errorMedicamento.set(this.mensajeError(err, 'No fue posible agregar el medicamento.'));
         },
       });
   }
 
   retirarMedicamento(formulacion: FormulacionFila, medicamento: MedicamentoFormulacion): void {
-    if (!medicamento.id || medicamento.dispensado) return;
+    if (!medicamento.id) return;
 
-    const confirmar = window.confirm(
-      `¿Deseas retirar ${medicamento.nombre} de la formulación ${formulacion.numero}?`
-    );
-
+    const confirmar = confirm(`¿Retirar "${medicamento.nombre}" de la formulación?`);
     if (!confirmar) return;
 
     this.formulacionService
@@ -419,68 +337,60 @@ export class FormulacionesComponent implements OnInit {
         next: (actualizada) => {
           this.formulacionSeleccionada.set(actualizada);
           this.cargarEvoluciones(actualizada);
-          this.mostrarToast('Medicamento retirado de la formulación.');
           this.cargarDatos();
+          this.mostrarToast('Medicamento retirado correctamente.');
         },
         error: (err) => {
-          alert(this.mensajeError(err, 'No se pudo retirar el medicamento.'));
+          this.mostrarToast(this.mensajeError(err, 'No fue posible retirar el medicamento.'));
         },
       });
-  }
-
-  abrirNuevoMedicamento(): void {
-    this.medicamentoFormulario.set(this.medicamentoVacio());
-    this.modalMedicamentoAbierto.set(true);
-  }
-
-  editarMedicamento(index: number): void {
-    const med = this.medicamentosTemporales()[index];
-
-    this.medicamentoFormulario.set({
-      medicamento_id: med.medicamento_id ?? '',
-      nombre: med.nombre,
-      concentracion: med.concentracion,
-      presentacion: med.presentacion ?? '',
-      cantidad: med.cantidad,
-      dosis_cantidad: med.dosis_cantidad ?? med.cantidad,
-      dosis_unidad: med.dosis_unidad ?? 'dosis',
-      frecuencia_horas: med.frecuencia_horas ?? 8,
-      duracion_dias: med.duracion_dias ?? 1,
-      unidad: med.unidad,
-      frecuencia: med.frecuencia,
-      duracion: med.duracion,
-      via: med.via,
-      indicaciones: med.indicaciones ?? '',
-    });
-
-    this.modalMedicamentoAbierto.set(true);
-  }
-
-  eliminarMedicamento(index: number): void {
-    this.medicamentosTemporales.update((meds) => meds.filter((_, i) => i !== index));
   }
 
   actualizarMedicamento(
     campo: keyof FormularioMedicamento,
     valor: string | number | null
   ): void {
-    if (campo === 'medicamento_id') {
-      const inventario = this.medicamentosDisponibles().find((item) => item.id === valor);
-      this.medicamentoFormulario.update((actual) => ({
+    this.medicamentoFormulario.update((actual) => {
+      const actualizado = {
         ...actual,
-        medicamento_id: String(valor ?? ''),
-        nombre: inventario?.nombre ?? '',
-        concentracion: inventario ? `${inventario.concentracion} ${inventario.concentracion_unidad}` : '',
-        presentacion: inventario?.presentacion ?? '',
-        unidad: inventario?.presentacion ?? 'Tableta',
-      }));
-      return;
-    }
+        [campo]: valor,
+      };
 
-    this.medicamentoFormulario.update((actual) => ({
-      ...actual,
-      [campo]: valor,
-    }));
+      if (campo === 'medicamento_id') {
+        const inventario = this.medicamentosDisponibles().find((item) => item.id === valor);
+        if (inventario) {
+          actualizado.nombre = inventario.nombre;
+          actualizado.concentracion = `${inventario.concentracion ?? ''} ${inventario.concentracion_unidad ?? ''}`.trim();
+          actualizado.presentacion = inventario.presentacion ?? '';
+          actualizado.unidad = inventario.presentacion ?? '';
+          actualizado.dosis_unidad = inventario.concentracion_unidad ?? '';
+        }
+      }
+
+      if (
+        campo === 'dosis_cantidad' ||
+        campo === 'frecuencia_horas' ||
+        campo === 'duracion_dias'
+      ) {
+        const dosis = Number(actualizado.dosis_cantidad) || 0;
+        const frec = Number(actualizado.frecuencia_horas) || 0;
+        const dias = Number(actualizado.duracion_dias) || 0;
+
+        if (dosis > 0 && frec > 0 && dias > 0) {
+          actualizado.cantidad = Number((dosis * (24 / frec) * dias).toFixed(2));
+        }
+
+        if (campo === 'frecuencia_horas' && frec > 0) {
+          actualizado.frecuencia = `Cada ${frec} horas`;
+        }
+
+        if (campo === 'duracion_dias' && dias > 0) {
+          actualizado.duracion = `${dias} días`;
+        }
+      }
+
+      return actualizado;
+    });
   }
 
   guardarMedicamento(): void {
@@ -495,116 +405,67 @@ export class FormulacionesComponent implements OnInit {
 
     if (this.modoAgregarAFormulacion()) {
       this.agregarMedicamentoAFormulacion({
-        medicamento_id: inventario.id,
+        medicamento_id: m.medicamento_id,
         cantidad,
         dosis_cantidad: m.dosis_cantidad,
         dosis_unidad: m.dosis_unidad,
         frecuencia_horas: m.frecuencia_horas,
         duracion_dias: m.duracion_dias,
-        frecuencia: `Cada ${m.frecuencia_horas} horas`,
-        duracion: `${m.duracion_dias} días`,
+        frecuencia: m.frecuencia,
+        duracion: m.duracion,
         via: m.via,
-        indicaciones: m.indicaciones.trim() || null,
+        indicaciones: m.indicaciones,
       });
-      return;
     }
-
-    const nuevoMed: MedicamentoFormulacion = {
-      medicamento_id: inventario.id,
-      nombre: inventario.nombre,
-      concentracion: `${inventario.concentracion} ${inventario.concentracion_unidad}`, 
-      presentacion: inventario.presentacion || null,
-      cantidad,
-      dosis_cantidad: m.dosis_cantidad,
-      dosis_unidad: m.dosis_unidad,
-      frecuencia_horas: m.frecuencia_horas,
-      duracion_dias: m.duracion_dias,
-      unidad: inventario.presentacion,
-      frecuencia: `Cada ${m.frecuencia_horas} horas`,
-      duracion: `${m.duracion_dias} días`,
-      via: m.via,
-      indicaciones: m.indicaciones.trim() || null,
-    };
-
-    const existeIndice = this.medicamentosTemporales().findIndex((item) => item.medicamento_id === nuevoMed.medicamento_id);
-    if (existeIndice >= 0) {
-      this.medicamentosTemporales.update((meds) => meds.map((item, index) => index === existeIndice ? nuevoMed : item));
-    } else {
-      this.medicamentosTemporales.update((meds) => [...meds, nuevoMed]);
-    }
-
-    this.modalMedicamentoAbierto.set(false);
   }
 
-  guardarFormulacion(): void {
-    const form = this.formulario();
-    const meds = this.medicamentosTemporales();
+  dispensar(formulacion: FormulacionFila, linea: MedicamentoFormulacion): void {
+    if (!linea.id) return;
 
-    if (!form.paciente_id) {
-      this.errorModal.set('Selecciona un paciente.');
-      return;
-    }
-
-    if (!form.diagnostico.trim()) {
-      this.errorModal.set('El diagnóstico es obligatorio.');
-      return;
-    }
-
-    if (meds.length === 0) {
-      this.errorModal.set('Debe agregar al menos un medicamento.');
-      return;
-    }
-
-    this.guardando.set(true);
-    this.errorModal.set(null);
-
-    const payload: FormulacionPayload = {
-      paciente_id: form.paciente_id,
-      veterinario_id: form.veterinario_id || null,
-      diagnostico: form.diagnostico.trim(),
-      observaciones: form.observaciones.trim() || null,
-      medicamentos: meds,
-    };
-
-    this.formulacionService.crear(payload, this.alcanceActual()).subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.modalFormularioAbierto.set(false);
-        this.mostrarToast('Formulación registrada exitosamente.');
+    this.dispensandoLineaId.set(linea.id);
+    this.formulacionService.dispensar(formulacion.id, linea.id).subscribe({
+      next: (actualizada) => {
+        this.dispensandoLineaId.set(null);
+        this.formulacionSeleccionada.set(actualizada);
+        this.cargarEvoluciones(actualizada);
         this.cargarDatos();
+        this.mostrarToast(`Se dispensó ${linea.nombre} correctamente.`);
       },
       error: (err) => {
-        this.guardando.set(false);
-        this.errorModal.set(
-          err.error?.message || 'Ocurrió un error al guardar la formulación.'
-        );
+        this.dispensandoLineaId.set(null);
+        this.mostrarToast(this.mensajeError(err, 'No fue posible dispensar el medicamento.'));
       },
     });
   }
 
   cambiarEstado(formulacion: FormulacionFila, nuevoEstado: 'Finalizada' | 'Cancelada'): void {
+    const accion = nuevoEstado === 'Finalizada' ? 'finalizar' : 'cancelar';
+    const confirmar = confirm(`¿Estás seguro de que deseas ${accion} esta formulación?`);
+    if (!confirmar) return;
+
+    this.guardando.set(true);
     this.formulacionService
       .cambiarEstado(formulacion.id, nuevoEstado, this.alcanceDe(formulacion))
       .subscribe({
         next: (actualizada) => {
+          this.guardando.set(false);
           this.formulacionSeleccionada.set(actualizada);
           this.cargarEvoluciones(actualizada);
-          this.mostrarToast(`Formulación ${nuevoEstado.toLowerCase()} exitosamente.`);
           this.cargarDatos();
+          this.mostrarToast(`Formulación ${accion}da correctamente.`);
         },
         error: (err) => {
-          alert(err.error?.message || 'Error al cambiar el estado.');
+          this.guardando.set(false);
+          this.mostrarToast(this.mensajeError(err, `No fue posible ${accion} la formulación.`));
         },
       });
   }
 
   obtenerIniciales(nombre: string): string {
-    return nombre
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((parte) => parte.charAt(0).toUpperCase())
-      .join('');
+    if (!nombre) return 'PA';
+    const partes = nombre.trim().split(/\s+/);
+    if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+    return `${partes[0][0]}${partes[1][0]}`.toUpperCase();
   }
 
   mostrarToast(mensaje: string): void {
@@ -612,6 +473,6 @@ export class FormulacionesComponent implements OnInit {
     clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => {
       this.mensajeToast.set(null);
-    }, 4000);
+    }, 3200);
   }
 }

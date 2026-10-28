@@ -319,6 +319,19 @@
     </div>
   </ng-template>
 
+  <ng-template #tarjetaCitaCompacta let-cita>
+    <button
+      type="button"
+      class="cita-mini"
+      [class]="'cita-mini cita-mini--' + cita.estado"
+      (click)="irADia(cita.fecha)"
+      [title]="cita.paciente_nombre + (cita.servicio_nombre ? ' - ' + cita.servicio_nombre : '')"
+    >
+      <span class="cita-mini__hora">{{ cita.hora_inicio }}</span>
+      <span class="cita-mini__paciente">{{ cita.paciente_nombre }}</span>
+    </button>
+  </ng-template>
+
   <!-- Vista Día: Timeline por franjas -->
   @if (periodo() === 'dia') {
     @if (profesionales().length > 0) {
@@ -353,29 +366,73 @@
     }
   }
 
-  <!-- Vista Semana / Mes: listado agrupado por día -->
-  @if (periodo() === 'semana' || periodo() === 'mes') {
-    @if (profesionales().length > 0) {
-      @if (citasPorDia().length === 0 && !cargando()) {
-        <div class="agenda-aviso">Este profesional no tiene citas en el periodo seleccionado.</div>
-      } @else {
-        <div class="agenda-lista-dias">
-          @for (grupo of citasPorDia(); track grupo.fecha) {
-            <section class="agenda-dia">
-              <div class="agenda-dia__cabecera">
-                <span class="agenda-dia__etiqueta">{{ grupo.etiqueta }}</span>
-                <span class="agenda-dia__conteo">{{ grupo.citas.length }} cita{{ grupo.citas.length !== 1 ? 's' : '' }}</span>
-              </div>
-              <div class="agenda-dia__grilla">
-                @for (cita of grupo.citas; track cita.id) {
+  <!-- Vista Semana: tabla con una columna por día -->
+  @if (periodo() === 'semana' && profesionales().length > 0) {
+    <div class="agenda-tabla-wrap">
+      <table class="agenda-semana">
+        <thead>
+          <tr>
+            @for (dia of diasSemana(); track dia.fecha) {
+              <th [class.agenda-semana__hoy]="dia.esHoy">
+                <span class="agenda-semana__dia">{{ dia.nombre }}</span>
+                <span class="agenda-semana__numero">{{ dia.numero }}</span>
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            @for (dia of diasSemana(); track dia.fecha) {
+              <td [class.agenda-semana__hoy]="dia.esHoy">
+                @for (cita of dia.citas; track cita.id) {
                   <ng-container *ngTemplateOutlet="tarjetaCita; context: { $implicit: cita }"></ng-container>
+                } @empty {
+                  <span class="agenda-semana__vacio">Sin citas</span>
                 }
-              </div>
-            </section>
+              </td>
+            }
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- Vista Mes: cuadrícula por semanas con cards compactas -->
+  @if (periodo() === 'mes' && profesionales().length > 0) {
+    <div class="agenda-tabla-wrap">
+      <table class="agenda-mes">
+        <thead>
+          <tr>
+            @for (nombre of nombresDiasSemana; track nombre) {
+              <th>{{ nombre }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (semana of semanasMes(); track semana[0].fecha) {
+            <tr>
+              @for (dia of semana; track dia.fecha) {
+                <td [class.agenda-mes__fuera]="!dia.delMes" [class.agenda-mes__hoy]="dia.esHoy">
+                  @if (dia.delMes) {
+                    <button type="button" class="agenda-mes__numero" (click)="irADia(dia.fecha)" [attr.aria-label]="'Ver el día ' + dia.numero">
+                      {{ dia.numero }}
+                    </button>
+                    @for (cita of dia.citas.slice(0, 3); track cita.id) {
+                      <ng-container *ngTemplateOutlet="tarjetaCitaCompacta; context: { $implicit: cita }"></ng-container>
+                    }
+                    @if (dia.citas.length > 3) {
+                      <button type="button" class="agenda-mes__mas" (click)="irADia(dia.fecha)">
+                        +{{ dia.citas.length - 3 }} más
+                      </button>
+                    }
+                  }
+                </td>
+              }
+            </tr>
           }
-        </div>
-      }
-    }
+        </tbody>
+      </table>
+    </div>
   }
 
   <!-- Indicador de carga -->
@@ -740,15 +797,16 @@
       <button
         type="button"
         class="btn-traer-diagnostico"
-        [disabled]="cargandoDiagnosticoAnterior()"
         (click)="traerDiagnosticosUltimaEvolucion()"
       >
         <span class="material-symbols-rounded">history</span>
-        {{ cargandoDiagnosticoAnterior()
-          ? 'Consultando evolución...'
-          : 'Traer diagnóstico de la última evolución' }}
+        Traer diagnóstico de la última evolución
       </button>
     </div>
+
+    @if (diagnosticoInfo()) {
+      <p class="diagnostico-info">{{ diagnosticoInfo() }}</p>
+    }
 
     <div class="form-campo">
       <label>Buscar diagnóstico en Wikidata</label>

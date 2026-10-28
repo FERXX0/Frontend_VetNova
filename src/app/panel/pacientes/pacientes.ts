@@ -1,5 +1,5 @@
 import { PermisoDirective } from '../../core/directives/permiso.directive';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { EmpresaService } from '../../core/services/empresa.service';
@@ -34,10 +34,14 @@ export class PacientesComponent implements OnInit {
   filtroEmpresa = signal<string>('todas');
 
   pacientes = signal<Paciente[]>([]);
+  paginaActual = signal(1);
+  totalPaginas = signal(1);
+  total = signal(0);
+  readonly porPagina = 15;
+  private debounceBusqueda: ReturnType<typeof setTimeout> | undefined;
   cargando = signal(false);
   error = signal<string | null>(null);
 
-  // Filtros client-side
   filtroTexto = signal('');
   filtroEspecie = signal<string>('todas');
   filtroEstado = signal<EstadoPaciente | 'todos'>('todos');
@@ -62,29 +66,6 @@ export class PacientesComponent implements OnInit {
     { valor: 'hembra', etiqueta: 'Hembra' },
     { valor: 'indefinido', etiqueta: 'Indefinido' },
   ];
-
-  pacientesFiltrados = computed(() => {
-    const texto = this.filtroTexto().toLowerCase().trim();
-    const especie = this.filtroEspecie();
-    const estado = this.filtroEstado();
-    const lista = this.pacientes();
-
-    return lista.filter((p) => {
-      const coincideTexto =
-        !texto ||
-        p.nombre.toLowerCase().includes(texto) ||
-        (p.raza && p.raza.toLowerCase().includes(texto)) ||
-        p.propietario.nombre.toLowerCase().includes(texto) ||
-        (p.propietario.celular && p.propietario.celular.includes(texto));
-
-      const coincideEspecie = especie === 'todas' || p.especie.toLowerCase() === especie.toLowerCase();
-      const coincideEstado = estado === 'todos' || p.estado === estado;
-      const empresa = this.filtroEmpresa();
-      const coincideEmpresa = empresa === 'todas' || p.empresa_id === empresa;
-
-      return coincideTexto && coincideEspecie && coincideEstado && coincideEmpresa;
-    });
-  });
 
   // ---------- Modal Crear / Editar ----------
   modalAbierto = signal(false);
@@ -132,29 +113,67 @@ export class PacientesComponent implements OnInit {
   }
 
   private alcanceListado(): AlcanceApi | undefined {
-    return this.esVistaSuperUsuario() ? { plataforma: true, empresaId: null } : undefined;
+    if (!this.esVistaSuperUsuario()) return undefined;
+    const empresa = this.filtroEmpresa();
+    return { plataforma: true, empresaId: empresa !== 'todas' ? empresa : null };
   }
 
   private alcanceEscritura(empresaId?: string | null): AlcanceApi | undefined {
     return this.esVistaSuperUsuario() ? { plataforma: true, empresaId } : undefined;
   }
 
-  cargarPacientes(): void {
+  cargarPacientes(pagina = 1): void {
     this.cargando.set(true);
     this.error.set(null);
 
-    this.pacienteService.listar(undefined, this.alcanceListado()).subscribe({
-      next: (res) => {
-        this.pacientes.set(res.data || []);
-        this.cargando.set(false);
-      },
-      error: (err) => {
-        this.cargando.set(false);
-        this.error.set(
-          err?.error?.message || 'No se pudo cargar el listado de pacientes. Verifica tu conexión con el servidor.'
-        );
-      },
-    });
+    const especie = this.filtroEspecie();
+
+    this.pacienteService
+      .listar(
+        {
+          buscar: this.filtroTexto().trim() || undefined,
+          especie: especie !== 'todas' ? especie : undefined,
+          page: pagina,
+          per_page: this.porPagina,
+        },
+        this.alcanceListado()
+      )
+      .subscribe({
+        next: (res) => {
+          this.pacientes.set(res.data || []);
+          this.paginaActual.set(res.current_page);
+          this.totalPaginas.set(res.last_page);
+          this.total.set(res.total);
+          this.cargando.set(false);
+        },
+        error: (err) => {
+          this.cargando.set(false);
+          this.error.set(
+            err?.error?.message || 'No se pudo cargar el listado de pacientes. Verifica tu conexión con el servidor.'
+          );
+        },
+      });
+  }
+
+  alBuscar(texto: string): void {
+    this.filtroTexto.set(texto);
+    clearTimeout(this.debounceBusqueda);
+    this.debounceBusqueda = setTimeout(() => this.cargarPacientes(1), 350);
+  }
+
+  alCambiarEmpresa(valor: string): void {
+    this.filtroEmpresa.set(valor);
+    this.cargarPacientes(1);
+  }
+
+  alCambiarEspecie(valor: string): void {
+    this.filtroEspecie.set(valor);
+    this.cargarPacientes(1);
+  }
+
+  irAPagina(pagina: number): void {
+    if (pagina < 1 || pagina > this.totalPaginas()) return;
+    this.cargarPacientes(pagina);
   }
 
   /** Deja solo dígitos en el campo indicado y limita su longitud mientras se escribe. */
@@ -248,7 +267,7 @@ export class PacientesComponent implements OnInit {
       next: () => {
         this.guardando.set(false);
         this.modalAbierto.set(false);
-        this.cargarPacientes();
+        this.cargarPacientes(this.paginaActual());
       },
       error: (err) => {
         this.guardando.set(false);
@@ -266,7 +285,12 @@ export class PacientesComponent implements OnInit {
     if (!confirmado) return;
 
     this.pacienteService.eliminar(paciente.id, this.alcanceEscritura(paciente.empresa_id)).subscribe({
-      next: () => this.cargarPacientes(),
+      next: () => {
+        const pagina = this.pacientes().length === 1 && this.paginaActual() > 1
+          ? this.paginaActual() - 1
+          : this.paginaActual();
+        this.cargarPacientes(pagina);
+      },
       error: (err) => {
         this.error.set(
           err?.error?.message || 'No se pudo eliminar el paciente. Intenta de nuevo.'

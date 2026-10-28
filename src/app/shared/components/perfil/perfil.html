@@ -89,7 +89,18 @@
       <div class="perfil-form__fila">
         <div class="perfil-form__campo">
           <label for="celular">Celular / Teléfono</label>
-          <input id="celular" type="tel" formControlName="celular" placeholder="Ej. +57 300 123 4567" />
+          <input
+            id="celular"
+            type="tel"
+            formControlName="celular"
+            placeholder="3001234567"
+            inputmode="numeric"
+            maxlength="10"
+            [class.perfil-form__input--invalido]="form.get('celular')?.invalid && form.get('celular')?.touched"
+          />
+          @if (form.get('celular')?.invalid && form.get('celular')?.touched) {
+            <span class="perfil-form__error">Solo números, máximo 10 dígitos.</span>
+          }
         </div>
 
         <div class="perfil-form__campo">

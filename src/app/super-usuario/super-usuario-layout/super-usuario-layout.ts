@@ -60,14 +60,14 @@ export class SuperUsuarioLayoutComponent {
       ruta: '/super-usuario/empresas',
       nombre: 'Empresas Registradas',
       icono: 'veterinarias',
-      roles: ['super_admin']
+      roles: ['super_admin', 'soporte']
     },
     
     {
       ruta: '/super-usuario/usuarios',
       nombre: 'Usuarios',
       icono: 'usuarios',
-      roles: ['super_admin']
+      roles: ['super_admin', 'soporte']
     },
 
     {
@@ -173,8 +173,8 @@ export class SuperUsuarioLayoutComponent {
     {
       codigo: 'facturacion',
       nombre: 'Facturación',
-      icono: 'facturacion',
-      proximamente: true
+      ruta: '/super-usuario/facturacion',
+      icono: 'facturacion'
     },
   ];
 
@@ -218,7 +218,7 @@ export class SuperUsuarioLayoutComponent {
       .filter((item) => asignados.has(item.codigo))
       .map((item) => ({
         ...item,
-        habilitado: !item.proximamente,
+        habilitado: true,
         asignado: true,
       }));
   });
@@ -239,6 +239,7 @@ export class SuperUsuarioLayoutComponent {
     '/super-usuario/formulaciones': 'Formulaciones',
     '/super-usuario/farmacia': 'Farmacia',
     '/super-usuario/servicios': 'Servicios',
+    '/super-usuario/facturacion': 'Facturación',
     '/super-usuario/perfil': 'Mi Perfil',
 
     '/panel/dashboard': 'Inicio',
@@ -252,6 +253,7 @@ export class SuperUsuarioLayoutComponent {
     '/panel/formulaciones': 'Formulaciones',
     '/panel/farmacia': 'Farmacia',
     '/panel/servicios': 'Servicios',
+    '/panel/facturacion': 'Facturación',
     '/panel/perfil': 'Mi Perfil',
   };
 

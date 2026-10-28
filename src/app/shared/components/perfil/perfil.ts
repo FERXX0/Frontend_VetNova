@@ -42,9 +42,9 @@ export class PerfilComponent implements OnInit {
 
   constructor() {
     this.form = this.fb.group({
-      nombre: ['', [Validators.required, Validators.maxLength(120)]],
-      correo: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
-      celular: ['', [Validators.maxLength(30)]],
+      nombre: ['', [Validators.required, Validators.maxLength(150)]],
+      correo: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+      celular: ['', [Validators.maxLength(10), Validators.pattern(/^\d+$/)]],
       fecha_nacimiento: [''],
     });
   }
@@ -56,7 +56,7 @@ export class PerfilComponent implements OnInit {
         nombre: user.nombre ?? '',
         correo: user.correo ?? '',
         celular: user.celular ?? '',
-        fecha_nacimiento: user.fecha_nacimiento ?? '',
+        fecha_nacimiento: (user.fecha_nacimiento ?? '').slice(0, 10),
       });
     }
   }
@@ -80,23 +80,9 @@ export class PerfilComponent implements OnInit {
       },
       error: (err) => {
         this.guardando.set(false);
-        // Si el backend aún no tiene el endpoint implementado (404), mostramos aviso informativo
-        if (err?.status === 404) {
-          this.mensajeError.set(
-            '⚠️ El endpoint PUT /auth/perfil aún no está disponible en el servidor. Los cambios locales se han guardado temporalmente.'
-          );
-          // Actualizamos sesión localmente para que la UI responda de inmediato
-          const user = this.usuario();
-          if (user) {
-            const token = this.session.obtenerToken() ?? '';
-            this.session.guardar(token, { ...user, ...payload });
-            this.mensajeExito.set('Datos actualizados en la sesión local.');
-          }
-        } else {
-          this.mensajeError.set(
-            err?.error?.message || 'No se pudo actualizar el perfil. Intenta de nuevo.'
-          );
-        }
+        const errores = err?.error?.errors;
+        const primero = errores ? (Object.values(errores)[0] as string[] | undefined)?.[0] : null;
+        this.mensajeError.set(primero ?? err?.error?.message ?? 'No se pudo actualizar el perfil. Intenta de nuevo.');
       },
     });
   }

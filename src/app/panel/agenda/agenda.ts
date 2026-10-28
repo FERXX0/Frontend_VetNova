@@ -19,7 +19,7 @@ import { SessionService } from '../../core/services/session.service';
 import { AtencionCitaService } from '../../core/services/atencion-cita.service';
 import { FarmaciaService } from '../../core/services/farmacia.service';
 import { Medicamento } from '../../core/models/farmacia.model';
-import { AtencionCitaPayload, AtencionCitaResponse, HistorialAgendaItem, MedicamentoAtencion, MedicamentoAtencionPayload } from '../../core/models/atencion-cita.model';
+import { AtencionCitaPayload, AtencionCitaResponse, DiagnosticoAnterior, HistorialAgendaItem, MedicamentoAtencion, MedicamentoAtencionPayload } from '../../core/models/atencion-cita.model';
 import { BuscadorPacienteComponent } from '../../shared/components/buscador-paciente/buscador-paciente';
 
 @Component({
@@ -50,7 +50,6 @@ export class AgendaComponent implements OnInit {
 
   // Esta misma pantalla se usa en /super-usuario/agenda y en /panel/agenda.
   readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
-  readonly cargandoDiagnosticoAnterior = signal(false);
 
   empresasDisponibles = signal<EmpresaOpcion[]>([]);
   profesionales = signal<Profesional[]>([]);
@@ -132,29 +131,66 @@ export class AgendaComponent implements OnInit {
 
   rangoPeriodo = computed(() => this.calcularRango(this.fechaSeleccionada(), this.periodo()));
 
-  citasPorDia = computed(() => {
+  readonly nombresDiasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+  private readonly mapaCitasPorFecha = computed(() => {
     const estado = this.filtroEstado();
     const empresa = this.filtroEmpresa();
-    const grupos = new Map<string, Cita[]>();
-
+    const mapa = new Map<string, Cita[]>();
     for (const cita of this.citas()) {
       if (estado !== 'todos' && cita.estado !== estado) continue;
       if (empresa !== 'todas' && cita.empresa_id !== empresa) continue;
-      const lista = grupos.get(cita.fecha) ?? [];
+      const lista = mapa.get(cita.fecha) ?? [];
       lista.push(cita);
-      grupos.set(cita.fecha, lista);
+      mapa.set(cita.fecha, lista);
     }
-
-    return Array.from(grupos.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([fecha, citas]) => ({
-        fecha,
-        etiqueta: this.fechaDesdeIso(fecha)
-          .toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-          .replace(',', ''),
-        citas: [...citas].sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio)),
-      }));
+    for (const lista of mapa.values()) {
+      lista.sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio));
+    }
+    return mapa;
   });
+
+  readonly diasSemana = computed(() => {
+    const { inicio } = this.calcularRango(this.fechaSeleccionada(), 'semana');
+    const base = this.fechaDesdeIso(inicio);
+    const hoy = this.formatoFechaIso(new Date());
+    const mapa = this.mapaCitasPorFecha();
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
+      const fecha = this.formatoFechaIso(d);
+      return { fecha, nombre: this.nombresDiasSemana[i], numero: d.getDate(), esHoy: fecha === hoy, citas: mapa.get(fecha) ?? [] };
+    });
+  });
+
+  readonly semanasMes = computed(() => {
+    const { inicio, fin } = this.calcularRango(this.fechaSeleccionada(), 'mes');
+    const primero = this.fechaDesdeIso(inicio);
+    const ultimo = this.fechaDesdeIso(fin);
+    const desfase = (primero.getDay() + 6) % 7;
+    const comienzo = new Date(primero.getFullYear(), primero.getMonth(), 1 - desfase);
+    const totalCeldas = Math.ceil((desfase + ultimo.getDate()) / 7) * 7;
+    const hoy = this.formatoFechaIso(new Date());
+    const mapa = this.mapaCitasPorFecha();
+
+    const celdas = Array.from({ length: totalCeldas }, (_, i) => {
+      const d = new Date(comienzo.getFullYear(), comienzo.getMonth(), comienzo.getDate() + i);
+      const fecha = this.formatoFechaIso(d);
+      const delMes = d.getMonth() === primero.getMonth();
+      return { fecha, numero: d.getDate(), delMes, esHoy: fecha === hoy, citas: delMes ? (mapa.get(fecha) ?? []) : [] };
+    });
+
+    const semanas: typeof celdas[] = [];
+    for (let i = 0; i < celdas.length; i += 7) {
+      semanas.push(celdas.slice(i, i + 7));
+    }
+    return semanas;
+  });
+
+  irADia(fecha: string): void {
+    this.fechaSeleccionada.set(fecha);
+    this.cambiarPeriodo('dia');
+  };
+
 
   statsPeriodo = computed(() => {
     const todas = this.citas();
@@ -307,6 +343,8 @@ export class AgendaComponent implements OnInit {
   diagnosticosEncontrados = signal<Array<{id:string;label:string;description:string}>>([]);
   diagnosticoBuscando = signal(false);
   diagnosticoError = signal<string | null>(null);
+  readonly diagnosticoAnterior = signal<DiagnosticoAnterior | null>(null);
+  readonly diagnosticoInfo = signal<string | null>(null);
   diagnosticosRegistrados = signal<Array<{id:string;label:string;description:string}>>([]);
   diagnosticoPrincipalId = signal<string | null>(null);
   diagnosticoConsultaRealizada = signal(false);
@@ -437,12 +475,33 @@ export class AgendaComponent implements OnInit {
     }
   }
 
-  /**
-   * Punto de integración con el historial de consultas clínicas.
-   */
   traerDiagnosticosUltimaEvolucion(): void {
-    this.diagnosticoError.set(
-      'No se pudo traer los diagnósticos de la última evolución. Intenta nuevamente. Si el problema persiste contacta con la empresa de Vetnova.'
+    this.diagnosticoError.set(null);
+    this.diagnosticoInfo.set(null);
+
+    const anterior = this.diagnosticoAnterior();
+    if (!anterior || anterior.diagnosticos.length === 0) {
+      this.diagnosticoInfo.set('El paciente no tiene diagnósticos registrados en evoluciones anteriores.');
+      return;
+    }
+
+    const antes = this.diagnosticosRegistrados().length;
+    this.incorporarDiagnosticosAnteriores(anterior.diagnosticos, anterior.principal_id);
+    this.sincronizarDiagnosticos();
+    const agregados = this.diagnosticosRegistrados().length - antes;
+
+    if (agregados === 0) {
+      this.diagnosticoInfo.set('Los diagnósticos de la última evolución ya estaban agregados.');
+      return;
+    }
+
+    const fecha = anterior.fecha
+      ? this.fechaDesdeIso(anterior.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+      : null;
+    this.diagnosticoInfo.set(
+      fecha
+        ? `Se incorporaron los diagnósticos de la evolución del ${fecha}.`
+        : 'Se incorporaron los diagnósticos de la última evolución.'
     );
   }
 
@@ -1104,6 +1163,7 @@ export class AgendaComponent implements OnInit {
           this.cargarInsumosEstetica(cita.empresa_id ?? '');
         }
         this.inicializarAtencion(cita);
+        this.diagnosticoAnterior.set(respuesta.diagnostico_anterior ?? null);
         this.modalAtencionAbierto.set(true);
         this.atencionCargando.set(false);
       },
@@ -1145,12 +1205,17 @@ export class AgendaComponent implements OnInit {
     this.diagnosticoConsultaRealizada.set(false);
     this.diagnosticosRegistrados.set([]);
     this.diagnosticoPrincipalId.set(null);
+    this.diagnosticoInfo.set(null);
+    this.diagnosticoError.set(null);
+    this.diagnosticoAnterior.set(null);
   }
 
   cerrarAtencion(): void {
     if (this.atencionGuardando()) return;
     this.modalAtencionAbierto.set(false);
     this.atencionCita.set(null);
+    this.diagnosticoAnterior.set(null);
+    this.diagnosticoInfo.set(null);
   }
 
   actualizarAtencion<K extends keyof ReturnType<typeof this.atencion>>(campo: K, valor: ReturnType<typeof this.atencion>[K]): void {

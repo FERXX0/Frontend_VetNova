@@ -26,8 +26,24 @@ export class UsuarioService {
   }
 
   /** Listado de usuarios de UNA empresa puntual (GET /api/empresas/{empresa}/usuarios). */
-  listarPorEmpresa(empresaId: string): Observable<PaginacionUsuarios> {
-    return this.http.get<PaginacionUsuarios>(`${this.apiUrl}/empresas/${empresaId}/usuarios`);
+  listarPorEmpresa(
+    empresaId: string,
+    opciones: { page?: number; per_page?: number } = {}
+  ): Observable<PaginacionUsuarios> {
+    let params = new HttpParams();
+    if (opciones.page) params = params.set('page', opciones.page);
+    if (opciones.per_page) params = params.set('per_page', opciones.per_page);
+
+    return this.http.get<PaginacionUsuarios>(
+      `${this.apiUrl}/empresas/${empresaId}/usuarios`,
+      { params }
+    );
+  }
+
+  modulosDisponibles(empresaId: string): Observable<{ id: string; codigo: string; nombre: string }[]> {
+    return this.http.get<{ id: string; codigo: string; nombre: string }[]>(
+      `${this.apiUrl}/empresas/${empresaId}/modulos-disponibles`
+    );
   }
 
   listarPermisos(): Observable<{ permisos: { id: string; modulo_id: string; codigo: string; nombre: string; activo: boolean }[] }> {

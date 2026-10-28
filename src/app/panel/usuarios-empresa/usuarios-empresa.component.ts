@@ -122,9 +122,10 @@ export class UsuariosEmpresaComponent implements OnInit {
       this.cargarEmpresas();
       this.cargarUsuarios();
     } else {
-      const empresaId = this.session.usuario()?.empresa?.id;
+      const empresaId = this.empresaIdPanel();
       if (empresaId) {
-        this.cargarModulosPermitidos(empresaId);
+        this.cargarModulosPermitidosPanel(empresaId);
+        this.cargarUsuariosPanel();
       }
     }
   }
@@ -139,6 +140,42 @@ export class UsuariosEmpresaComponent implements OnInit {
       error: () => {
         this.mostrarMensaje('No se pudieron cargar los usuarios.', 'error');
         this.cargandoUsuarios.set(false);
+      },
+    });
+  }
+
+  private empresaIdPanel(): string {
+    return this.session.usuario()?.empresa?.id ?? '';
+  }
+
+  cargarUsuariosPanel(): void {
+    const empresaId = this.empresaIdPanel();
+    if (!empresaId) return;
+
+    this.cargandoUsuarios.set(true);
+    this.usuarioService.listarPorEmpresa(empresaId, { per_page: 100 }).subscribe({
+      next: (respuesta) => {
+        this.usuarios.set(respuesta.data.map((u) => this.mapearUsuario(u)));
+        this.cargandoUsuarios.set(false);
+      },
+      error: () => {
+        this.mostrarMensaje('No se pudieron cargar los usuarios.', 'error');
+        this.cargandoUsuarios.set(false);
+      },
+    });
+  }
+
+  private cargarModulosPermitidosPanel(empresaId: string): void {
+    this.cargandoModulosPermitidos.set(true);
+    this.usuarioService.modulosDisponibles(empresaId).subscribe({
+      next: (modulos) => {
+        this.modulosPermitidosEmpresa.set(new Set(modulos.map((modulo) => modulo.codigo)));
+        this.cargandoModulosPermitidos.set(false);
+      },
+      error: () => {
+        this.modulosPermitidosEmpresa.set(new Set());
+        this.cargandoModulosPermitidos.set(false);
+        this.mostrarMensaje('No se pudieron cargar los módulos de tu plan.', 'error');
       },
     });
   }
@@ -295,11 +332,10 @@ export class UsuariosEmpresaComponent implements OnInit {
   });
 
   // =========================================================
-  // DATOS MOCK
+  // LISTADO
   // =========================================================
 
-  // Se carga desde UsuarioService.listarGlobal() en ngOnInit (solo Super Usuario).
-  // En /panel/usuarios queda vacío hasta que exista un endpoint por empresa propio.
+  // Se carga con listarGlobal() en /super-usuario y con listarPorEmpresa() en /panel.
   usuarios = signal<UsuarioVeterinaria[]>([]);
 
   // =========================================================
@@ -361,7 +397,7 @@ export class UsuariosEmpresaComponent implements OnInit {
       correo: '',
       telefono: '',
       rolId: '',
-      tipoIdentificacion: '',
+      tipoIdentificacion: 'CC',
       numeroIdentificacion: '',
       contrasena: '',
       estado: 'Activo',
@@ -546,7 +582,11 @@ export class UsuariosEmpresaComponent implements OnInit {
           'success'
         );
         this.cerrarModal();
-        if (this.esVistaSuperUsuario()) this.cargarUsuarios();
+        if (this.esVistaSuperUsuario()) {
+          this.cargarUsuarios();
+        } else {
+          this.cargarUsuariosPanel();
+        }
       },
       error: (err) => {
         const detalle = err?.error?.errors
@@ -562,27 +602,44 @@ export class UsuariosEmpresaComponent implements OnInit {
   // =========================================================
 
   cambiarEstado(usuario: UsuarioVeterinaria): void {
+    const empresaId = this.esVistaSuperUsuario() ? (usuario.empresaId ?? '') : this.empresaIdPanel();
+    if (!empresaId) return;
 
-    const nuevoEstado =
-      usuario.estado === 'Activo'
-        ? 'Inactivo'
-        : 'Activo';
+    if (usuario.id === this.session.usuario()?.id) {
+      this.mostrarMensaje('No puedes desactivar tu propia cuenta.', 'error');
+      return;
+    }
 
-    this.usuarios.update(usuarios =>
-      usuarios.map(item =>
-        item.id === usuario.id
-          ? {
-              ...item,
-              estado: nuevoEstado
-            }
-          : item
-      )
-    );
+    const activar = usuario.estado !== 'Activo';
 
-    this.mostrarMensaje(
-      `Usuario ${nuevoEstado === 'Activo' ? 'activado' : 'desactivado'} correctamente.`,
-      'success'
-    );
+    const payload: UsuarioPayload = {
+      rol_id: usuario.rolId,
+      nombre: usuario.nombre,
+      tipo_identificacion: usuario.tipoIdentificacion,
+      numero_identificacion: usuario.numeroIdentificacion,
+      celular: usuario.telefono || null,
+      correo: usuario.correo,
+      activo: activar,
+    };
+
+    this.usuarioService.actualizar(empresaId, usuario.id, payload).subscribe({
+      next: () => {
+        this.usuarios.update((lista) =>
+          lista.map((item) =>
+            item.id === usuario.id
+              ? { ...item, estado: activar ? 'Activo' : 'Inactivo' }
+              : item
+          )
+        );
+        this.mostrarMensaje(`Usuario ${activar ? 'activado' : 'desactivado'} correctamente.`, 'success');
+      },
+      error: (err) => {
+        const detalle = err?.error?.errors
+          ? (Object.values(err.error.errors)[0] as string[])[0]
+          : err?.error?.message;
+        this.mostrarMensaje(detalle || 'No se pudo cambiar el estado del usuario.', 'error');
+      },
+    });
   }
 
   // =========================================================
@@ -599,22 +656,17 @@ export class UsuariosEmpresaComponent implements OnInit {
       return;
     }
 
-    if (this.esVistaSuperUsuario() && usuario.empresaId) {
-      this.usuarioService.eliminar(usuario.empresaId, usuario.id).subscribe({
-        next: () => {
-          this.usuarios.update(usuarios => usuarios.filter(item => item.id !== usuario.id));
-          this.mostrarMensaje('Usuario eliminado correctamente.', 'success');
-        },
-        error: () => this.mostrarMensaje('No se pudo eliminar el usuario.', 'error'),
-      });
-      return;
-    }
+    const empresaId = this.esVistaSuperUsuario() ? (usuario.empresaId ?? '') : this.empresaIdPanel();
+    if (!empresaId) return;
 
-    this.usuarios.update(usuarios =>
-      usuarios.filter(item => item.id !== usuario.id)
-    );
-
-    this.mostrarMensaje('Usuario eliminado correctamente.', 'success');
+    this.usuarioService.eliminar(empresaId, usuario.id).subscribe({
+      next: () => {
+        this.usuarios.update((lista) => lista.filter((item) => item.id !== usuario.id));
+        this.mostrarMensaje('Usuario eliminado correctamente.', 'success');
+      },
+      error: (err) =>
+        this.mostrarMensaje(err?.error?.message || 'No se pudo eliminar el usuario.', 'error'),
+    });
   }
 
   // =========================================================

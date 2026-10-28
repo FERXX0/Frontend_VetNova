@@ -87,4 +87,5 @@ export interface ResumenFormulaciones {
   activas: number;
   finalizadas: number;
   total_medicamentos: number;
+  pendientes_dispensar: number;
 }
