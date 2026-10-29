@@ -512,3 +512,117 @@
     }
   }
 }
+
+
+/* =========================================
+   HISTORIAL DE TARIFAS
+   ========================================= */
+
+.historial-contenido {
+  padding: 0.25rem 0;
+}
+
+.historial-servicio {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--vn-border, #e5e9ec);
+  border-radius: 0.75rem;
+  background: var(--vn-surface, #f6f9fa);
+
+  span {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--vn-text-muted, #8a97a1);
+  }
+
+  strong {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--vn-navy, #10263a);
+  }
+}
+
+.historial-tabla-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--vn-border, #e5e9ec);
+  border-radius: 0.75rem;
+}
+
+.historial-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  thead {
+    background: var(--vn-surface, #f6f9fa);
+  }
+
+  th {
+    padding: 0.9rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--vn-text-muted, #8a97a1);
+    border-bottom: 1px solid var(--vn-border, #e5e9ec);
+  }
+
+  td {
+    padding: 1rem;
+    color: var(--vn-text-dark, #1c2b36);
+    border-bottom: 1px solid var(--vn-border, #e5e9ec);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:hover {
+    background: rgba(246, 249, 250, 0.8);
+  }
+
+  td strong {
+    font-weight: 700;
+    color: var(--vn-teal-dark, #0e7c86);
+  }
+}
+
+.historial-estado {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--vn-text-muted, #8a97a1);
+}
+
+.btn-cerrar-historial {
+  padding: 0.65rem 1.25rem;
+  border: 1.5px solid var(--vn-border, #e5e9ec);
+  border-radius: 0.6rem;
+  background: var(--vn-white, #ffffff);
+  color: var(--vn-text-dark, #1c2b36);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--vn-surface, #f6f9fa);
+    border-color: var(--vn-teal, #1aa7a0);
+    color: var(--vn-teal-dark, #0e7c86);
+  }
+}
+
+/* Botones de acciones deshabilitados */
+.btn-accion:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-accion:disabled:hover {
+  background: var(--vn-white, #ffffff);
+  border-color: var(--vn-border, #e5e9ec);
+  color: var(--vn-text-muted, #8a97a1);
+}

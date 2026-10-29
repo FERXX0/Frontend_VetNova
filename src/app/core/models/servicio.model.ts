@@ -15,6 +15,7 @@ export interface Servicio {
   activo: boolean;
   creado_en?: string;
   actualizado_en?: string;
+  motivo?: string | null;
 }
 
 export interface ServicioPayload {

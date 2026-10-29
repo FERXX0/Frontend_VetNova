@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { FacturacionService } from '../../core/services/facturacion.service';
 import { EmpresaService } from '../../core/services/empresa.service';
 import { Factura } from '../../core/models/factura.model';
@@ -18,6 +20,7 @@ export class FacturacionComponent implements OnInit {
   private readonly service = inject(FacturacionService);
   private readonly empresaService = inject(EmpresaService);
   private readonly router = inject(Router);
+  private readonly http = inject(HttpClient);
 
   readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
   readonly empresasDisponibles = signal<EmpresaOpcion[]>([]);
@@ -27,6 +30,11 @@ export class FacturacionComponent implements OnInit {
   readonly hasta = signal('');
   readonly total = signal(0);
 
+  vista = signal<'cuentas' | 'facturas'>('cuentas');
+  cuentas = signal<any[]>([]);
+  cuentaSeleccionada = signal<any | null>(null);
+  cargandoCuentas = signal(false);
+  errorCuentas = signal<string | null>(null);
   facturas = signal<Factura[]>([]);
   cargando = signal(false);
   error = signal<string | null>(null);
@@ -54,6 +62,23 @@ export class FacturacionComponent implements OnInit {
       });
     }
     this.cargar();
+    this.cargarCuentas();
+  }
+
+  cargarCuentas(): void {
+    this.cargandoCuentas.set(true);
+    this.errorCuentas.set(null);
+    this.http.get<any>(`${environment.apiUrl}/facturacion/cuentas`).subscribe({
+      next: (r) => { this.cuentas.set(r.data || []); this.cargandoCuentas.set(false); },
+      error: (e) => { this.errorCuentas.set(e?.error?.message || 'No se pudieron cargar las cuentas.'); this.cargandoCuentas.set(false); }
+    });
+  }
+
+  verCuenta(cuenta: any): void {
+    this.http.get<any>(`${environment.apiUrl}/facturacion/cuentas/${encodeURIComponent(cuenta.id)}`).subscribe({
+      next: (r) => this.cuentaSeleccionada.set(r),
+      error: (e) => this.errorCuentas.set(e?.error?.message || 'No se pudo consultar la cuenta.')
+    });
   }
 
   cargar(page = 1): void {

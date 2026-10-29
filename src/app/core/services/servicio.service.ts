@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Servicio, ServicioPayload } from '../models/servicio.model';
 import { AlcanceApi, urlRecurso } from '../utils/alcance-api';
+import { HistorialTarifa } from '../models/historial-tarifa.model';
 
 @Injectable({ providedIn: 'root' })
 export class ServicioService {
@@ -35,5 +36,11 @@ export class ServicioService {
 
   eliminar(id: string, alcance?: AlcanceApi): Observable<void> {
     return this.http.delete<void>(`${this.url(alcance)}/${id}`);
+  }
+  
+  historialTarifas(servicioId: string, alcance?: AlcanceApi): Observable<HistorialTarifa[]> {
+    return this.http.get<HistorialTarifa[]>(
+      `${this.url(alcance)}/${servicioId}/historial-tarifas`
+    );
   }
 }

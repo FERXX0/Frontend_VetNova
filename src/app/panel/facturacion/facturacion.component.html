@@ -3,10 +3,41 @@
     <div>
       <span class="eyebrow">GESTIÓN COMERCIAL</span>
       <h1>Facturación</h1>
-      <p>Consulta las ventas generadas desde la salida de medicamentos de farmacia.</p>
+      <p>Consulta cuentas clínicas pendientes y facturas emitidas.</p>
     </div>
   </header>
 
+  <nav class="cuentas-tabs" aria-label="Vistas de facturación">
+    <button type="button" [class.activa]="vista() === 'cuentas'" (click)="vista.set('cuentas'); cargarCuentas()">Cuentas de pacientes</button>
+    <button type="button" [class.activa]="vista() === 'facturas'" (click)="vista.set('facturas')">Facturas emitidas</button>
+  </nav>
+  @if (vista() === 'cuentas') {
+    <section class="facturacion-card">
+      <div class="facturacion-card__header"><h2>Cuentas de pacientes</h2><span>Se crean al marcar citas como cumplidas</span></div>
+      @if (errorCuentas()) { <div class="facturacion-alert">{{ errorCuentas() }}</div> }
+      @if (cargandoCuentas()) { <div class="facturacion-empty">Cargando cuentas…</div> }
+      @else if (!cuentas().length) { <div class="facturacion-empty">No hay cuentas registradas.</div> }
+      @else {
+        <div class="table-wrapper"><table><thead><tr><th>MASCOTA</th><th>PROPIETARIO</th><th>ESTADO</th><th>TOTAL</th><th>ACCIONES</th></tr></thead><tbody>
+          @for (cuenta of cuentas(); track cuenta.id) {
+            <tr><td>{{ cuenta.atencion?.paciente?.nombre || '—' }}</td><td>{{ cuenta.atencion?.propietario?.nombre || '—' }}</td>
+              <td><span class="status">{{ cuenta.estado }}</span></td><td>{{ formatearMoneda(+cuenta.total) }}</td>
+              <td><button type="button" class="btn-detail" (click)="verCuenta(cuenta)">Ver cargos</button></td></tr>
+          }
+        </tbody></table></div>
+      }
+    </section>
+    @if (cuentaSeleccionada(); as cuenta) {
+      <div class="facturacion-modal-backdrop" (click)="cuentaSeleccionada.set(null)">
+        <section class="facturacion-modal" (click)="$event.stopPropagation()">
+          <header><h2>Cuenta de {{ cuenta.atencion?.paciente?.nombre }}</h2><button type="button" (click)="cuentaSeleccionada.set(null)">Cerrar</button></header>
+          <div class="table-wrapper"><table><thead><tr><th>CONCEPTO</th><th>CANT.</th><th>PRECIO</th><th>SUBTOTAL</th></tr></thead><tbody>
+            @for (cargo of cuenta.detalles || []; track cargo.id) { <tr><td>{{ cargo.descripcion }}</td><td>{{ cargo.cantidad }}</td><td>{{ formatearMoneda(+cargo.precio_unitario) }}</td><td>{{ formatearMoneda(+cargo.subtotal) }}</td></tr> }
+          </tbody></table></div><p><strong>Total: {{ formatearMoneda(+cuenta.total) }}</strong></p>
+        </section>
+      </div>
+    }
+  } @else {
   @if (error()) {
     <div class="facturacion-alert">{{ error() }}</div>
   }
@@ -163,5 +194,6 @@
         </footer>
       </section>
     </div>
+  }
   }
 </div>

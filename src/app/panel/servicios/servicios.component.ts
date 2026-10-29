@@ -9,6 +9,7 @@ import { EmpresaOpcion } from '../../core/models/empresa.model';
 import { Servicio, ServicioPayload } from '../../core/models/servicio.model';
 import { TipoConsulta } from '../../core/models/cita.model';
 import { AlcanceApi } from '../../core/utils/alcance-api';
+import { HistorialTarifa } from '../../core/models/historial-tarifa.model';
 
 @Component({
   selector: 'app-servicios',
@@ -18,11 +19,17 @@ import { AlcanceApi } from '../../core/utils/alcance-api';
   styleUrl: './servicios.component.scss',
 })
 export class ServiciosComponent implements OnInit {
+
   private readonly servicioService = inject(ServicioService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly empresaService = inject(EmpresaService);
 
+  readonly historialAbierto = signal(false);
+  readonly historialCargando = signal(false);
+  readonly historialError = signal<string | null>(null);
+  readonly historialServicio = signal<Servicio | null>(null);
+  readonly historialRegistros = signal<HistorialTarifa[]>([]);
   readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
 
   empresasDisponibles = signal<EmpresaOpcion[]>([]);
@@ -245,5 +252,41 @@ export class ServiciosComponent implements OnInit {
         );
       },
     });
+  }
+
+  verHistorial(servicio: Servicio): void {
+    this.historialServicio.set(servicio);
+    this.historialRegistros.set([]);
+    this.historialError.set(null);
+    this.historialAbierto.set(true);
+    this.historialCargando.set(true);
+
+    this.servicioService
+      .historialTarifas(servicio.id, this.alcance())
+      .subscribe({
+        next: (registros) => {
+          this.historialRegistros.set(registros);
+          this.historialCargando.set(false);
+        },
+        error: (err) => {
+          this.historialError.set(
+            err?.error?.message ||
+            'No se pudo consultar el historial de tarifas.'
+          );
+          this.historialCargando.set(false);
+        }
+      });
+  }
+
+  cerrarHistorial(): void {
+    this.historialAbierto.set(false);
+    this.historialServicio.set(null);
+  }
+
+  formatearFecha(fecha: string): string {
+    return new Intl.DateTimeFormat('es-CO', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(new Date(fecha));
   }
 }
