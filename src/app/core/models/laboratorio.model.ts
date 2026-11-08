@@ -53,6 +53,13 @@ export interface SolicitudLaboratorio {
     muestra: string;
     prioridad: PrioridadSolicitud;
     estado: EstadoSolicitud;
+    servicio_id?: string | null;
+    servicio?: {
+        id: string;
+        nombre: string;
+        precio: number;
+    } | null;
+    cuenta_atencion_id?: string | null;
     observaciones: string | null;
     resultados: ResultadoLaboratorio[];
     notas: NotaLaboratorio[];
@@ -70,6 +77,8 @@ export interface ResumenLaboratorio {
 export interface SolicitudPayload {
     paciente_id: string;
     veterinario_id: string;
+    servicio_id?: string | null;
+    cuenta_atencion_id?: string | null;
     examen: string;
     categoria: string;
     diagnostico: string | null;

@@ -39,6 +39,13 @@ export interface Hospitalizacion {
   ubicacion: string;
   prioridad: PrioridadHospitalizacion;
   estado: EstadoHospitalizacion;
+  servicio_id?: string | null;
+  servicio?: {
+    id: string;
+    nombre: string;
+    precio: number;
+  } | null;
+  cuenta_atencion_id?: string | null;
   observaciones: string | null;
   evoluciones: EvolucionHospitalizacion[];
 }
@@ -46,6 +53,8 @@ export interface Hospitalizacion {
 export interface HospitalizacionPayload {
   paciente_id?: string;
   veterinario_id: string;
+  servicio_id?: string | null;
+  cuenta_atencion_id?: string | null;
   motivo: string;
   diagnostico?: string | null;
   fecha_ingreso: string;

@@ -1,9 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
-import { FacturacionService } from '../../core/services/facturacion.service';
+import { FormsModule } from '@angular/forms';
+import {
+  CargoCuenta,
+  CuentaPaciente,
+  FacturacionService,
+  PagoCuenta,
+} from '../../core/services/facturacion.service';
 import { EmpresaService } from '../../core/services/empresa.service';
 import { Factura } from '../../core/models/factura.model';
 import { EmpresaOpcion } from '../../core/models/empresa.model';
@@ -12,7 +16,7 @@ import { AlcanceApi } from '../../core/utils/alcance-api';
 @Component({
   selector: 'app-facturacion',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './facturacion.component.html',
   styleUrl: './facturacion.component.scss',
 })
@@ -20,7 +24,6 @@ export class FacturacionComponent implements OnInit {
   private readonly service = inject(FacturacionService);
   private readonly empresaService = inject(EmpresaService);
   private readonly router = inject(Router);
-  private readonly http = inject(HttpClient);
 
   readonly esVistaSuperUsuario = signal(this.router.url.startsWith('/super-usuario'));
   readonly empresasDisponibles = signal<EmpresaOpcion[]>([]);
@@ -31,10 +34,16 @@ export class FacturacionComponent implements OnInit {
   readonly total = signal(0);
 
   vista = signal<'cuentas' | 'facturas'>('cuentas');
-  cuentas = signal<any[]>([]);
-  cuentaSeleccionada = signal<any | null>(null);
+  cuentas = signal<CuentaPaciente[]>([]);
+  cuentaSeleccionada = signal<CuentaPaciente | null>(null);
   cargandoCuentas = signal(false);
   errorCuentas = signal<string | null>(null);
+
+  filtroEstadoCuenta = signal<string>('');
+  busquedaCuenta = signal<string>('');
+  paginaCuentas = signal(1);
+  totalPaginasCuentas = signal(1);
+
   facturas = signal<Factura[]>([]);
   cargando = signal(false);
   error = signal<string | null>(null);
@@ -42,7 +51,36 @@ export class FacturacionComponent implements OnInit {
   totalPaginas = signal(1);
   facturaSeleccionada = signal<Factura | null>(null);
 
+  // Modales de acciones clínicas/financieras
+  modalPagoAbierto = signal(false);
+  pagoMonto = signal<number>(0);
+  pagoMetodo = signal<string>('Efectivo');
+  pagoReferencia = signal<string>('');
+  pagoNotas = signal<string>('');
+  procesandoPago = signal(false);
+  errorPago = signal<string | null>(null);
+
+  modalAnularAbierto = signal(false);
+  cargoAAnular = signal<CargoCuenta | null>(null);
+  motivoAnulacion = signal<string>('');
+  procesandoAnulacion = signal(false);
+  errorAnulacion = signal<string | null>(null);
+
+  procesandoAccion = signal(false);
+  mensajeAlerta = signal<{ texto: string; tipo: 'exito' | 'error' } | null>(null);
+
+  readonly metodosPagoDisponibles = [
+    'Efectivo',
+    'Tarjeta de crédito',
+    'Tarjeta de débito',
+    'Transferencia',
+    'Nequi',
+    'Daviplata',
+    'Otro',
+  ];
+
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private debounceTimerCuentas: ReturnType<typeof setTimeout> | null = null;
 
   readonly hayFiltros = computed(
     () => !!(this.busqueda() || this.desde() || this.hasta() || this.filtroEmpresa())
@@ -65,20 +103,243 @@ export class FacturacionComponent implements OnInit {
     this.cargarCuentas();
   }
 
-  cargarCuentas(): void {
+  cargarCuentas(page = 1): void {
     this.cargandoCuentas.set(true);
     this.errorCuentas.set(null);
-    this.http.get<any>(`${environment.apiUrl}/facturacion/cuentas`).subscribe({
-      next: (r) => { this.cuentas.set(r.data || []); this.cargandoCuentas.set(false); },
-      error: (e) => { this.errorCuentas.set(e?.error?.message || 'No se pudieron cargar las cuentas.'); this.cargandoCuentas.set(false); }
+    this.service
+      .listarCuentas(
+        this.alcance(),
+        {
+          estado: this.filtroEstadoCuenta() || undefined,
+          buscar: this.busquedaCuenta() || undefined,
+          page,
+        }
+      )
+      .subscribe({
+        next: (r) => {
+          this.cuentas.set(r.data || []);
+          this.paginaCuentas.set(r.current_page || 1);
+          this.totalPaginasCuentas.set(r.last_page || 1);
+          this.cargandoCuentas.set(false);
+        },
+        error: (e) => {
+          this.errorCuentas.set(e?.error?.message || 'No se pudieron cargar las cuentas.');
+          this.cargandoCuentas.set(false);
+        },
+      });
+  }
+
+  cambiarBusquedaCuenta(valor: string): void {
+    this.busquedaCuenta.set(valor);
+    if (this.debounceTimerCuentas) {
+      clearTimeout(this.debounceTimerCuentas);
+    }
+    this.debounceTimerCuentas = setTimeout(() => this.cargarCuentas(1), 350);
+  }
+
+  cambiarEstadoCuenta(estado: string): void {
+    this.filtroEstadoCuenta.set(estado);
+    this.cargarCuentas(1);
+  }
+
+  verCuenta(cuenta: CuentaPaciente): void {
+    this.service.obtenerCuenta(cuenta.id, this.alcance()).subscribe({
+      next: (r) => this.cuentaSeleccionada.set(r),
+      error: (e) => this.errorCuentas.set(e?.error?.message || 'No se pudo consultar la cuenta.'),
     });
   }
 
-  verCuenta(cuenta: any): void {
-    this.http.get<any>(`${environment.apiUrl}/facturacion/cuentas/${encodeURIComponent(cuenta.id)}`).subscribe({
-      next: (r) => this.cuentaSeleccionada.set(r),
-      error: (e) => this.errorCuentas.set(e?.error?.message || 'No se pudo consultar la cuenta.')
+  refrescarCuentaSeleccionada(): void {
+    const sel = this.cuentaSeleccionada();
+    if (!sel) return;
+    this.service.obtenerCuenta(sel.id, this.alcance()).subscribe({
+      next: (r) => {
+        this.cuentaSeleccionada.set(r);
+        // También actualizar la lista
+        this.cuentas.update((items) => items.map((c) => (c.id === r.id ? r : c)));
+      },
     });
+  }
+
+  abrirRegistrarPago(): void {
+    const cuenta = this.cuentaSeleccionada();
+    if (!cuenta) return;
+    const saldo = this.saldoPendiente(cuenta);
+    this.pagoMonto.set(saldo);
+    this.pagoMetodo.set('Efectivo');
+    this.pagoReferencia.set('');
+    this.pagoNotas.set('');
+    this.errorPago.set(null);
+    this.modalPagoAbierto.set(true);
+  }
+
+  cerrarModalPago(): void {
+    this.modalPagoAbierto.set(false);
+    this.errorPago.set(null);
+  }
+
+  guardarPago(): void {
+    const cuenta = this.cuentaSeleccionada();
+    if (!cuenta) return;
+
+    const monto = Number(this.pagoMonto());
+    if (isNaN(monto) || monto <= 0) {
+      this.errorPago.set('Ingresa un monto válido mayor a 0.');
+      return;
+    }
+
+    const saldo = this.saldoPendiente(cuenta);
+    if (monto > saldo) {
+      this.errorPago.set(`El monto no puede superar el saldo pendiente (${this.formatearMoneda(saldo)}).`);
+      return;
+    }
+
+    this.procesandoPago.set(true);
+    this.errorPago.set(null);
+
+    this.service
+      .registrarPago(
+        cuenta.id,
+        {
+          monto,
+          metodo_pago: this.pagoMetodo(),
+          referencia: this.pagoReferencia().trim() || undefined,
+          notas: this.pagoNotas().trim() || undefined,
+        },
+        this.alcance()
+      )
+      .subscribe({
+        next: (r) => {
+          this.procesandoPago.set(false);
+          this.cerrarModalPago();
+          this.cuentaSeleccionada.set(r);
+          this.cuentas.update((items) => items.map((c) => (c.id === r.id ? r : c)));
+          this.mostrarAlerta('Abono registrado correctamente.', 'exito');
+        },
+        error: (err) => {
+          this.procesandoPago.set(false);
+          this.errorPago.set(err?.error?.message || 'Error al registrar el pago.');
+        },
+      });
+  }
+
+  abrirAnularCargo(cargo: CargoCuenta): void {
+    this.cargoAAnular.set(cargo);
+    this.motivoAnulacion.set('');
+    this.errorAnulacion.set(null);
+    this.modalAnularAbierto.set(true);
+  }
+
+  cerrarModalAnular(): void {
+    this.modalAnularAbierto.set(false);
+    this.cargoAAnular.set(null);
+    this.errorAnulacion.set(null);
+  }
+
+  confirmarAnulacion(): void {
+    const cuenta = this.cuentaSeleccionada();
+    const cargo = this.cargoAAnular();
+    if (!cuenta || !cargo) return;
+
+    const motivo = this.motivoAnulacion().trim();
+    if (motivo.length < 5) {
+      this.errorAnulacion.set('Indica un motivo de anulación de al menos 5 caracteres.');
+      return;
+    }
+
+    this.procesandoAnulacion.set(true);
+    this.errorAnulacion.set(null);
+
+    this.service.anularCargo(cuenta.id, cargo.id, motivo, this.alcance()).subscribe({
+      next: (r) => {
+        this.procesandoAnulacion.set(false);
+        this.cerrarModalAnular();
+        this.cuentaSeleccionada.set(r);
+        this.cuentas.update((items) => items.map((c) => (c.id === r.id ? r : c)));
+        this.mostrarAlerta('Cargo anulado exitosamente.', 'exito');
+      },
+      error: (err) => {
+        this.procesandoAnulacion.set(false);
+        this.errorAnulacion.set(err?.error?.message || 'Error al anular el cargo.');
+      },
+    });
+  }
+
+  cerrarCuenta(): void {
+    const cuenta = this.cuentaSeleccionada();
+    if (!cuenta) return;
+
+    const saldo = this.saldoPendiente(cuenta);
+    if (saldo > 0) {
+      this.mostrarAlerta(`No puedes cerrar la cuenta. Hay un saldo pendiente de ${this.formatearMoneda(saldo)}.`, 'error');
+      return;
+    }
+
+    if (!confirm(`¿Confirmas el cierre definitivo de la cuenta de ${cuenta.atencion?.paciente?.nombre}? Ya no admitirá nuevos cargos.`)) {
+      return;
+    }
+
+    this.procesandoAccion.set(true);
+    this.service.cerrarCuenta(cuenta.id, this.alcance()).subscribe({
+      next: (r) => {
+        this.procesandoAccion.set(false);
+        this.cuentaSeleccionada.set(r);
+        this.cuentas.update((items) => items.map((c) => (c.id === r.id ? r : c)));
+        this.mostrarAlerta('Cuenta cerrada formalmente.', 'exito');
+      },
+      error: (err) => {
+        this.procesandoAccion.set(false);
+        this.mostrarAlerta(err?.error?.message || 'Error al cerrar la cuenta.', 'error');
+      },
+    });
+  }
+
+  emitirFactura(): void {
+    const cuenta = this.cuentaSeleccionada();
+    if (!cuenta) return;
+
+    if (!confirm(`¿Generar factura oficial para la cuenta de ${cuenta.atencion?.paciente?.nombre}?`)) {
+      return;
+    }
+
+    this.procesandoAccion.set(true);
+    this.service.emitirFactura(cuenta.id, this.alcance()).subscribe({
+      next: (factura) => {
+        this.procesandoAccion.set(false);
+        this.refrescarCuentaSeleccionada();
+        this.cargar(1); // Actualizar listado de facturas
+        this.mostrarAlerta(`Factura ${factura.numero} generada con éxito.`, 'exito');
+      },
+      error: (err) => {
+        this.procesandoAccion.set(false);
+        this.mostrarAlerta(err?.error?.message || 'Error al emitir factura.', 'error');
+      },
+    });
+  }
+
+  saldoPendiente(cuenta: CuentaPaciente): number {
+    const tot = Number(cuenta.total || 0);
+    const pag = Number(cuenta.pagado || 0);
+    return Math.max(0, tot - pag);
+  }
+
+  origenEtiqueta(tipo: string): string {
+    switch (tipo) {
+      case 'cita_servicio':
+        return 'Cita Médica';
+      case 'hospitalizacion':
+        return 'Hospitalización';
+      case 'procedimiento':
+        return 'Procedimiento';
+      case 'laboratorio':
+        return 'Laboratorio';
+      case 'dispensacion_medicamento':
+        return 'Medicamento';
+      case 'venta_medicamento':
+        return 'Farmacia';
+      default:
+        return tipo;
+    }
   }
 
   cargar(page = 1): void {
@@ -135,6 +396,7 @@ export class FacturacionComponent implements OnInit {
   onEmpresaChange(valor: string): void {
     this.filtroEmpresa.set(valor);
     this.cargar(1);
+    this.cargarCuentas(1);
   }
 
   limpiarFiltros(): void {
@@ -160,11 +422,17 @@ export class FacturacionComponent implements OnInit {
     this.facturaSeleccionada.set(null);
   }
 
-  formatearMoneda(valor: number): string {
+  mostrarAlerta(texto: string, tipo: 'exito' | 'error'): void {
+    this.mensajeAlerta.set({ texto, tipo });
+    setTimeout(() => this.mensajeAlerta.set(null), 5000);
+  }
+
+  formatearMoneda(valor: number | string): string {
+    const num = Number(valor || 0);
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
       maximumFractionDigits: 0,
-    }).format(valor);
+    }).format(num);
   }
 }

@@ -1495,6 +1495,26 @@ solicitudSeleccionada()
 
       </div>
 
+      <!-- SERVICIO / TARIFA FACTURABLE -->
+      <div class="form-group">
+        <label>
+          Tarifa / Servicio de Facturación (Catálogo)
+        </label>
+        <select [value]="formulario().servicioId" (change)="
+              actualizarFormulario(
+                'servicioId',
+                $any($event.target).value
+              )
+            ">
+          <option value="">Seleccionar tarifa de examen (opcional)</option>
+          @for (srv of servicios(); track srv.id) {
+          <option [value]="srv.id" [selected]="srv.id === formulario().servicioId">
+            {{ srv.nombre }} ({{ srv.precio | currency:'COP':'symbol-narrow':'1.0-0' }})
+          </option>
+          }
+        </select>
+      </div>
+
 
       <div class="form-group">
 

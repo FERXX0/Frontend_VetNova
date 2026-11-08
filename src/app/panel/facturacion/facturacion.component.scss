@@ -163,3 +163,329 @@ th { color: var(--vn-text-muted, #8a97a1); font-size: .7rem; }
     }
   }
 }
+
+.facturacion-modal--amplio {
+  width: min(880px, 96vw);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+
+  > header {
+    flex-shrink: 0;
+  }
+
+  .modal-seccion {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--vn-border, #e5e9ec);
+
+    h3 {
+      margin: 0 0 0.75rem;
+      font-size: 0.95rem;
+      color: var(--vn-navy, #10263a);
+    }
+  }
+}
+
+.cuenta-resumen-barra {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--vn-surface, #f6f9fa);
+  border-bottom: 1px solid var(--vn-border, #e5e9ec);
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+
+    small {
+      font-size: 0.72rem;
+      color: var(--vn-text-muted, #8a97a1);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    strong {
+      font-size: 1.05rem;
+      color: var(--vn-navy, #10263a);
+    }
+
+    span {
+      font-size: 0.78rem;
+      color: var(--vn-text-muted, #8a97a1);
+    }
+  }
+}
+
+.seccion-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+
+  h3 {
+    margin: 0 !important;
+  }
+}
+
+.saldo-pendiente {
+  color: var(--vn-danger, #e0554f) !important;
+}
+
+.text-success {
+  color: #16a34a !important;
+}
+
+.status.cerrada {
+  background: rgba(140, 150, 160, 0.15);
+  color: #556068;
+}
+
+.badge-origen {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: #e2e8f0;
+  color: #334155;
+
+  &.badge-cita_servicio {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  &.badge-hospitalizacion {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  &.badge-procedimiento {
+    background: #ede9fe;
+    color: #5b21b6;
+  }
+  &.badge-laboratorio {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  &.badge-dispensacion_medicamento,
+  &.badge-venta_medicamento {
+    background: #dcfce7;
+    color: #166534;
+  }
+}
+
+.fila-anulada {
+  opacity: 0.6;
+  text-decoration: line-through;
+  background: #fafafa;
+}
+
+.anulado-nota {
+  font-size: 0.75rem;
+  color: var(--vn-danger, #e0554f);
+  text-decoration: none;
+  font-weight: normal;
+  margin-top: 0.2rem;
+}
+
+.badge-anulado {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.btn-anular {
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--vn-danger, #e0554f);
+  background: transparent;
+  color: var(--vn-danger, #e0554f);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--vn-danger, #e0554f);
+    color: #fff;
+  }
+}
+
+.metodo-tag {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.facturas-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  .factura-chip {
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+}
+
+.cuenta-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: var(--vn-white, #fff);
+  flex-shrink: 0;
+
+  .acciones-izq {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+}
+
+.btn-accion {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1.5px solid transparent;
+
+  &--primario {
+    background: var(--vn-teal, #1aa7a0);
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: var(--vn-teal-dark, #0e7c86);
+    }
+  }
+
+  &--secundario {
+    background: #0284c7;
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: #0369a1;
+    }
+  }
+
+  &--cerrar {
+    background: #475569;
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: #334155;
+    }
+  }
+
+  &--peligro {
+    background: var(--vn-danger, #e0554f);
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: #c53030;
+    }
+  }
+
+  &--outline {
+    background: transparent;
+    border-color: var(--vn-border, #e5e9ec);
+    color: var(--vn-text-dark, #1c2b36);
+
+    &:hover {
+      background: var(--vn-surface, #f6f9fa);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.submodal {
+  z-index: 1300 !important;
+
+  .submodal-card {
+    width: min(480px, 94vw);
+
+    .submodal-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+
+      p {
+        margin: 0;
+        font-size: 0.88rem;
+        line-height: 1.4;
+      }
+    }
+
+    .form-control {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+
+      label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--vn-navy, #10263a);
+      }
+
+      input,
+      select,
+      textarea {
+        padding: 0.55rem 0.75rem;
+        border: 1.5px solid var(--vn-border, #e5e9ec);
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 0.85rem;
+        color: var(--vn-text-dark, #1c2b36);
+
+        &:focus {
+          outline: none;
+          border-color: var(--vn-teal, #1aa7a0);
+        }
+      }
+    }
+  }
+}
+
+.alerta-banner {
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+
+  &.exito {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+  }
+
+  &.error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+}
+

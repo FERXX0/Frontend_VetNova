@@ -36,6 +36,13 @@ export interface Procedimiento {
   sala: string;
   prioridad: PrioridadProcedimiento;
   estado: EstadoProcedimiento;
+  servicio_id?: string | null;
+  servicio?: {
+    id: string;
+    nombre: string;
+    precio: number;
+  } | null;
+  cuenta_atencion_id?: string | null;
   indicaciones: string | null;
   observaciones: string | null;
   notas: NotaProcedimiento[];
@@ -44,6 +51,8 @@ export interface Procedimiento {
 export interface ProcedimientoPayload {
   paciente_id?: string;
   veterinario_id: string;
+  servicio_id?: string | null;
+  cuenta_atencion_id?: string | null;
   procedimiento: string;
   categoria: string;
   diagnostico?: string | null;

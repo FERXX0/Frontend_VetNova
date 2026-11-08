@@ -9,6 +9,8 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { HospitalizacionService } from '../../core/services/hospitalizacion.service';
 import { EmpresaService } from '../../core/services/empresa.service';
 import { SessionService } from '../../core/services/session.service';
+import { ServicioService } from '../../core/services/servicio.service';
+import { Servicio } from '../../core/models/servicio.model';
 import { EmpresaOpcion } from '../../core/models/empresa.model';
 import { Profesional } from '../../core/models/cita.model';
 import { AlcanceApi } from '../../core/utils/alcance-api';
@@ -30,6 +32,7 @@ interface OpcionPaciente {
 interface FormularioHospitalizacion {
   pacienteId: string;
   veterinarioId: string;
+  servicioId: string;
   motivo: string;
   diagnostico: string;
   fechaIngreso: string;
@@ -56,6 +59,7 @@ interface FormularioEvolucion {
 export class HospitalizacionComponent implements OnInit {
   private readonly hospitalizacionService = inject(HospitalizacionService);
   private readonly empresaService = inject(EmpresaService);
+  private readonly servicioService = inject(ServicioService);
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
 
@@ -90,6 +94,7 @@ export class HospitalizacionComponent implements OnInit {
   readonly pacienteSeleccionado = signal<OpcionPaciente | null>(null);
   readonly alcanceFormulario = computed(() => this.alcanceEmpresa(this.empresaFormulario()));
   readonly profesionales = signal<Profesional[]>([]);
+  readonly servicios = signal<Servicio[]>([]);
 
   readonly guardando = signal(false);
   readonly errorFormulario = signal<string | null>(null);
@@ -258,6 +263,7 @@ export class HospitalizacionComponent implements OnInit {
     return {
       pacienteId: '',
       veterinarioId: '',
+      servicioId: '',
       motivo: '',
       diagnostico: '',
       fechaIngreso: this.obtenerFechaActual(),
@@ -281,9 +287,13 @@ export class HospitalizacionComponent implements OnInit {
       profesionales: this.hospitalizacionService
         .profesionales(alcance)
         .pipe(catchError(() => of([] as Profesional[]))),
-    }).subscribe(({ profesionales }) => {
+      servicios: this.servicioService
+        .listar(true, alcance)
+        .pipe(catchError(() => of([] as Servicio[]))),
+    }).subscribe(({ profesionales, servicios }) => {
       this.pacienteSeleccionado.set(pacienteActual);
       this.profesionales.set(profesionales);
+      this.servicios.set(servicios);
       alTerminar(profesionales);
     });
   }
@@ -327,6 +337,7 @@ export class HospitalizacionComponent implements OnInit {
     this.formulario.set({
       pacienteId: item.paciente?.id ?? '',
       veterinarioId: item.veterinario_id ?? '',
+      servicioId: item.servicio_id ?? '',
       motivo: item.motivo,
       diagnostico: item.diagnostico ?? '',
       fechaIngreso: item.fecha_ingreso,
@@ -418,6 +429,7 @@ export class HospitalizacionComponent implements OnInit {
     const payload: HospitalizacionPayload = {
       ...(edicion ? {} : { paciente_id: f.pacienteId }),
       veterinario_id: f.veterinarioId,
+      servicio_id: f.servicioId || null,
       motivo: f.motivo.trim(),
       diagnostico: f.diagnostico.trim() || null,
       fecha_ingreso: f.fechaIngreso,

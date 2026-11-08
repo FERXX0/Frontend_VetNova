@@ -1,199 +1,586 @@
 <div class="facturacion-page">
   <header class="facturacion-page__header">
     <div>
-      <span class="eyebrow">GESTIÓN COMERCIAL</span>
+      <span class="eyebrow">GESTIÓN COMERCIAL Y FINANCIERA</span>
       <h1>Facturación</h1>
-      <p>Consulta cuentas clínicas pendientes y facturas emitidas.</p>
+      <p>Control de cuentas clínicas por episodio, cargos, abonos y facturas emitidas.</p>
     </div>
   </header>
 
+  @if (mensajeAlerta(); as alerta) {
+    <div class="alerta-banner" [class.exito]="alerta.tipo === 'exito'" [class.error]="alerta.tipo === 'error'">
+      {{ alerta.texto }}
+    </div>
+  }
+
   <nav class="cuentas-tabs" aria-label="Vistas de facturación">
-    <button type="button" [class.activa]="vista() === 'cuentas'" (click)="vista.set('cuentas'); cargarCuentas()">Cuentas de pacientes</button>
-    <button type="button" [class.activa]="vista() === 'facturas'" (click)="vista.set('facturas')">Facturas emitidas</button>
+    <button type="button" [class.activa]="vista() === 'cuentas'" (click)="vista.set('cuentas'); cargarCuentas()">
+      Cuentas de pacientes
+    </button>
+    <button type="button" [class.activa]="vista() === 'facturas'" (click)="vista.set('facturas'); cargar()">
+      Facturas emitidas
+    </button>
   </nav>
+
   @if (vista() === 'cuentas') {
-    <section class="facturacion-card">
-      <div class="facturacion-card__header"><h2>Cuentas de pacientes</h2><span>Se crean al marcar citas como cumplidas</span></div>
-      @if (errorCuentas()) { <div class="facturacion-alert">{{ errorCuentas() }}</div> }
-      @if (cargandoCuentas()) { <div class="facturacion-empty">Cargando cuentas…</div> }
-      @else if (!cuentas().length) { <div class="facturacion-empty">No hay cuentas registradas.</div> }
-      @else {
-        <div class="table-wrapper"><table><thead><tr><th>MASCOTA</th><th>PROPIETARIO</th><th>ESTADO</th><th>TOTAL</th><th>ACCIONES</th></tr></thead><tbody>
-          @for (cuenta of cuentas(); track cuenta.id) {
-            <tr><td>{{ cuenta.atencion?.paciente?.nombre || '—' }}</td><td>{{ cuenta.atencion?.propietario?.nombre || '—' }}</td>
-              <td><span class="status">{{ cuenta.estado }}</span></td><td>{{ formatearMoneda(+cuenta.total) }}</td>
-              <td><button type="button" class="btn-detail" (click)="verCuenta(cuenta)">Ver cargos</button></td></tr>
+    <!-- FILTROS DE CUENTAS -->
+    <section class="facturacion-filtros">
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input
+          type="text"
+          placeholder="Buscar por mascota, propietario o identificación..."
+          [value]="busquedaCuenta()"
+          (input)="cambiarBusquedaCuenta($any($event.target).value)"
+        />
+      </div>
+
+      <select [value]="filtroEstadoCuenta()" (change)="cambiarEstadoCuenta($any($event.target).value)">
+        <option value="">Todos los estados</option>
+        <option value="abierta">Abiertas</option>
+        <option value="cerrada">Cerradas</option>
+      </select>
+
+      @if (esVistaSuperUsuario()) {
+        <select [value]="filtroEmpresa()" (change)="onEmpresaChange($any($event.target).value)">
+          <option value="">Todas las empresas</option>
+          @for (empresa of empresasDisponibles(); track empresa.id) {
+            <option [value]="empresa.id" [selected]="empresa.id === filtroEmpresa()">
+              {{ empresa.nombre }}
+            </option>
           }
-        </tbody></table></div>
+        </select>
       }
     </section>
+
+    <!-- LISTADO DE CUENTAS -->
+    <section class="facturacion-card">
+      <div class="facturacion-card__header">
+        <div>
+          <h2>Cuentas clínicas por episodio</h2>
+          <span>Centraliza consultas, hospitalizaciones, cirugías, exámenes y farmacia</span>
+        </div>
+      </div>
+
+      @if (errorCuentas()) {
+        <div class="facturacion-alert">{{ errorCuentas() }}</div>
+      }
+
+      @if (cargandoCuentas()) {
+        <div class="facturacion-empty">Cargando cuentas…</div>
+      } @else if (!cuentas().length) {
+        <div class="facturacion-empty">No hay cuentas registradas con los criterios seleccionados.</div>
+      } @else {
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>MASCOTA</th>
+                <th>PROPIETARIO</th>
+                <th>TOTAL</th>
+                <th>PAGADO</th>
+                <th>SALDO</th>
+                <th>ESTADO</th>
+                <th>ACCIONES</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (cuenta of cuentas(); track cuenta.id) {
+                <tr>
+                  <td>
+                    <strong>{{ cuenta.atencion?.paciente?.nombre || '—' }}</strong>
+                    <small>{{ cuenta.atencion?.paciente?.especie || '' }}</small>
+                  </td>
+                  <td>
+                    <strong>{{ cuenta.atencion?.propietario?.nombre || '—' }}</strong>
+                    @if (cuenta.atencion?.propietario?.numero_identificacion) {
+                      <small>CC: {{ cuenta.atencion?.propietario?.numero_identificacion }}</small>
+                    }
+                  </td>
+                  <td><strong>{{ formatearMoneda(cuenta.total) }}</strong></td>
+                  <td class="text-success">{{ formatearMoneda(cuenta.pagado) }}</td>
+                  <td>
+                    <strong [class.saldo-pendiente]="saldoPendiente(cuenta) > 0">
+                      {{ formatearMoneda(saldoPendiente(cuenta)) }}
+                    </strong>
+                  </td>
+                  <td>
+                    <span class="status" [class.cerrada]="cuenta.estado === 'cerrada'">
+                      {{ cuenta.estado }}
+                    </span>
+                  </td>
+                  <td>
+                    <button type="button" class="btn-detail" (click)="verCuenta(cuenta)">
+                      Ver cuenta
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (totalPaginasCuentas() > 1) {
+          <div class="facturacion-pagination">
+            <button type="button" [disabled]="paginaCuentas() <= 1" (click)="cargarCuentas(paginaCuentas() - 1)">
+              Anterior
+            </button>
+            <span>Página {{ paginaCuentas() }} de {{ totalPaginasCuentas() }}</span>
+            <button type="button" [disabled]="paginaCuentas() >= totalPaginasCuentas()" (click)="cargarCuentas(paginaCuentas() + 1)">
+              Siguiente
+            </button>
+          </div>
+        }
+      }
+    </section>
+
+    <!-- MODAL DETALLE DE LA CUENTA -->
     @if (cuentaSeleccionada(); as cuenta) {
       <div class="facturacion-modal-backdrop" (click)="cuentaSeleccionada.set(null)">
-        <section class="facturacion-modal" (click)="$event.stopPropagation()">
-          <header><h2>Cuenta de {{ cuenta.atencion?.paciente?.nombre }}</h2><button type="button" (click)="cuentaSeleccionada.set(null)">Cerrar</button></header>
-          <div class="table-wrapper"><table><thead><tr><th>CONCEPTO</th><th>CANT.</th><th>PRECIO</th><th>SUBTOTAL</th></tr></thead><tbody>
-            @for (cargo of cuenta.detalles || []; track cargo.id) { <tr><td>{{ cargo.descripcion }}</td><td>{{ cargo.cantidad }}</td><td>{{ formatearMoneda(+cargo.precio_unitario) }}</td><td>{{ formatearMoneda(+cargo.subtotal) }}</td></tr> }
-          </tbody></table></div><p><strong>Total: {{ formatearMoneda(+cuenta.total) }}</strong></p>
+        <section class="facturacion-modal facturacion-modal--amplio" (click)="$event.stopPropagation()">
+          <header>
+            <div>
+              <span class="eyebrow">ESTADO DE CUENTA CLÍNICA</span>
+              <h2>{{ cuenta.atencion?.paciente?.nombre }} · {{ cuenta.atencion?.propietario?.nombre }}</h2>
+            </div>
+            <button type="button" (click)="cuentaSeleccionada.set(null)">×</button>
+          </header>
+
+          <div class="cuenta-resumen-barra">
+            <div>
+              <small>Responsable legal</small>
+              <strong>{{ cuenta.atencion?.propietario?.nombre }}</strong>
+              <span>{{ cuenta.atencion?.propietario?.celular || 'Sin celular' }}</span>
+            </div>
+            <div>
+              <small>Total cargos</small>
+              <strong>{{ formatearMoneda(cuenta.total) }}</strong>
+            </div>
+            <div>
+              <small>Total pagado</small>
+              <strong class="text-success">{{ formatearMoneda(cuenta.pagado) }}</strong>
+            </div>
+            <div>
+              <small>Saldo pendiente</small>
+              <strong [class.saldo-pendiente]="saldoPendiente(cuenta) > 0">
+                {{ formatearMoneda(saldoPendiente(cuenta)) }}
+              </strong>
+            </div>
+            <div>
+              <small>Estado</small>
+              <span class="status" [class.cerrada]="cuenta.estado === 'cerrada'">
+                {{ cuenta.estado }}
+              </span>
+            </div>
+          </div>
+
+          <!-- TABLA DE CARGOS -->
+          <div class="modal-seccion">
+            <h3>Detalle de cargos acumulados</h3>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ORIGEN</th>
+                    <th>CONCEPTO</th>
+                    <th>CANT.</th>
+                    <th>PRECIO</th>
+                    <th>SUBTOTAL</th>
+                    <th>ACCIONES</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (cargo of cuenta.detalles || []; track cargo.id) {
+                    <tr [class.fila-anulada]="cargo.anulado_en">
+                      <td>
+                        <span class="badge-origen badge-{{ cargo.origen_tipo }}">
+                          {{ origenEtiqueta(cargo.origen_tipo) }}
+                        </span>
+                      </td>
+                      <td>
+                        <strong>{{ cargo.descripcion }}</strong>
+                        @if (cargo.anulado_en) {
+                          <div class="anulado-nota">
+                            ⚠ Anulado: {{ cargo.motivo_anulacion }}
+                          </div>
+                        }
+                      </td>
+                      <td>{{ cargo.cantidad }}</td>
+                      <td>{{ formatearMoneda(cargo.precio_unitario) }}</td>
+                      <td><strong>{{ formatearMoneda(cargo.subtotal) }}</strong></td>
+                      <td>
+                        @if (!cargo.anulado_en && cuenta.estado === 'abierta') {
+                          <button type="button" class="btn-anular" (click)="abrirAnularCargo(cargo)">
+                            Anular
+                          </button>
+                        } @else if (cargo.anulado_en) {
+                          <span class="badge-anulado">Anulado</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                  @if (!cuenta.detalles?.length) {
+                    <tr><td colspan="6" class="text-center">No hay cargos registrados en esta cuenta.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TABLA DE PAGOS Y ABONOS -->
+          <div class="modal-seccion">
+            <div class="seccion-header-flex">
+              <h3>Historial de abonos y pagos</h3>
+              @if (cuenta.estado === 'abierta' && saldoPendiente(cuenta) > 0) {
+                <button type="button" class="btn-accion btn-accion--primario" (click)="abrirRegistrarPago()">
+                  + Registrar Abono
+                </button>
+              }
+            </div>
+
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>FECHA</th>
+                    <th>MÉTODO</th>
+                    <th>REFERENCIA</th>
+                    <th>REGISTRADO POR</th>
+                    <th>MONTO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (pago of cuenta.pagos || []; track pago.id) {
+                    <tr>
+                      <td>{{ pago.creado_en | date:'dd/MM/yyyy HH:mm' }}</td>
+                      <td><span class="metodo-tag">{{ pago.metodo_pago }}</span></td>
+                      <td>{{ pago.referencia || '—' }}</td>
+                      <td>{{ pago.usuario?.nombre || 'Sistema' }}</td>
+                      <td><strong class="text-success">{{ formatearMoneda(pago.monto) }}</strong></td>
+                    </tr>
+                  }
+                  @if (!cuenta.pagos?.length) {
+                    <tr><td colspan="5" class="text-center text-muted">Aún no se han registrado abonos en esta cuenta.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- FACTURAS EMITIDAS -->
+          @if (cuenta.facturas?.length) {
+            <div class="modal-seccion">
+              <h3>Facturas oficiales vinculadas</h3>
+              <div class="facturas-tags">
+                @for (fac of cuenta.facturas; track fac.id) {
+                  <span class="factura-chip">
+                    📄 Factura {{ fac.numero }} ({{ formatearMoneda(fac.total) }})
+                  </span>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- FOOTER CON ACCIONES -->
+          <footer class="cuenta-modal-footer">
+            <div class="acciones-izq">
+              @if (cuenta.estado === 'abierta') {
+                <button type="button" class="btn-accion btn-accion--secundario" [disabled]="procesandoAccion()" (click)="emitirFactura()">
+                  🧾 Emitir Factura
+                </button>
+                @if (saldoPendiente(cuenta) === 0 && (cuenta.detalles?.length || 0) > 0) {
+                  <button type="button" class="btn-accion btn-accion--cerrar" [disabled]="procesandoAccion()" (click)="cerrarCuenta()">
+                    🔒 Cerrar Cuenta
+                  </button>
+                }
+              }
+            </div>
+            <button type="button" class="btn-accion btn-accion--outline" (click)="cuentaSeleccionada.set(null)">
+              Cerrar
+            </button>
+          </footer>
+        </section>
+      </div>
+    }
+
+    <!-- MODAL REGISTRAR ABONO / PAGO -->
+    @if (modalPagoAbierto()) {
+      <div class="facturacion-modal-backdrop submodal" (click)="cerrarModalPago()">
+        <section class="facturacion-modal submodal-card" (click)="$event.stopPropagation()">
+          <header>
+            <h2>Registrar Abono / Pago</h2>
+            <button type="button" (click)="cerrarModalPago()">×</button>
+          </header>
+
+          <div class="submodal-body">
+            @if (errorPago()) {
+              <div class="facturacion-alert">{{ errorPago() }}</div>
+            }
+
+            <div class="form-control">
+              <label>Monto a abonar (COP) *</label>
+              <input
+                type="number"
+                [value]="pagoMonto()"
+                (input)="pagoMonto.set(+$any($event.target).value)"
+                step="1000"
+                min="1"
+              />
+            </div>
+
+            <div class="form-control">
+              <label>Método de pago *</label>
+              <select [value]="pagoMetodo()" (change)="pagoMetodo.set($any($event.target).value)">
+                @for (metodo of metodosPagoDisponibles; track metodo) {
+                  <option [value]="metodo">{{ metodo }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-control">
+              <label>No. de comprobante / Referencia</label>
+              <input
+                type="text"
+                placeholder="Ej. # Transacción, voucher..."
+                [value]="pagoReferencia()"
+                (input)="pagoReferencia.set($any($event.target).value)"
+              />
+            </div>
+
+            <div class="form-control">
+              <label>Notas adicionales</label>
+              <input
+                type="text"
+                placeholder="Observaciones..."
+                [value]="pagoNotas()"
+                (input)="pagoNotas.set($any($event.target).value)"
+              />
+            </div>
+          </div>
+
+          <footer>
+            <button type="button" class="btn-accion btn-accion--outline" (click)="cerrarModalPago()">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn-accion btn-accion--primario"
+              [disabled]="procesandoPago()"
+              (click)="guardarPago()"
+            >
+              {{ procesandoPago() ? 'Guardando…' : 'Confirmar Pago' }}
+            </button>
+          </footer>
+        </section>
+      </div>
+    }
+
+    <!-- MODAL ANULAR CARGO -->
+    @if (modalAnularAbierto(); as cargo) {
+      <div class="facturacion-modal-backdrop submodal" (click)="cerrarModalAnular()">
+        <section class="facturacion-modal submodal-card" (click)="$event.stopPropagation()">
+          <header>
+            <h2>Anular Cargo de la Cuenta</h2>
+            <button type="button" (click)="cerrarModalAnular()">×</button>
+          </header>
+
+          <div class="submodal-body">
+            @if (errorAnulacion()) {
+              <div class="facturacion-alert">{{ errorAnulacion() }}</div>
+            }
+
+            <p>
+              Estás a punto de anular: <strong>{{ cargo.descripcion }}</strong>
+              por valor de <strong>{{ formatearMoneda(cargo.subtotal) }}</strong>.
+            </p>
+
+            <div class="form-control">
+              <label>Motivo de la anulación (obligatorio por trazabilidad) *</label>
+              <textarea
+                rows="3"
+                placeholder="Indica la razón administrativa o clínica..."
+                [value]="motivoAnulacion()"
+                (input)="motivoAnulacion.set($any($event.target).value)"
+              ></textarea>
+            </div>
+          </div>
+
+          <footer>
+            <button type="button" class="btn-accion btn-accion--outline" (click)="cerrarModalAnular()">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn-accion btn-accion--peligro"
+              [disabled]="procesandoAnulacion()"
+              (click)="confirmarAnulacion()"
+            >
+              {{ procesandoAnulacion() ? 'Anulando…' : 'Confirmar Anulación' }}
+            </button>
+          </footer>
         </section>
       </div>
     }
   } @else {
-  @if (error()) {
-    <div class="facturacion-alert">{{ error() }}</div>
-  }
-
-  <section class="facturacion-filtros">
-    <div class="search-box">
-      <span class="search-icon">⌕</span>
-      <input
-        type="text"
-        placeholder="Buscar por número, comprador o identificación"
-        [value]="busqueda()"
-        (input)="cambiarBusqueda($any($event.target).value)"
-      />
-    </div>
-
-    @if (esVistaSuperUsuario()) {
-      <select [value]="filtroEmpresa()" (change)="onEmpresaChange($any($event.target).value)">
-        <option value="">Todas las empresas</option>
-        @for (empresa of empresasDisponibles(); track empresa.id) {
-          <option [value]="empresa.id" [selected]="empresa.id === filtroEmpresa()">
-            {{ empresa.nombre }}
-          </option>
-        }
-      </select>
+    <!-- VISTA DE FACTURAS EMITIDAS -->
+    @if (error()) {
+      <div class="facturacion-alert">{{ error() }}</div>
     }
 
-    <div class="filtro-fecha">
-      <label for="fecha-desde">Desde</label>
-      <input
-        id="fecha-desde"
-        type="date"
-        [value]="desde()"
-        [max]="hasta() || null"
-        (change)="cambiarDesde($any($event.target).value)"
-      />
-    </div>
-
-    <div class="filtro-fecha">
-      <label for="fecha-hasta">Hasta</label>
-      <input
-        id="fecha-hasta"
-        type="date"
-        [value]="hasta()"
-        [min]="desde() || null"
-        (change)="cambiarHasta($any($event.target).value)"
-      />
-    </div>
-
-    @if (hayFiltros()) {
-      <button type="button" class="btn-limpiar" (click)="limpiarFiltros()">
-        Limpiar filtros
-      </button>
-    }
-  </section>
-
-  <section class="facturacion-card">
-    <div class="facturacion-card__header">
-      <div>
-        <h2>Ventas de medicamentos</h2>
-        <span>{{ total() }} factura(s)</span>
+    <section class="facturacion-filtros">
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input
+          type="text"
+          placeholder="Buscar por número, comprador o identificación"
+          [value]="busqueda()"
+          (input)="cambiarBusqueda($any($event.target).value)"
+        />
       </div>
-    </div>
 
-    @if (cargando()) {
-      <div class="facturacion-empty">Cargando facturación…</div>
-    } @else if (facturas().length === 0) {
-      <div class="facturacion-empty">
-        @if (hayFiltros()) {
-          No hay facturas que coincidan con los filtros.
-        } @else {
-          Aún no se han registrado ventas de medicamentos.
-        }
+      @if (esVistaSuperUsuario()) {
+        <select [value]="filtroEmpresa()" (change)="onEmpresaChange($any($event.target).value)">
+          <option value="">Todas las empresas</option>
+          @for (empresa of empresasDisponibles(); track empresa.id) {
+            <option [value]="empresa.id" [selected]="empresa.id === filtroEmpresa()">
+              {{ empresa.nombre }}
+            </option>
+          }
+        </select>
+      }
+
+      <div class="filtro-fecha">
+        <label for="fecha-desde">Desde</label>
+        <input
+          id="fecha-desde"
+          type="date"
+          [value]="desde()"
+          [max]="hasta() || null"
+          (change)="cambiarDesde($any($event.target).value)"
+        />
       </div>
-    } @else {
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>NÚMERO</th>
-              @if (esVistaSuperUsuario()) {
-                <th>EMPRESA</th>
-              }
-              <th>FECHA</th>
-              <th>COMPRADOR</th>
-              <th>DETALLE</th>
-              <th>TOTAL</th>
-              <th>ESTADO</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (factura of facturas(); track factura.id) {
+
+      <div class="filtro-fecha">
+        <label for="fecha-hasta">Hasta</label>
+        <input
+          id="fecha-hasta"
+          type="date"
+          [value]="hasta()"
+          [min]="desde() || null"
+          (change)="cambiarHasta($any($event.target).value)"
+        />
+      </div>
+
+      @if (hayFiltros()) {
+        <button type="button" class="btn-limpiar" (click)="limpiarFiltros()">
+          Limpiar filtros
+        </button>
+      }
+    </section>
+
+    <section class="facturacion-card">
+      <div class="facturacion-card__header">
+        <div>
+          <h2>Facturas emitidas</h2>
+          <span>{{ total() }} factura(s) registrada(s)</span>
+        </div>
+      </div>
+
+      @if (cargando()) {
+        <div class="facturacion-empty">Cargando facturación…</div>
+      } @else if (facturas().length === 0) {
+        <div class="facturacion-empty">
+          @if (hayFiltros()) {
+            No hay facturas que coincidan con los filtros.
+          } @else {
+            Aún no se han emitido facturas.
+          }
+        </div>
+      } @else {
+        <div class="table-wrapper">
+          <table>
+            <thead>
               <tr>
-                <td><strong>{{ factura.numero }}</strong></td>
+                <th>NÚMERO</th>
                 @if (esVistaSuperUsuario()) {
-                  <td>{{ factura.empresa?.nombre || '—' }}</td>
+                  <th>EMPRESA</th>
                 }
-                <td>{{ factura.fecha | date:'dd/MM/yyyy' }}</td>
-                <td>
-                  <strong>{{ factura.tercero_nombre }}</strong>
-                  @if (factura.tercero_identificacion) { <small>{{ factura.tercero_identificacion }}</small> }
-                </td>
-                <td>{{ factura.detalles.length }} producto(s)</td>
-                <td><strong>{{ formatearMoneda(factura.total) }}</strong></td>
-                <td><span class="status">{{ factura.estado }}</span></td>
-                <td>
-                  <button type="button" class="btn-detail" (click)="verFactura(factura)">Ver detalle</button>
-                </td>
+                <th>FECHA</th>
+                <th>COMPRADOR</th>
+                <th>DETALLES</th>
+                <th>TOTAL</th>
+                <th>ESTADO</th>
+                <th></th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (factura of facturas(); track factura.id) {
+                <tr>
+                  <td><strong>{{ factura.numero }}</strong></td>
+                  @if (esVistaSuperUsuario()) {
+                    <td>{{ factura.empresa?.nombre || '—' }}</td>
+                  }
+                  <td>{{ factura.fecha | date:'dd/MM/yyyy' }}</td>
+                  <td>
+                    <strong>{{ factura.tercero_nombre }}</strong>
+                    @if (factura.tercero_identificacion) {
+                      <small>{{ factura.tercero_identificacion }}</small>
+                    }
+                  </td>
+                  <td>{{ factura.detalles.length }} ítem(s)</td>
+                  <td><strong>{{ formatearMoneda(factura.total) }}</strong></td>
+                  <td><span class="status">{{ factura.estado }}</span></td>
+                  <td>
+                    <button type="button" class="btn-detail" (click)="verFactura(factura)">Ver detalle</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    @if (totalPaginas() > 1) {
+      <div class="facturacion-pagination">
+        <button type="button" [disabled]="pagina() <= 1" (click)="cargar(pagina() - 1)">Anterior</button>
+        <span>Página {{ pagina() }} de {{ totalPaginas() }}</span>
+        <button type="button" [disabled]="pagina() >= totalPaginas()" (click)="cargar(pagina() + 1)">Siguiente</button>
       </div>
     }
-  </section>
 
-  @if (totalPaginas() > 1) {
-    <div class="facturacion-pagination">
-      <button type="button" [disabled]="pagina() <= 1" (click)="cargar(pagina() - 1)">Anterior</button>
-      <span>Página {{ pagina() }} de {{ totalPaginas() }}</span>
-      <button type="button" [disabled]="pagina() >= totalPaginas()" (click)="cargar(pagina() + 1)">Siguiente</button>
-    </div>
-  }
-
-  @if (facturaSeleccionada(); as factura) {
-    <div class="facturacion-modal-backdrop" (click)="cerrarDetalle()">
-      <section class="facturacion-modal" (click)="$event.stopPropagation()">
-        <header>
-          <div>
-            <span class="eyebrow">FACTURA DE VENTA</span>
-            <h2>{{ factura.numero }}</h2>
-          </div>
-          <button type="button" (click)="cerrarDetalle()">×</button>
-        </header>
-        <div class="facturacion-modal__cliente">
-          @if (esVistaSuperUsuario() && factura.empresa?.nombre) {
-            <span class="facturacion-modal__empresa"><strong>Empresa:</strong> {{ factura.empresa?.nombre }}</span>
-          }
-          <strong>{{ factura.tercero_nombre }}</strong>
-          <span>{{ factura.tercero_identificacion || 'Sin identificación' }}</span>
-          <span>{{ factura.tercero_celular || 'Sin celular' }}</span>
-        </div>
-        <div class="facturacion-detalles">
-          @for (detalle of factura.detalles; track detalle.id) {
+    @if (facturaSeleccionada(); as factura) {
+      <div class="facturacion-modal-backdrop" (click)="cerrarDetalle()">
+        <section class="facturacion-modal" (click)="$event.stopPropagation()">
+          <header>
             <div>
-              <span>{{ detalle.descripcion }} × {{ detalle.cantidad }}</span>
-              <strong>{{ formatearMoneda(detalle.total) }}</strong>
+              <span class="eyebrow">DOCUMENTO DE VENTA</span>
+              <h2>{{ factura.numero }}</h2>
             </div>
-          }
-        </div>
-        <footer>
-          <span>Total</span>
-          <strong>{{ formatearMoneda(factura.total) }}</strong>
-        </footer>
-      </section>
-    </div>
-  }
+            <button type="button" (click)="cerrarDetalle()">×</button>
+          </header>
+          <div class="facturacion-modal__cliente">
+            @if (esVistaSuperUsuario() && factura.empresa?.nombre) {
+              <span class="facturacion-modal__empresa"><strong>Empresa:</strong> {{ factura.empresa?.nombre }}</span>
+            }
+            <strong>{{ factura.tercero_nombre }}</strong>
+            <span>{{ factura.tercero_identificacion || 'Sin identificación' }}</span>
+            <span>{{ factura.tercero_celular || 'Sin celular' }}</span>
+          </div>
+          <div class="facturacion-detalles">
+            @for (detalle of factura.detalles; track detalle.id) {
+              <div>
+                <span>{{ detalle.descripcion }} × {{ detalle.cantidad }}</span>
+                <strong>{{ formatearMoneda(detalle.total) }}</strong>
+              </div>
+            }
+          </div>
+          <footer>
+            <span>Total</span>
+            <strong>{{ formatearMoneda(factura.total) }}</strong>
+          </footer>
+        </section>
+      </div>
+    }
   }
 </div>

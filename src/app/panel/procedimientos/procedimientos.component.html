@@ -1221,6 +1221,28 @@
         </div>
 
 
+        <!-- TARIFA / SERVICIO FACTURABLE -->
+        <div class="form-group full">
+          <label>Tarifa / Servicio del Procedimiento (Catálogo)</label>
+          <select
+            [value]="formulario().servicioId"
+            (change)="
+              actualizarFormulario(
+                'servicioId',
+                $any($event.target).value
+              )
+            "
+          >
+            <option value="">Seleccionar tarifa de procedimiento</option>
+            @for (srv of servicios(); track srv.id) {
+              <option [value]="srv.id" [selected]="srv.id === formulario().servicioId">
+                {{ srv.nombre }} ({{ srv.precio | currency:'COP':'symbol-narrow':'1.0-0' }})
+              </option>
+            }
+          </select>
+        </div>
+
+
         <!-- PROCEDIMIENTO -->
 
         <div class="form-group full">

@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 import { LaboratorioService } from '../../core/services/laboratorio.service';
+import { ServicioService } from '../../core/services/servicio.service';
+import { Servicio } from '../../core/models/servicio.model';
 import { BuscadorPacienteComponent } from '../../shared/components/buscador-paciente/buscador-paciente';
 import { Paciente } from '../../core/models/paciente.model';
 import { EmpresaService } from '../../core/services/empresa.service';
@@ -31,6 +33,7 @@ interface OpcionPaciente {
 interface FormularioLaboratorio {
   pacienteId: string;
   veterinarioId: string;
+  servicioId: string;
   examen: string;
   categoria: string;
   diagnostico: string;
@@ -62,6 +65,7 @@ interface FormularioResultado {
 export class LaboratorioComponent implements OnInit {
   private readonly laboratorioService = inject(LaboratorioService);
   private readonly empresaService = inject(EmpresaService);
+  private readonly servicioService = inject(ServicioService);
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
 
@@ -100,6 +104,7 @@ export class LaboratorioComponent implements OnInit {
   readonly pacienteSeleccionado = signal<OpcionPaciente | null>(null);
   readonly alcanceFormulario = computed(() => this.alcanceEmpresa(this.empresaFormulario()));
   readonly profesionales = signal<Profesional[]>([]);
+  readonly servicios = signal<Servicio[]>([]);
 
   readonly guardando = signal(false);
   readonly errorFormulario = signal<string | null>(null);
@@ -296,6 +301,7 @@ export class LaboratorioComponent implements OnInit {
     return {
       pacienteId: '',
       veterinarioId: '',
+      servicioId: '',
       examen: '',
       categoria: 'Hematología',
       diagnostico: '',
@@ -322,9 +328,13 @@ export class LaboratorioComponent implements OnInit {
       profesionales: this.laboratorioService
         .profesionales(alcance)
         .pipe(catchError(() => of([] as Profesional[]))),
-    }).subscribe(({ profesionales }) => {
+      servicios: this.servicioService
+        .listar(true, alcance)
+        .pipe(catchError(() => of([] as Servicio[]))),
+    }).subscribe(({ profesionales, servicios }) => {
       this.pacienteSeleccionado.set(pacienteActual);
       this.profesionales.set(profesionales);
+      this.servicios.set(servicios);
       alTerminar(profesionales);
     });
   }
@@ -363,6 +373,7 @@ export class LaboratorioComponent implements OnInit {
     this.formulario.set({
       pacienteId: solicitud.paciente?.id ?? '',
       veterinarioId: solicitud.veterinario_id ?? '',
+      servicioId: solicitud.servicio_id ?? '',
       examen: solicitud.examen,
       categoria: solicitud.categoria,
       diagnostico: solicitud.diagnostico ?? '',
@@ -450,6 +461,7 @@ export class LaboratorioComponent implements OnInit {
     const payload: SolicitudPayload = {
       paciente_id: f.pacienteId,
       veterinario_id: f.veterinarioId,
+      servicio_id: f.servicioId || null,
       examen: f.examen.trim(),
       categoria: f.categoria,
       diagnostico: f.diagnostico.trim() || null,

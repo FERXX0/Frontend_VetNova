@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AlcanceApi, urlRecurso } from '../utils/alcance-api';
 
 export interface ConfiguracionFacturacionClinica {
   servicio_id: string;
@@ -9,49 +10,26 @@ export interface ConfiguracionFacturacionClinica {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class FacturacionClinicaService {
   private readonly http = inject(HttpClient);
-  private readonly api = environment.apiUrl;
 
   configurarProcedimiento(
     procedimientoId: string,
     datos: ConfiguracionFacturacionClinica,
-    empresaId?: string
+    alcance?: AlcanceApi
   ): Observable<unknown> {
-    const prefijo = empresaId
-      ? `plataforma/empresas/${encodeURIComponent(empresaId)}`
-      : '';
-
-    const ruta = [
-      this.api,
-      prefijo,
-      'procedimientos',
-      encodeURIComponent(procedimientoId),
-      'configurar-facturacion'
-    ].filter(Boolean).join('/');
-
-    return this.http.patch(ruta, datos);
+    const url = `${urlRecurso(environment.apiUrl, 'procedimientos', alcance)}/${encodeURIComponent(procedimientoId)}/configurar-facturacion`;
+    return this.http.patch(url, datos);
   }
 
   configurarHospitalizacion(
     hospitalizacionId: string,
     datos: ConfiguracionFacturacionClinica,
-    empresaId?: string
+    alcance?: AlcanceApi
   ): Observable<unknown> {
-    const prefijo = empresaId
-      ? `plataforma/empresas/${encodeURIComponent(empresaId)}`
-      : '';
-
-    const ruta = [
-      this.api,
-      prefijo,
-      'hospitalizacion',
-      encodeURIComponent(hospitalizacionId),
-      'configurar-facturacion'
-    ].filter(Boolean).join('/');
-
-    return this.http.patch(ruta, datos);
+    const url = `${urlRecurso(environment.apiUrl, 'hospitalizacion', alcance)}/${encodeURIComponent(hospitalizacionId)}/configurar-facturacion`;
+    return this.http.patch(url, datos);
   }
 }
