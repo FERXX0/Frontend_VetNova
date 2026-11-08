@@ -376,7 +376,7 @@
     }
 
     <!-- MODAL ANULAR CARGO -->
-    @if (modalAnularAbierto(); as cargo) {
+    @if (cargoAAnular(); as cargo) {
       <div class="facturacion-modal-backdrop submodal" (click)="cerrarModalAnular()">
         <section class="facturacion-modal submodal-card" (click)="$event.stopPropagation()">
           <header>
