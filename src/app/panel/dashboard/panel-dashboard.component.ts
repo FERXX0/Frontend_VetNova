@@ -173,13 +173,13 @@ export class PanelDashboardComponent implements OnInit {
 
               const sorted = [...pendientes].sort(
                 (a, b) =>
-                  (a.hora || '').localeCompare(
-                    b.hora || ''
+                  (a.hora_inicio || a.hora || '').localeCompare(
+                    b.hora_inicio || b.hora || ''
                   )
               );
 
               this.proximaCitaHora.set(
-                sorted[0].hora || '--:--'
+                (sorted[0].hora_inicio || sorted[0].hora || '').slice(0, 5) || '--:--'
               );
 
             } else {

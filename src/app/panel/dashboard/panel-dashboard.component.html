@@ -1,491 +1,156 @@
 <div class="dashboard">
-
-  <!-- =====================================================
-       ENCABEZADO
-       ===================================================== -->
-
-  <header class="dashboard__header">
-
-    <div class="dashboard__welcome">
-
-      <h1 class="dashboard__title">
-        Bienvenido a
-        <span>{{ empresaNombre() }}</span>
-      </h1>
-
-      <p class="dashboard__date">
-        {{ todayDate() | titlecase }}
-      </p>
-
+  <header class="dashboard__welcome">
+    <div class="dashboard__welcome-content">
+      <span class="dashboard__eyebrow">PANEL DE CONTROL</span>
+      <h1 class="dashboard__title">Bienvenido a <span>{{ empresaNombre() }}</span></h1>
+      <p class="dashboard__date">{{ todayDate() | titlecase }}</p>
+      <p class="dashboard__welcome-text">Aquí tienes el resumen de la actividad de tu veterinaria.</p>
     </div>
-
+    <div class="dashboard__welcome-art" aria-hidden="true">
+      <div class="dashboard__art-circle dashboard__art-circle--one"></div>
+      <div class="dashboard__art-circle dashboard__art-circle--two"></div>
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M60 101s-35-21.4-47.5-42C3.5 42 10 22 30 22c12 0 21 7.5 30 19 9-11.5 18-19 30-19 20 0 26.5 20 17.5 37C95 79.6 60 101 60 101Z" fill="currentColor" opacity=".16"/>
+        <path d="M60 89S32 72 22 55c-7-12 0-25 13-25 9 0 17 7 25 17 8-10 16-17 25-17 13 0 20 13 13 25C88 72 60 89 60 89Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M60 46v28M46 60h28" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+    </div>
   </header>
 
+  <section class="dashboard__overview" aria-label="Resumen del día">
+    <div class="dashboard__section-heading">
+      <div>
+        <span class="dashboard__eyebrow dashboard__eyebrow--dark">RESUMEN</span>
+        <h2 class="dashboard__section-title">Actividad de hoy</h2>
+      </div>
+      <span class="dashboard__today-label">Hoy</span>
+    </div>
 
-  <!-- =====================================================
-       KPI
-       SOLO SE MUESTRAN SEGÚN LOS MÓDULOS
-       ===================================================== -->
+    <div class="dashboard__kpis">
+      @if (tieneModulo('citas')) {
+        <article class="dashboard__kpi-card dashboard__kpi-card--blue">
+          <div class="dashboard__kpi-top">
+            <span class="dashboard__kpi-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="17" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 14h3M8 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </span>
+            <span class="dashboard__kpi-caption">AGENDA</span>
+          </div>
+          <strong class="dashboard__kpi-value">{{ loadingCitas() ? '—' : citasHoyCount() }}</strong>
+          <span class="dashboard__kpi-label">Citas de hoy</span>
+        </article>
 
-  <div class="dashboard__kpis">
+        <article class="dashboard__kpi-card dashboard__kpi-card--teal">
+          <div class="dashboard__kpi-top">
+            <span class="dashboard__kpi-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <span class="dashboard__kpi-caption">HORARIO</span>
+          </div>
+          <strong class="dashboard__kpi-value dashboard__kpi-value--time">{{ loadingCitas() ? '—' : proximaCitaHora() }}</strong>
+          <span class="dashboard__kpi-label">Próxima cita pendiente</span>
+        </article>
 
-    <!-- CITAS -->
-    @if (tieneModulo('citas')) {
+        <article class="dashboard__kpi-card dashboard__kpi-card--amber">
+          <div class="dashboard__kpi-top">
+            <span class="dashboard__kpi-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5M12 16.5v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+            <span class="dashboard__kpi-caption">POR ATENDER</span>
+          </div>
+          <strong class="dashboard__kpi-value">{{ loadingCitas() ? '—' : citasPendientesCount() }}</strong>
+          <span class="dashboard__kpi-label">Citas pendientes</span>
+        </article>
+      }
 
-      <article class="dashboard__kpi-card">
+      @if (tieneModulo('clientes_pacientes')) {
+        <article class="dashboard__kpi-card dashboard__kpi-card--purple">
+          <div class="dashboard__kpi-top">
+            <span class="dashboard__kpi-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7-4.35-9.5-8.5C.7 9 2 5 6 5c2 0 3.5 1.5 4 2.5C10.5 6.5 12 5 14 5c4 0 5.3 4 3.5 7.5C15 16.65 12 21 12 21Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            </span>
+            <span class="dashboard__kpi-caption">REGISTRO</span>
+          </div>
+          <strong class="dashboard__kpi-value">{{ loadingPacientes() ? '—' : pacientesCount() }}</strong>
+          <span class="dashboard__kpi-label">Pacientes registrados</span>
+        </article>
+      }
+    </div>
+  </section>
 
-        <div class="dashboard__kpi-icon">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <rect
-              x="3"
-              y="4"
-              width="18"
-              height="18"
-              rx="2"
-              stroke="currentColor"
-              stroke-width="1.8"
-            />
+  <section class="dashboard__quick-section">
+    <div class="dashboard__section-heading">
+      <div>
+        <span class="dashboard__eyebrow dashboard__eyebrow--dark">ACCESOS DIRECTOS</span>
+        <h2 class="dashboard__section-title">¿Qué necesitas hacer?</h2>
+        <p class="dashboard__section-subtitle">Acciones disponibles según los módulos asignados a tu cuenta.</p>
+      </div>
+    </div>
 
-            <path
-              d="M16 2v4M8 2v4M3 10h18"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-          </svg>
-        </div>
+    <div class="dashboard__actions-grid">
+      @if (tieneModulo('citas')) {
+        <a routerLink="/panel/agenda" class="dashboard__action-card">
+          <span class="dashboard__action-icon dashboard__action-icon--teal"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M16 2v4M8 2v4M3 10h18M12 13v5M9.5 15.5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <span class="dashboard__action-copy"><strong>Agendar una cita</strong><small>Organiza las próximas atenciones</small></span>
+          <span class="dashboard__action-arrow">→</span>
+        </a>
+      }
+      @if (tieneModulo('clientes_pacientes')) {
+        <a routerLink="/panel/pacientes" class="dashboard__action-card">
+          <span class="dashboard__action-icon dashboard__action-icon--purple"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7-4.35-9.5-8.5C.7 9 2 5 6 5c2 0 3.5 1.5 4 2.5C10.5 6.5 12 5 14 5c4 0 5.3 4 3.5 7.5C15 16.65 12 21 12 21Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+          <span class="dashboard__action-copy"><strong>Registrar un paciente</strong><small>Consulta y administra pacientes</small></span>
+          <span class="dashboard__action-arrow">→</span>
+        </a>
+      }
+      @if (tieneModulo('usuarios')) {
+        <a routerLink="/panel/usuarios" class="dashboard__action-card">
+          <span class="dashboard__action-icon dashboard__action-icon--blue"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M2.5 20c1.1-3.4 3.3-5.2 6.5-5.2 1.6 0 2.9.4 4 1.2M16 8v6M13 11h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+          <span class="dashboard__action-copy"><strong>Gestionar usuarios</strong><small>Administra el equipo de trabajo</small></span>
+          <span class="dashboard__action-arrow">→</span>
+        </a>
+      }
+    </div>
+  </section>
 
-        <div class="dashboard__kpi-content">
-
-          <span class="dashboard__kpi-label">
-            Citas de hoy
-          </span>
-
-          <strong class="dashboard__kpi-value">
-            {{ citasHoyCount() }}
-          </strong>
-
-        </div>
-
-      </article>
-
-
-      <!-- PRÓXIMA CITA -->
-      <article class="dashboard__kpi-card">
-
-        <div class="dashboard__kpi-icon">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <circle
-              cx="12"
-              cy="12"
-              r="9"
-              stroke="currentColor"
-              stroke-width="1.8"
-            />
-
-            <path
-              d="M12 7v5l3 2"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-          </svg>
-        </div>
-
-        <div class="dashboard__kpi-content">
-
-          <span class="dashboard__kpi-label">
-            Próxima cita
-          </span>
-
-          <strong class="dashboard__kpi-value">
-            {{ proximaCitaHora() }}
-          </strong>
-
-        </div>
-
-      </article>
-
-
-      <!-- CITAS PENDIENTES -->
-      <article class="dashboard__kpi-card">
-
-        <div class="dashboard__kpi-icon">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <circle
-              cx="12"
-              cy="12"
-              r="9"
-              stroke="currentColor"
-              stroke-width="1.8"
-            />
-
-            <path
-              d="M8 12l2.5 2.5L16 9"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </div>
-
-        <div class="dashboard__kpi-content">
-
-          <span class="dashboard__kpi-label">
-            Citas pendientes
-          </span>
-
-          <strong class="dashboard__kpi-value">
-            {{ citasPendientesCount() }}
-          </strong>
-
-        </div>
-
-      </article>
-
-    }
-
-
-    <!-- PACIENTES -->
-    @if (tieneModulo('clientes_pacientes')) {
-
-      <article class="dashboard__kpi-card">
-
-        <div class="dashboard__kpi-icon">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M12 21s-7-4.35-9.5-8.5C.7 9 2 5 6 5c2 0 3.5 1.5 4 2.5C10.5 6.5 12 5 14 5c4 0 5.3 4 3.5 7.5C15 16.65 12 21 12 21Z"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </div>
-
-        <div class="dashboard__kpi-content">
-
-          <span class="dashboard__kpi-label">
-            Pacientes registrados
-          </span>
-
-          <strong class="dashboard__kpi-value">
-            {{ pacientesCount() }}
-          </strong>
-
-        </div>
-
-      </article>
-
-    }
-
-  </div>
-
-
-  <!-- =====================================================
-       CONTENIDO PRINCIPAL
-       ===================================================== -->
-
-  <div class="dashboard__main">
-
-
-    <!-- ===================================================
-         ACCIONES RÁPIDAS
-         =================================================== -->
-
-    <section class="dashboard__actions">
-
-      <div class="dashboard__section-header">
-
+  @if (tieneModulo('citas')) {
+    <section class="dashboard__appointments">
+      <div class="dashboard__section-heading dashboard__section-heading--appointments">
         <div>
-          <h2 class="dashboard__section-title">
-            Acciones rápidas
-          </h2>
-
-          <p class="dashboard__section-subtitle">
-            Accesos según tus módulos asignados
-          </p>
+          <span class="dashboard__eyebrow dashboard__eyebrow--dark">SEGUIMIENTO</span>
+          <h2 class="dashboard__section-title">Agenda de hoy</h2>
+          <p class="dashboard__section-subtitle">Revisa las atenciones programadas para tu veterinaria.</p>
         </div>
-
+        <a routerLink="/panel/agenda" class="dashboard__text-link">Ver agenda <span>→</span></a>
       </div>
 
-
-      <div class="dashboard__actions-grid">
-
-
-        <!-- AGENDAR CITA -->
-        @if (tieneModulo('citas')) {
-
-          <a
-            routerLink="/panel/agenda"
-            class="dashboard__action-card"
-          >
-
-            <span class="dashboard__action-icon">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect
-                  x="3"
-                  y="4"
-                  width="18"
-                  height="18"
-                  rx="2"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                />
-
-                <path
-                  d="M16 2v4M8 2v4M3 10h18"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                />
-
-                <path
-                  d="M12 13v4M10 15h4"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                />
-              </svg>
-            </span>
-
-            <span>
-              <strong>Agendar Cita</strong>
-              <small>Gestionar agenda médica</small>
-            </span>
-
-          </a>
-
-        }
-
-
-        <!-- REGISTRAR PACIENTE -->
-        @if (tieneModulo('clientes_pacientes')) {
-
-          <a
-            routerLink="/panel/pacientes"
-            class="dashboard__action-card"
-          >
-
-            <span class="dashboard__action-icon">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 21s-7-4.35-9.5-8.5C.7 9 2 5 6 5c2 0 3.5 1.5 4 2.5C10.5 6.5 12 5 14 5c4 0 5.3 4 3.5 7.5C15 16.65 12 21 12 21Z"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
-
-            <span>
-              <strong>Pacientes</strong>
-              <small>Gestionar pacientes</small>
-            </span>
-
-          </a>
-
-        }
-
-
-        <!-- USUARIOS -->
-        @if (tieneModulo('usuarios')) {
-
-          <a
-            routerLink="/panel/usuarios"
-            class="dashboard__action-card"
-          >
-
-            <span class="dashboard__action-icon">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle
-                  cx="12"
-                  cy="8"
-                  r="3.2"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                />
-
-                <path
-                  d="M4.5 20c1.2-3.4 4-5.2 7.5-5.2s6.3 1.8 7.5 5.2"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                />
-              </svg>
-            </span>
-
-            <span>
-              <strong>Usuarios</strong>
-              <small>Gestionar usuarios</small>
-            </span>
-
-          </a>
-
-        }
-
-
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         CITAS RECIENTES
-         =================================================== -->
-
-    @if (tieneModulo('citas')) {
-
-      <section class="dashboard__recent">
-
-        <div class="dashboard__section-header">
-
-          <div>
-
-            <h2 class="dashboard__section-title">
-              Citas de hoy
-            </h2>
-
-            <p class="dashboard__section-subtitle">
-              Próximas atenciones programadas
-            </p>
-
-          </div>
-
-          <a
-            routerLink="/panel/agenda"
-            class="dashboard__section-link"
-          >
-            Ver agenda
-          </a>
-
-        </div>
-
-
-        @if (loading()) {
-
-          <div class="dashboard__skeleton">
-
-            <div class="dashboard__skeleton-row"></div>
-            <div class="dashboard__skeleton-row"></div>
-            <div class="dashboard__skeleton-row"></div>
-
-          </div>
-
+      <div class="dashboard__appointments-card">
+        @if (loadingCitas()) {
+          <div class="dashboard__loading-state"><span class="dashboard__spinner"></span><span>Cargando agenda...</span></div>
         } @else {
-
           @if (citasRecientes().length > 0) {
-
-            <div class="dashboard__table-wrapper">
-
+            <div class="dashboard__table-wrap">
               <table class="dashboard__table">
-
-                <thead>
-                  <tr>
-                    <th>Hora</th>
-                    <th>Paciente</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-
+                <thead><tr><th>Hora</th><th>Paciente</th><th>Estado</th></tr></thead>
                 <tbody>
-
-                  @for (
-                    cita of citasRecientes();
-                    track cita.id || $index
-                  ) {
-
+                  @for (cita of citasRecientes(); track cita.id || $index) {
                     <tr>
-
-                      <td>
-                        {{ cita.hora || '--:--' }}
-                      </td>
-
-                      <td>
-                        {{
-                          cita.paciente?.nombre
-                          || cita.paciente_nombre
-                          || 'Paciente'
-                        }}
-                      </td>
-
-                      <td>
-
-                        <span
-                          class="dashboard__badge"
-                          [class.dashboard__badge--pendiente]="
-                            cita.estado?.toLowerCase() === 'pendiente'
-                          "
-                        >
-                          {{ cita.estado || 'Sin estado' }}
-                        </span>
-
-                      </td>
-
+                      <td class="dashboard__table-time">{{ (cita.hora_inicio || cita.hora || '').slice(0, 5) || '--:--' }}</td>
+                      <td><span class="dashboard__patient-name">{{ cita.paciente?.nombre || cita.paciente_nombre || 'Paciente' }}</span></td>
+                      <td><span class="dashboard__status" [class.dashboard__status--pending]="cita.estado?.toLowerCase() === 'pendiente'">{{ cita.estado || 'Sin estado' }}</span></td>
                     </tr>
-
                   }
-
                 </tbody>
-
               </table>
-
             </div>
-
           } @else {
-
             <div class="dashboard__empty">
-
-              <span class="dashboard__empty-icon">
-                📅
-              </span>
-
-              <h3>
-                No hay citas para hoy
-              </h3>
-
-              <p>
-                No tienes citas programadas para este día.
-              </p>
-
+              <span class="dashboard__empty-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="17" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M8 14h.01M12 14h.01M16 14h.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>
+              <h3>Tu agenda está libre por ahora</h3>
+              <p>No hay citas programadas para hoy. Cuando registres una nueva atención, aparecerá aquí.</p>
+              <a routerLink="/panel/agenda" class="dashboard__empty-link">Ir a la agenda <span>→</span></a>
             </div>
-
           }
-
         }
-
-      </section>
-
-    }
-
-  </div>
-
+      </div>
+    </section>
+  }
 </div>
